@@ -1,0 +1,53 @@
+{
+  "name": "vanillagrid2",
+  "version": "1.0.0-beta.0",
+  "description": "A simple editor using only Vanilla JS and ES5 syntax.",
+  "main": "dist/Vanillagrid2.bundle.js",
+  "module": "dist/Vanillagrid2.bundle.js",
+  "types": "dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/Vanillagrid2.bundle.js",
+      "require": "./dist/Vanillagrid2.bundle.cjs",
+      "default": "./dist/Vanillagrid2.bundle.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc && webpack",
+    "lint": "eslint 'src/**/*.ts'",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vanilla-grid/vanillagrid2.min.git"
+  },
+  "keywords": [
+    "grid",
+    "excel",
+    "vanillagrid",
+    "cell",
+    "table"
+  ],
+  "author": "Hani Son",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/vanilla-grid/vanillagrid2.min/issues"
+  },
+  "homepage": "https://vanilla-grid.github.io/",
+  "devDependencies": {
+    "@babel/core": "^7.0.0",
+    "@babel/preset-env": "^7.0.0",
+    "@babel/preset-typescript": "^7.26.0",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "babel-loader": "^8.4.1",
+    "eslint": "^8.57.1",
+    "typescript": "^5.8.2",
+    "webpack": "^5.0.0",
+    "webpack-cli": "^4.0.0"
+  }
+}
