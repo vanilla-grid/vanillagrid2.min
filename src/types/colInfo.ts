@@ -187,11 +187,37 @@ export interface ColInfo {
      * If fontUnderline is true, the innerText of the column's cells will be underlined.
      */
     fontUnderline: boolean | null;
+    /**
+     * An array of values ​​that the filter has. Automatically changes.
+     */
+    filterValues?: Set<string> | null;
+    /**
+     * The currently specified filter value.
+     */
+    filterValue?: string | null;
+    /**
+     * Whether a filter has been applied.
+     */
+    filter?: boolean | null;
+    /**
+     * If visible is false, this row is hidden.
+     */
+    rowVisible?: boolean | null;
 }
 
 /**
  * Default configuration for column-level properties.
  * Simplifies column setup and ensures consistency.
  */
-export interface DefaultColInfo extends Omit<ColInfo, 'id' | 'index' | 'name' | 'header' | 'footer'>{
+export interface DefaultColInfo extends Omit<ColInfo,
+'id' |
+'index' |
+'name' |
+'header' |
+'footer' |
+'filterValues' |
+'filterValue' |
+'filter' |
+'rowVisible'
+>{
 }

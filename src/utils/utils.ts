@@ -341,7 +341,7 @@ export const nvl = <T,U> (value: T, nullValue: U) => {
     }
     return value;
 };
-export const getVerticalAlign = (verticalAlign: VerticalAlign.TOP | VerticalAlign.CENTER | VerticalAlign.BOTTOM) => {
+export const getVerticalAlign = (verticalAlign: VerticalAlign.top | VerticalAlign.center | VerticalAlign.bottom) => {
     switch (toLowerCase(verticalAlign)) {
         case 'top':
             return 'flex-start';
@@ -367,17 +367,17 @@ export const checkIsValueOrData = (keyValueOrDatas: (object | object[])[]) => {
     }
     return isKeyValue;
 };
-export const getColorFromColorSet = (colorSet: ColorSet.BLACK
-    | ColorSet.BLUE
-    | ColorSet.BROWN
-    | ColorSet.GREEN
-    | ColorSet.LIGHT_GREEN
-    | ColorSet.LIGHT_RED
-    | ColorSet.ORANGE
-    | ColorSet.PURPLE
-    | ColorSet.RED
-    | ColorSet.SKYBLUE
-    | ColorSet.YELLOW
+export const getColorFromColorSet = (colorSet: ColorSet.black
+    | ColorSet.blue
+    | ColorSet.brown
+    | ColorSet.green
+    | ColorSet.light_green
+    | ColorSet.light_red
+    | ColorSet.orange
+    | ColorSet.purple
+    | ColorSet.red
+    | ColorSet.skyblue
+    | ColorSet.yellow
     | string | null
 ) => {
     switch(colorSet) {
@@ -505,8 +505,4 @@ export const setInvertColor = (cssInfo: GridCssInfo) => {
     cssInfo.linkActiveFontColor = getInvertColor(cssInfo.linkActiveFontColor);
     cssInfo.linkVisitedFontColor = getInvertColor(cssInfo.linkVisitedFontColor);
     cssInfo.linkFocusFontColor = getInvertColor(cssInfo.linkFocusFontColor);
-};
-export const doEventWithCheckChanged = (gId: string, eventName: string, ...params: any[]) => {
-    if ((this as any)[gId].events[gId + eventName] !== (window as any)[gId + eventName]) throw new Error('Abnormal access has been detected. An initially defined event has changed. \nevent : ' + gId + eventName);
-    return (window as any)[gId + eventName](...params);
 };

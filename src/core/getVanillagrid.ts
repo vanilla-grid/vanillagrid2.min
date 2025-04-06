@@ -3,6 +3,11 @@ import { DefaultGridCssInfo, DefaultGridInfo, GridInfo } from "../types/gridInfo
 import { DefaultColInfo } from "../types/colInfo";
 import { SelectionPolicy, VerticalAlign } from "../types/enum";
 import { deepFreeze } from "../utils/utils";
+import { Cell, CellData } from "../types/cell";
+import { modifyCell } from "../utils/handleElement";
+import { getTabCell, redoundo, selectCell, selectCells, stopScrolling } from "../utils/handleActive";
+import { __getData, _getCell } from "../utils/handleGrid";
+import { createGridEditor } from "../utils/handleCell";
 
 let singletonVanillagrid: Vanillagrid | null = null;
 
@@ -25,7 +30,7 @@ export const getVanillagrid = (config?: VanillagridConfig): Vanillagrid => {
             defaultColInfo: config.attributes.defaultColInfo,
         },
         checkByte: config.checkByte,
-        gridMethods: {},
+        grids: {},
         getGrid: (gridId: string) => {},
         documentEvent: {
             mousedown: null,
@@ -83,7 +88,7 @@ export const initVanillagrid = () => {
 
     vg.documentEvent.mousedown = function (e: any) {
         if (vg._status.activeGridEditor && vg._status.activeGridEditor !== e.target) {
-            modifyCell();
+            modifyCell(vg);
         }
         
         if (vg._status.activeGrid && !vg._status.activeGrid.contains(e.target)) {
@@ -96,7 +101,7 @@ export const initVanillagrid = () => {
     vg.documentEvent.mouseup = function (e: any) {
         vg._status.mouseX = 0;
         vg._status.mouseY = 0;
-        stopScrolling();
+        stopScrolling(vg);
 
         if (vg._status.isDragging) {
             vg._status.isDragging = false;
@@ -112,43 +117,38 @@ export const initVanillagrid = () => {
         if (vg._status.activeGrid && !vg._status.activeGridEditor) {
             const grid = vg._status.activeGrid; 
             const gId = grid._id;
-            if (doEventWithCheckChanged(gId, '_onKeydownGrid', e) === false) {
-                e.stopPropagation();
-                e.preventDefault();
-                return;
-            }
             
             if (e.ctrlKey || e.metaKey) {
                 switch (e.key) {
                     case 'z':
                     case 'Z': 
-                        redoundo(gId);
+                        redoundo(grid);
                         e.preventDefault();
                         break;
                     case 'y':
                     case 'Y': 
-                        redoundo(gId, false);
+                        redoundo(grid, false);
                         e.preventDefault();
                         break;
                     case 'a':
                     case 'A': 
-                        grid._variables._targetCell = grid._getCell(1,3);
-                        selectCells(grid._getCell(1,1),grid._getCell(grid.getRowCount(), grid.getColCount()));
+                        grid._variables._targetCell = _getCell(grid, 1, 3);
+                        selectCells(grid, _getCell(grid, 1, 1)!, _getCell(grid, grid.getRowCount(), grid.getColCount())!);
                         e.preventDefault();
                         break;
                     default:
                         break;
                 }
             }
-            if (grid.info.gSelectionPolicy === 'none' || grid._variables._activeCells.length <= 0) return;
+            if (grid._gridInfo.selectionPolicy === 'none' || grid._variables._activeCells.length <= 0) return;
             const startCell = grid._variables._activeCells[0];
             const endCell = grid._variables._activeCells[grid._variables._activeCells.length - 1];
             let newTargetCell: Cell;
             Object.keys(vg.dataType).forEach((key) => {
-                if(grid._variables._targetCell.cDataType === key) {
+                if(grid._variables._targetCell!._colInfo.dataType === key) {
                     if(vg.dataType[key].onSelectedAndKeyDown) {
                         if(typeof vg.dataType[key].onSelectedAndKeyDown !== 'function') throw new Error('onSelectedAndKeyDown must be a function.');
-                        if(vg.dataType[key].onSelectedAndKeyDown(e, grid.__getData(grid._variables._targetCell)) === false) {
+                        if(vg.dataType[key].onSelectedAndKeyDown(e, __getData(grid._variables._targetCell!)) === false) {
                             return;
                         }
                     }
@@ -156,20 +156,20 @@ export const initVanillagrid = () => {
             });
             switch (e.key) {
                 case 'Tab':
-                    newTargetCell = getTabCell(grid._variables._targetCell, e.shiftKey)!;
+                    newTargetCell = getTabCell(grid._variables._targetCell!, e.shiftKey)!;
                     selectCell(newTargetCell);
                     e.preventDefault();
                     break;
                 case 'F2':
-                    createGridEditor(grid._variables._targetCell);
+                    createGridEditor(grid._variables._targetCell!);
                     e.preventDefault();
                     break;
                 case 'Enter':
-                    if (grid._variables._targetCell.cDataType === 'select') {
+                    if (grid._variables._targetCell._colInfo.dataType === 'select') {
                         editOldValue = grid._variables._targetCell.firstChild.value;
                         grid._variables._targetCell.firstChild.focus();
                     }
-                    else if (grid._variables._targetCell.cDataType === 'checkbox') {
+                    else if (grid._variables._targetCell._colInfo.dataType === 'checkbox') {
                         editOldValue = grid._variables._targetCell.cValue;
                         grid._variables._targetCell.firstChild.checked = !grid._variables._targetCell.firstChild.checked;
                         selectAndCheckboxOnChange(grid._variables._targetCell.firstChild);
@@ -178,13 +178,13 @@ export const initVanillagrid = () => {
                         selectCell(newTargetCell);
                         e.preventDefault();
                     }
-                    else if (['text','number','date','month','mask','code'].indexOf(grid._variables._targetCell.cDataType) >= 0) {
+                    else if (['text','number','date','month','mask','code'].indexOf(grid._variables._targetCell._colInfo.dataType) >= 0) {
                         createGridEditor(grid._variables._targetCell, true);
                         e.preventDefault();
                     }
                     break;
                 case ' ':
-                    if (grid._variables._targetCell.cDataType === 'select') {
+                    if (grid._variables._targetCell._colInfo.dataType === 'select') {
                         if (grid._variables._targetCell.cUntarget || grid._variables._targetCell.cLocked) {
                             e.preventDefault();
                             return;
@@ -192,10 +192,10 @@ export const initVanillagrid = () => {
                         editOldValue = grid._variables._targetCell.firstChild.value;
                         grid._variables._targetCell.firstChild.focus();
                     }
-                    else if (grid._variables._targetCell.cDataType === 'button') {
+                    else if (grid._variables._targetCell._colInfo.dataType === 'button') {
                         grid._variables._targetCell.firstChild.focus();
                     }
-                    else if (grid._variables._targetCell.cDataType === 'checkbox') {
+                    else if (grid._variables._targetCell._colInfo.dataType === 'checkbox') {
                         if (grid._variables._targetCell.cUntarget || grid._variables._targetCell.cLocked) {
                             e.preventDefault();
                             return;
@@ -205,13 +205,13 @@ export const initVanillagrid = () => {
                         selectAndCheckboxOnChange(grid._variables._targetCell.firstChild);
                         e.preventDefault();
                     }
-                    else if (['text','number','date','month','mask','code'].indexOf(grid._variables._targetCell.cDataType) >= 0) {
+                    else if (['text','number','date','month','mask','code'].indexOf(grid._variables._targetCell._colInfo.dataType) >= 0) {
                         createGridEditor(grid._variables._targetCell);
                         e.preventDefault();
                     }
                     break;
                 case 'ArrowUp':
-                    if (grid.info.gSelectionPolicy === 'range' && e.shiftKey) {
+                    if (grid._gridInfo.selectionPolicy === 'range' && e.shiftKey) {
                         unselectCells(gId);
                         if (grid._variables._targetCell.row >= endCell.row) {
                             newTargetCell = getMoveRowCell(startCell, -1)!;
@@ -229,7 +229,7 @@ export const initVanillagrid = () => {
                     e.preventDefault();
                     break;
                 case 'ArrowDown':
-                    if (grid.info.gSelectionPolicy === 'range' && e.shiftKey) {
+                    if (grid._gridInfo.selectionPolicy === 'range' && e.shiftKey) {
                         unselectCells(gId);
                         if (grid._variables._targetCell.row <= startCell.row) {
                             newTargetCell = getMoveRowCell(endCell, 1)!;
@@ -247,7 +247,7 @@ export const initVanillagrid = () => {
                     e.preventDefault();
                     break;
                 case 'ArrowLeft':
-                    if (grid.info.gSelectionPolicy === 'range' && e.shiftKey) {
+                    if (grid._gridInfo.selectionPolicy === 'range' && e.shiftKey) {
                         unselectCells(gId);
                         if (grid._variables._targetCell.col >= endCell.col) {
                             newTargetCell = getMoveColCell(startCell, -1)!;
@@ -265,7 +265,7 @@ export const initVanillagrid = () => {
                     e.preventDefault();
                     break;
                 case 'ArrowRight':
-                    if (grid.info.gSelectionPolicy === 'range' && e.shiftKey) {
+                    if (grid._gridInfo.selectionPolicy === 'range' && e.shiftKey) {
                         unselectCells(gId);
                         if (grid._variables._targetCell.col <= startCell.col) {
                             newTargetCell = getMoveColCell(endCell, 1)!;
@@ -592,7 +592,7 @@ const setGridMethod = (grid: Grid) => {
     };
     grid.clearStatus = (): boolean => {
         for(let row = 1; row <= grid.getRowCount(); row++) {
-            const cell = grid._getCell(row, 2);
+            const cell = _getCell(grid, row, 2);
             cell.cValue = null;
             utils.reConnectedCallbackElement(cell);
         }
@@ -602,7 +602,7 @@ const setGridMethod = (grid: Grid) => {
         return gridBodyCells.length;
     };
     grid.getColCount = (): number => {
-        return colInfos.length;
+        return grid._colInfos.length;
     };
     grid.getValues = (): Record<string, any>[] => {
         const keyValues = [];
@@ -632,7 +632,7 @@ const setGridMethod = (grid: Grid) => {
         for(const rows of gridBodyCells) {
             for(const cell of rows) {
                 if(cell.cRequired
-                    && ['select','checkbox','button','link'].indexOf(cell.cDataType!) < 0
+                    && ['select','checkbox','button','link'].indexOf(cell._colInfo.dataType!) < 0
                     && (cell.cValue === '' || cell.cValue === null || cell.cValue === undefined || cell.cValue === grid.info.gNullValue)) {
                     if(func) {
                         func(grid.__getData(cell));
@@ -773,12 +773,12 @@ const setGridMethod = (grid: Grid) => {
     grid.isGridResizable = () => {
         return grid.info.gResizable;
     };
-    grid.setGridRecodeCount = (recodeCount: number): boolean => {
-        recodeCount = utils.validatePositiveIntegerAndZero(recodeCount);
-        grid.info.gRedoCount = recodeCount;
+    grid.setGridRecordCount = (recordCount: number): boolean => {
+        recordCount = utils.validatePositiveIntegerAndZero(recordCount);
+        grid.info.gRedoCount = recordCount;
         return true;
     };
-    grid.getGridRecodeCount = (): number => {
+    grid.getGridRecordCount = (): number => {
         return grid.info.gRedoCount;
     };
     grid.setGridRedoable = (isRedoable: boolean): boolean => {
@@ -849,11 +849,11 @@ const setGridMethod = (grid: Grid) => {
     };
     grid.setGridSelectionPolicy = (selectionPolicy: SelectionPolicy.RANGE | SelectionPolicy.SINGLE | SelectionPolicy.NONE): boolean => {
         if (!utils.isIncludeEnum(selectionPolicyUnit, selectionPolicy)) throw new Error('Please insert the correct selectionPolicy properties. (single, range, none)');
-        grid.info.gSelectionPolicy = selectionPolicy;
+        grid._gridInfo.selectionPolicy = selectionPolicy;
         return true
     };
     grid.getGridSelectionPolicy = (): string => {
-        return grid.info.gSelectionPolicy;
+        return grid._gridInfo.selectionPolicy;
     };
     grid.setGridNullValue = (nullValue: any): boolean => {
         grid.info.gNullValue = nullValue;
@@ -1075,7 +1075,7 @@ const setGridMethod = (grid: Grid) => {
             required : colInfo.cRequired,
             resizable : colInfo.cResizable,
             originWidth : colInfo.cOriginWidth,
-            dataType : colInfo.cDataType,
+            dataType : colInfo._colInfo.dataType,
             selectSize : colInfo.cSelectSize,
             locked : colInfo.cLocked,
             lockedColor : colInfo.cLockedColor,
@@ -1122,21 +1122,21 @@ const setGridMethod = (grid: Grid) => {
         }
         return colDatas;
     };
-    grid.setColSameValue = (colIndexOrColId: number | string, value: any, doRecode = false) : boolean => {
+    grid.setColSameValue = (colIndexOrColId: number | string, value: any, doRecord = false) : boolean => {
         const colIndex = grid.__getColIndex(colIndexOrColId, true);
         grid.__checkColRownumOrStatus(colIndex);
-        if (doRecode) {
-            const recodes = [];
+        if (doRecord) {
+            const records = [];
             for(let row = 1; row <= grid.getRowCount(); row++) {
-                let cell = grid._getCell(row, colIndex);
-                let recode = utils.getRecodesWithModifyValue(cell, value, true);
-                if (Array.isArray(recode) && recode.length > 0) recodes.push(recode[0]);
+                let cell = _getCell(grid, row, colIndex);
+                let record = utils.getRecordsWithModifyValue(cell, value, true);
+                if (Array.isArray(record) && record.length > 0) records.push(record[0]);
             }
-            utils.recodeGridModify(grid.gId, recodes);
+            utils.recordGridModify(grid.gId, records);
         }
         else {
             for(let row = 1; row <= grid.getRowCount(); row++) {
-                let cell = grid._getCell(row, colIndex);
+                let cell = _getCell(grid, row, colIndex);
                 cell.cValue = utils.getValidValue(cell, value);
                 utils.reConnectedCallbackElement(cell);
             }
@@ -1148,7 +1148,7 @@ const setGridMethod = (grid: Grid) => {
         const colIndex = grid.__getColIndex(colIndexOrColId, true);
         const colValues = [];
         for(let row = 1; row <= grid.getRowCount(); row++) {
-            let cell = grid._getCell(row, colIndex);
+            let cell = _getCell(grid, row, colIndex);
             colValues.push(utils.deepCopy(cell.cValue));
         }
         return colValues;
@@ -1165,8 +1165,8 @@ const setGridMethod = (grid: Grid) => {
         const colIndex = grid.__getColIndex(colIndexOrColId, true);
         const colValues = [];
         for(let row = 1; row <= grid.getRowCount(); row++) {
-            let cell = grid._getCell(row, colIndex);
-            switch (cell.cDataType) {
+            let cell = _getCell(grid, row, colIndex);
+            switch (cell._colInfo.dataType) {
                 case 'select':
                 case 'checkbox':
                 case 'button':
@@ -1230,7 +1230,7 @@ const setGridMethod = (grid: Grid) => {
         const colInfo: CellColInfo = grid.__getColInfo(colIndex);
         colInfo.cName = colName;
         for(let row = 1; row <= grid.getRowCount(); row++) {
-            grid._getCell(row, colIndex).cName = colName;
+            _getCell(grid, row, colIndex).cName = colName;
         }
         return true;
     };
@@ -1245,7 +1245,7 @@ const setGridMethod = (grid: Grid) => {
         const colInfo: CellColInfo = grid.__getColInfo(colIndex);
         colInfo.cUntarget = isUntarget;
         for(let row = 1; row <= grid.getRowCount(); row++) {
-            grid._getCell(row, colIndex).cUntarget = isUntarget;
+            _getCell(grid, row, colIndex).cUntarget = isUntarget;
         }
         return true;
     };
@@ -1304,7 +1304,7 @@ const setGridMethod = (grid: Grid) => {
         const colInfo: CellColInfo = grid.__getColInfo(colIndex, true);
         colInfo.cRequired = isRequired;
         for(let row = 1; row <= grid.getRowCount(); row++) {
-            grid._getCell(row, colIndex).cRequired = isRequired;
+            _getCell(grid, row, colIndex).cRequired = isRequired;
         }
         return true;
     };
@@ -1370,10 +1370,10 @@ const setGridMethod = (grid: Grid) => {
         const colIndex = grid.__getColIndex(colIndexOrColId, true);
         if (!utils.isIncludeEnum(dataTypeUnit, dataType)) throw new Error('Please insert a valid dataType.');
         const colInfo: CellColInfo = grid.__getColInfo(colIndex);
-        colInfo.cDataType = dataType;
+        colInfo._colInfo.dataType = dataType;
         for(let row = 1; row <= grid.getRowCount(); row++) {
-            const cell = grid._getCell(row, colIndex);
-            cell.cDataType = dataType;
+            const cell = _getCell(grid, row, colIndex);
+            cell._colInfo.dataType = dataType;
             utils.reConnectedCallbackElement(cell);
         }
         utils.reloadGridWithModifyCell(gId, colIndex);
@@ -1381,7 +1381,7 @@ const setGridMethod = (grid: Grid) => {
     };
     grid.getColDataType = (colIndexOrColId: number | string): string => {
         const colInfo: CellColInfo = grid.__getColInfo(colIndexOrColId, true);
-        return colInfo.cDataType!;
+        return colInfo._colInfo.dataType!;
     };
     grid.setColSelectSize = (colIndexOrColId: number | string, cssTextSelectSize: string): boolean => {
         grid.__checkColRownumOrStatus(colIndexOrColId);
@@ -1389,7 +1389,7 @@ const setGridMethod = (grid: Grid) => {
         const colInfo: CellColInfo = grid.__getColInfo(colIndex);
         colInfo.cSelectSize = cssTextSelectSize;
         for(let row = 1; row <= grid.getRowCount(); row++) {
-            const cell = grid._getCell(row, colIndex);
+            const cell = _getCell(grid, row, colIndex);
             cell.cSelectSize = cssTextSelectSize;
             grid.__gridCellReConnectedWithControlSpan(cell);
         }
@@ -1406,7 +1406,7 @@ const setGridMethod = (grid: Grid) => {
         const colInfo: CellColInfo = grid.__getColInfo(colIndex);
         colInfo.cLocked = isLocked;
         for(let row = 1; row <= grid.getRowCount(); row++) {
-            const cell = grid._getCell(row, colIndex);
+            const cell = _getCell(grid, row, colIndex);
             cell.cLocked = isLocked;
             grid.__gridCellReConnectedWithControlSpan(cell);
         }
@@ -1422,7 +1422,7 @@ const setGridMethod = (grid: Grid) => {
         const colInfo: CellColInfo = grid.__getColInfo(colIndex);
         colInfo.cLockedColor = isLockedColor;
         for(let row = 1; row <= grid.getRowCount(); row++) {
-            const cell = grid._getCell(row, colIndex);
+            const cell = _getCell(grid, row, colIndex);
             cell.cLockedColor = isLockedColor;
             grid.__gridCellReConnectedWithControlSpan(cell);
         }
@@ -1439,9 +1439,9 @@ const setGridMethod = (grid: Grid) => {
         const colInfo: CellColInfo = grid.__getColInfo(colIndex);
         colInfo.cFormat = format;
         for(let row = 1; row <= grid.getRowCount(); row++) {
-            const cell = grid._getCell(row, colIndex);
+            const cell = _getCell(grid, row, colIndex);
             cell.cFormat = format;
-            if(cell.cDataType === 'mask') {
+            if(cell._colInfo.dataType === 'mask') {
                 cell.cValue = utils.getValidValue(cell, cell.cValue);
             }
             utils.reConnectedCallbackElement(cell);
@@ -1460,9 +1460,9 @@ const setGridMethod = (grid: Grid) => {
         const colInfo: CellColInfo = grid.__getColInfo(colIndex);
         colInfo.cCodes = codes;
         for(let row = 1; row <= grid.getRowCount(); row++) {
-            const cell = grid._getCell(row, colIndex);
+            const cell = _getCell(grid, row, colIndex);
             cell.cCodes = codes;
-            if(cell.cDataType === 'code') {
+            if(cell._colInfo.dataType === 'code') {
                 cell.cValue = utils.getValidValue(cell, cell.cValue);
             }
             utils.reConnectedCallbackElement(cell);
@@ -1480,9 +1480,9 @@ const setGridMethod = (grid: Grid) => {
         const colInfo: CellColInfo = grid.__getColInfo(colIndex);
         colInfo.cDefaultCode = defaultCode;
         for(let row = 1; row <= grid.getRowCount(); row++) {
-            const cell = grid._getCell(row, colIndex);
+            const cell = _getCell(grid, row, colIndex);
             cell.cDefaultCode = defaultCode;
-            if(cell.cDataType === 'code') {
+            if(cell._colInfo.dataType === 'code') {
                 cell.cValue = utils.getValidValue(cell, cell.cValue);
             }
             utils.reConnectedCallbackElement(cell);
@@ -1501,9 +1501,9 @@ const setGridMethod = (grid: Grid) => {
         const colInfo: CellColInfo = grid.__getColInfo(colIndex);
         colInfo.cMaxLength = maxLength;
         for(let row = 1; row <= grid.getRowCount(); row++) {
-            const cell = grid._getCell(row, colIndex);
+            const cell = _getCell(grid, row, colIndex);
             cell.cMaxLength = maxLength;
-            if(cell.cDataType === 'text') {
+            if(cell._colInfo.dataType === 'text') {
                 cell.cValue = utils.getValidValue(cell, cell.cValue);
             }
             utils.reConnectedCallbackElement(cell);
@@ -1522,9 +1522,9 @@ const setGridMethod = (grid: Grid) => {
         const colInfo: CellColInfo = grid.__getColInfo(colIndex);
         colInfo.cMaxByte = maxByte;
         for(let row = 1; row <= grid.getRowCount(); row++) {
-            const cell = grid._getCell(row, colIndex);
+            const cell = _getCell(grid, row, colIndex);
             cell.cMaxByte = maxByte;
-            if(cell.cDataType === 'text') {
+            if(cell._colInfo.dataType === 'text') {
                 cell.cValue = utils.getValidValue(cell, cell.cValue);
             }
             utils.reConnectedCallbackElement(cell);
@@ -1543,9 +1543,9 @@ const setGridMethod = (grid: Grid) => {
         const colInfo: CellColInfo = grid.__getColInfo(colIndex);
         colInfo.cMaxNumber = maxNumber;
         for(let row = 1; row <= grid.getRowCount(); row++) {
-            const cell = grid._getCell(row, colIndex);
+            const cell = _getCell(grid, row, colIndex);
             cell.cMaxNumber = maxNumber;
-            if(cell.cDataType === 'number') {
+            if(cell._colInfo.dataType === 'number') {
                 cell.cValue = utils.getValidValue(cell, cell.cValue);
             }
             utils.reConnectedCallbackElement(cell);
@@ -1564,9 +1564,9 @@ const setGridMethod = (grid: Grid) => {
         const colInfo: CellColInfo = grid.__getColInfo(colIndex);
         colInfo.cMinNumber = minNumber;
         for(let row = 1; row <= grid.getRowCount(); row++) {
-            const cell = grid._getCell(row, colIndex);
+            const cell = _getCell(grid, row, colIndex);
             cell.cMinNumber = minNumber;
-            if(cell.cDataType === 'number') {
+            if(cell._colInfo.dataType === 'number') {
                 cell.cValue = utils.getValidValue(cell, cell.cValue);
             }
             utils.reConnectedCallbackElement(cell);
@@ -1585,9 +1585,9 @@ const setGridMethod = (grid: Grid) => {
         const colInfo: CellColInfo = grid.__getColInfo(colIndex);
         colInfo.cRoundNumber = roundNumber;
         for(let row = 1; row <= grid.getRowCount(); row++) {
-            const cell = grid._getCell(row, colIndex);
+            const cell = _getCell(grid, row, colIndex);
             cell.cRoundNumber = roundNumber;
-            if(cell.cDataType === 'number') {
+            if(cell._colInfo.dataType === 'number') {
                 cell.cValue = utils.getValidValue(cell, cell.cValue);
             }
             utils.reConnectedCallbackElement(cell);
@@ -1605,7 +1605,7 @@ const setGridMethod = (grid: Grid) => {
         const colInfo: CellColInfo = grid.__getColInfo(colIndex);
         colInfo.cAlign = align;
         for(let row = 1; row <= grid.getRowCount(); row++) {
-            const cell = grid._getCell(row, colIndex);
+            const cell = _getCell(grid, row, colIndex);
             cell.cAlign = align;
             grid.__gridCellReConnectedWithControlSpan(cell);
         }
@@ -1621,7 +1621,7 @@ const setGridMethod = (grid: Grid) => {
         const colInfo: CellColInfo = grid.__getColInfo(colIndex);
         colInfo.cVerticalAlign = verticalAlign;
         for(let row = 1; row <= grid.getRowCount(); row++) {
-            const cell = grid._getCell(row, colIndex);
+            const cell = _getCell(grid, row, colIndex);
             cell.cVerticalAlign = verticalAlign;
             grid.__gridCellReConnectedWithControlSpan(cell);
         }
@@ -1636,7 +1636,7 @@ const setGridMethod = (grid: Grid) => {
         const colInfo: CellColInfo = grid.__getColInfo(colIndex);
         colInfo.cOverflowWrap = overflowWrap;
         for(let row = 1; row <= grid.getRowCount(); row++) {
-            const cell = grid._getCell(row, colIndex);
+            const cell = _getCell(grid, row, colIndex);
             cell.cOverflowWrap = overflowWrap;
             grid.__gridCellReConnectedWithControlSpan(cell);
         }
@@ -1651,7 +1651,7 @@ const setGridMethod = (grid: Grid) => {
         const colInfo: CellColInfo = grid.__getColInfo(colIndex);
         colInfo.cWordBreak = wordBreak;
         for(let row = 1; row <= grid.getRowCount(); row++) {
-            const cell = grid._getCell(row, colIndex);
+            const cell = _getCell(grid, row, colIndex);
             cell.cWordBreak = wordBreak;
             grid.__gridCellReConnectedWithControlSpan(cell);
         }
@@ -1666,7 +1666,7 @@ const setGridMethod = (grid: Grid) => {
         const colInfo: CellColInfo = grid.__getColInfo(colIndex);
         colInfo.cWhiteSpace = whiteSpace;
         for(let row = 1; row <= grid.getRowCount(); row++) {
-            const cell = grid._getCell(row, colIndex);
+            const cell = _getCell(grid, row, colIndex);
             cell.cWhiteSpace = whiteSpace;
             grid.__gridCellReConnectedWithControlSpan(cell);
         }
@@ -1682,7 +1682,7 @@ const setGridMethod = (grid: Grid) => {
         const colInfo: CellColInfo = grid.__getColInfo(colIndex);
         colInfo.cBackColor = hexadecimalBackColor;
         for(let row = 1; row <= grid.getRowCount(); row++) {
-            const cell = grid._getCell(row, colIndex);
+            const cell = _getCell(grid, row, colIndex);
             cell.cBackColor = hexadecimalBackColor;
             grid.__gridCellReConnectedWithControlSpan(cell);
         }
@@ -1698,7 +1698,7 @@ const setGridMethod = (grid: Grid) => {
         const colInfo: CellColInfo = grid.__getColInfo(colIndex);
         colInfo.cFontColor = hexadecimalFontColor;
         for(let row = 1; row <= grid.getRowCount(); row++) {
-            const cell = grid._getCell(row, colIndex);
+            const cell = _getCell(grid, row, colIndex);
             cell.cFontColor = hexadecimalFontColor;
             grid.__gridCellReConnectedWithControlSpan(cell);
         }
@@ -1714,7 +1714,7 @@ const setGridMethod = (grid: Grid) => {
         const colInfo: CellColInfo = grid.__getColInfo(colIndex);
         colInfo.cFontBold = isFontBold;
         for(let row = 1; row <= grid.getRowCount(); row++) {
-            const cell = grid._getCell(row, colIndex);
+            const cell = _getCell(grid, row, colIndex);
             cell.cFontBold = isFontBold;
             grid.__gridCellReConnectedWithControlSpan(cell);
         }
@@ -1730,7 +1730,7 @@ const setGridMethod = (grid: Grid) => {
         const colInfo: CellColInfo = grid.__getColInfo(colIndex);
         colInfo.cFontItalic = isFontItalic;
         for(let row = 1; row <= grid.getRowCount(); row++) {
-            const cell = grid._getCell(row, colIndex);
+            const cell = _getCell(grid, row, colIndex);
             cell.cFontItalic = isFontItalic;
             grid.__gridCellReConnectedWithControlSpan(cell);
         }
@@ -1746,7 +1746,7 @@ const setGridMethod = (grid: Grid) => {
         const colInfo: CellColInfo = grid.__getColInfo(colIndex);
         colInfo.cFontThruline = isFontThruline;
         for(let row = 1; row <= grid.getRowCount(); row++) {
-            const cell = grid._getCell(row, colIndex);
+            const cell = _getCell(grid, row, colIndex);
             cell.cFontThruline = isFontThruline;
             grid.__gridCellReConnectedWithControlSpan(cell);
         }
@@ -1762,7 +1762,7 @@ const setGridMethod = (grid: Grid) => {
         const colInfo: CellColInfo = grid.__getColInfo(colIndex);
         colInfo.cFontUnderline = isFontUnderline;
         for(let row = 1; row <= grid.getRowCount(); row++) {
-            const cell = grid._getCell(row, colIndex);
+            const cell = _getCell(grid, row, colIndex);
             cell.cFontUnderline = isFontUnderline;
             grid.__gridCellReConnectedWithControlSpan(cell);
         }
@@ -1817,7 +1817,7 @@ const setGridMethod = (grid: Grid) => {
         for(let r = row; r < row + cnt; r++) {
             grid.setRowStatus(r + 1, 'C');
         }
-        utils.focusCell(grid._getCell(row + 1, 'v-g-status'));
+        utils.focusCell(_getCell(grid, row + 1, 'v-g-status'));
         return true;
     };
     grid.removeRow = (row: number): Record<string, any> => {
@@ -1832,14 +1832,14 @@ const setGridMethod = (grid: Grid) => {
     grid.setRowStatus = (row: number, status: string): boolean => {
         grid.__checkRowIndex(row);
         if (!utils.isIncludeEnum(statusUnit, status)) throw new Error('Please insert the correct status code. (C, U, D)');
-        const statusCell = grid._getCell(row, 'v-g-status');
+        const statusCell = _getCell(grid, row, 'v-g-status');
         statusCell.cValue = status;
         utils.reConnectedCallbackElement(statusCell);
         return true;
     };
     grid.getRowStatus = (row: number): string => {
         grid.__checkRowIndex(row);
-        return grid._getCell(row, 'v-g-status').cValue;
+        return _getCell(grid, row, 'v-g-status').cValue;
     };
     grid.setRowDatas = (row: number, cellDatas: Record<string, any>[]): boolean => {
         for(const cellData of cellDatas) {
@@ -1855,26 +1855,26 @@ const setGridMethod = (grid: Grid) => {
         }
         return rowDatas;
     };
-    grid.setRowValues = (row: number, values: Record<string, any>, doRecode = false): boolean => {
+    grid.setRowValues = (row: number, values: Record<string, any>, doRecord = false): boolean => {
         row = 2;
         grid.__checkRowIndex(row);
         if (!values || values.constructor !== Object) throw new Error('Please insert a valid value.');
         let value = null;
         let cell = null;
 
-        if (doRecode) {
-            const recodes = [];
-            let recode
+        if (doRecord) {
+            const records = [];
+            let record
             for(const colInfo of colInfos) {
                 if (colInfo.cId === 'v-g-rownum' || colInfo.cId === 'v-g-status') continue;
                 for(const key in values) {
                     if (colInfo.cId === key) value = values[key];
                 }
-                cell = grid._getCell(row, colInfo.cIndex);
-                recode = utils.getRecodesWithModifyValue(cell, value, true);
-                if (Array.isArray(recode) && recode.length > 0) recodes.push(recode[0]);
+                cell = _getCell(grid, row, colInfo.cIndex);
+                record = utils.getRecordsWithModifyValue(cell, value, true);
+                if (Array.isArray(record) && record.length > 0) records.push(record[0]);
             }
-            utils.recodeGridModify(grid.gId, recodes);
+            utils.recordGridModify(grid.gId, records);
         }
         else {
             for(const colInfo of colInfos) {
@@ -1882,7 +1882,7 @@ const setGridMethod = (grid: Grid) => {
                 for(const key in values) {
                     if (colInfo.cId === key) value = values[key];
                 }
-                cell = grid._getCell(row, colInfo.cIndex);
+                cell = _getCell(grid, row, colInfo.cIndex);
                 cell.cValue = utils.getValidValue(cell, value);
                 utils.reConnectedCallbackElement(cell);
                 utils.reloadGridWithModifyCell(cell.gId, cell.cIndex);
@@ -1910,7 +1910,7 @@ const setGridMethod = (grid: Grid) => {
         grid.__checkRowIndex(row);
         if (typeof isVisible !== 'boolean') throw new Error('Please insert a boolean type.');
         for(let c = 1; c <= grid.getColCount(); c++) {
-            const cell = grid._getCell(row, c);
+            const cell = _getCell(grid, row, c);
             cell.cRowVisible = isVisible;
             grid.__gridCellReConnectedWithControlSpan(cell);
         }
@@ -1918,7 +1918,7 @@ const setGridMethod = (grid: Grid) => {
     };
     grid.isRowVisible = (row: number): boolean => {
         grid.__checkRowIndex(row);
-        const cell = grid._getCell(row, 1);
+        const cell = _getCell(grid, row, 1);
         return cell.cRowVisible;
     };
     grid.setRowDataType = (row: number, dataType: string): boolean => {
@@ -1926,7 +1926,7 @@ const setGridMethod = (grid: Grid) => {
         if (!utils.isIncludeEnum(dataTypeUnit, dataType)) throw new Error('Please insert a valid dataType.');
         for(const cell of gridBodyCells[row - 1]) {
             if (cell.cId === 'v-g-rownum' || cell.cId === 'v-g-status') continue;
-            cell.cDataType = dataType;
+            cell._colInfo.dataType = dataType;
             utils.reConnectedCallbackElement(cell);
         }
         
@@ -2105,18 +2105,18 @@ const setGridMethod = (grid: Grid) => {
         const colIndex = grid.__getColIndex(colIndexOrColId, true);
         grid.__checkColIndex(colIndex);
         
-        const cell = grid._getCell(row, colIndex);
+        const cell = _getCell(grid, row, colIndex);
         const data = grid.__getData(cell);
         return data;
     }
-    grid.setCellValue = (row: number, colIndexOrColId: number | string, value: any, doRecode = false): boolean => {
+    grid.setCellValue = (row: number, colIndexOrColId: number | string, value: any, doRecord = false): boolean => {
         grid.__checkRowIndex(row);
         const colIndex = grid.__getColIndex(colIndexOrColId, true);
         grid.__checkColIndex(colIndex);
 
-        const cell = grid._getCell(row, colIndex);
-        if (doRecode) {
-            utils.recodeGridModify(cell.gId, utils.getRecodesWithModifyValue(cell, value, true));
+        const cell = _getCell(grid, row, colIndex);
+        if (doRecord) {
+            utils.recordGridModify(cell.gId, utils.getRecordsWithModifyValue(cell, value, true));
         }
         else {
             cell.cValue = utils.getValidValue(cell, value);
@@ -2130,14 +2130,14 @@ const setGridMethod = (grid: Grid) => {
         const colIndex = grid.__getColIndex(colIndexOrColId, true);
         grid.__checkColIndex(colIndex);
 
-        return utils.deepCopy(grid._getCell(row, colIndex).cValue);
+        return utils.deepCopy(_getCell(grid, row, colIndex).cValue);
     };
     grid.getCellText = (row: number, colIndexOrColId: number | string): string => {
         grid.__checkRowIndex(row);
         const colIndex = grid.__getColIndex(colIndexOrColId, true);
         grid.__checkColIndex(colIndex);
 
-        return utils.getCellText(grid._getCell(row, colIndex));
+        return utils.getCellText(_getCell(grid, row, colIndex));
     };
     grid.setCellRequired = (row: number, colIndexOrColId: number | string, isRequired: boolean): boolean => {
         grid.__checkRowIndex(row);
@@ -2146,7 +2146,7 @@ const setGridMethod = (grid: Grid) => {
         grid.__checkColRownumOrStatus(colIndex);
         if (typeof isRequired !== 'boolean') throw new Error('Please insert a boolean type.');
 
-        const cell = grid._getCell(row, colIndex);
+        const cell = _getCell(grid, row, colIndex);
         cell.cRequired = isRequired;
         grid.__gridCellReConnectedWithControlSpan(cell);
         return true;
@@ -2155,7 +2155,7 @@ const setGridMethod = (grid: Grid) => {
         grid.__checkRowIndex(row);
         const colIndex = grid.__getColIndex(colIndexOrColId, true);
         grid.__checkColIndex(colIndex);
-        return grid._getCell(row, colIndex).cRequired;
+        return _getCell(grid, row, colIndex).cRequired;
     }
     grid.setCellDataType = (row: number, colIndexOrColId: number | string, dataType: string): boolean => {
         grid.__checkRowIndex(row);
@@ -2164,8 +2164,8 @@ const setGridMethod = (grid: Grid) => {
         grid.__checkColRownumOrStatus(colIndex);
         
         if (!utils.isIncludeEnum(dataTypeUnit, dataType)) throw new Error('Please insert a valid dataType.');
-        const cell = grid._getCell(row, colIndex);
-        cell.cDataType = dataType;
+        const cell = _getCell(grid, row, colIndex);
+        cell._colInfo.dataType = dataType;
         utils.reConnectedCallbackElement(cell);
         utils.reloadGridWithModifyCell(gId, colIndex);
         return true;
@@ -2175,7 +2175,7 @@ const setGridMethod = (grid: Grid) => {
         const colIndex = grid.__getColIndex(colIndexOrColId, true);
         grid.__checkColIndex(colIndex);
         grid.__checkColRownumOrStatus(colIndex);
-        return grid._getCell(row, colIndex).cDataType;
+        return _getCell(grid, row, colIndex)._colInfo.dataType;
     };
     grid.setCellLocked = (row: number, colIndexOrColId: number | string, isLocked: boolean): boolean => {
         grid.__checkRowIndex(row);
@@ -2184,7 +2184,7 @@ const setGridMethod = (grid: Grid) => {
         grid.__checkColRownumOrStatus(colIndex);
         if (typeof isLocked !== 'boolean') throw new Error('Please insert a boolean type.');
 
-        const cell = grid._getCell(row, colIndex);
+        const cell = _getCell(grid, row, colIndex);
         cell.cLocked = isLocked;
         grid.__gridCellReConnectedWithControlSpan(cell);
         return true;
@@ -2193,7 +2193,7 @@ const setGridMethod = (grid: Grid) => {
         grid.__checkRowIndex(row);
         const colIndex = grid.__getColIndex(colIndexOrColId, true);
         grid.__checkColIndex(colIndex);
-        return grid._getCell(row, colIndex).cLocked;
+        return _getCell(grid, row, colIndex).cLocked;
     };
     grid.setCellLockedColor = (row: number, colIndexOrColId: number | string, isLockedColor: boolean): boolean => {
         grid.__checkRowIndex(row);
@@ -2201,7 +2201,7 @@ const setGridMethod = (grid: Grid) => {
         grid.__checkColIndex(colIndex);
         grid.__checkColRownumOrStatus(colIndex);
         if (typeof isLockedColor !== 'boolean') throw new Error('Please insert a boolean type.');
-        const cell = grid._getCell(row, colIndex);
+        const cell = _getCell(grid, row, colIndex);
         cell.cLockedColor = isLockedColor;
         grid.__gridCellReConnectedWithControlSpan(cell);
         return true;
@@ -2210,7 +2210,7 @@ const setGridMethod = (grid: Grid) => {
         grid.__checkRowIndex(row);
         const colIndex = grid.__getColIndex(colIndexOrColId, true);
         grid.__checkColIndex(colIndex);
-        return grid._getCell(row, colIndex).cLockedColor;
+        return _getCell(grid, row, colIndex).cLockedColor;
     };
     grid.setCellFormat = (row: number, colIndexOrColId: number | string, format: string): boolean => {
         grid.__checkRowIndex(row);
@@ -2218,9 +2218,9 @@ const setGridMethod = (grid: Grid) => {
         grid.__checkColIndex(colIndex);
         grid.__checkColRownumOrStatus(colIndex);
         if (typeof format !== 'string') throw new Error('Please insert a string type.');
-        const cell = grid._getCell(row, colIndex);
+        const cell = _getCell(grid, row, colIndex);
         cell.cFormat = format;
-        if(cell.cDataType === 'mask') {
+        if(cell._colInfo.dataType === 'mask') {
             cell.cValue = utils.getValidValue(cell, cell.cValue);
         }
         grid.__gridCellReConnectedWithControlSpan(cell);
@@ -2231,7 +2231,7 @@ const setGridMethod = (grid: Grid) => {
         grid.__checkRowIndex(row);
         const colIndex = grid.__getColIndex(colIndexOrColId, true);
         grid.__checkColIndex(colIndex);
-        return grid._getCell(row, colIndex).cFormat;
+        return _getCell(grid, row, colIndex).cFormat;
     };
     grid.setCellCodes = (row: number, colIndexOrColId: number | string, codes: string[]): boolean => {
         grid.__checkRowIndex(row);
@@ -2239,9 +2239,9 @@ const setGridMethod = (grid: Grid) => {
         grid.__checkColIndex(colIndex);
         grid.__checkColRownumOrStatus(colIndex);
         if (!Array.isArray(codes)) throw new Error('Please insert a vaild codes. (Array)');
-        const cell = grid._getCell(row, colIndex);
+        const cell = _getCell(grid, row, colIndex);
         cell.cCodes = codes;
-        if(cell.cDataType === 'code') {
+        if(cell._colInfo.dataType === 'code') {
             cell.cValue = utils.getValidValue(cell, cell.cValue);
         }
         grid.__gridCellReConnectedWithControlSpan(cell);
@@ -2252,16 +2252,16 @@ const setGridMethod = (grid: Grid) => {
         grid.__checkRowIndex(row);
         const colIndex = grid.__getColIndex(colIndexOrColId, true);
         grid.__checkColIndex(colIndex);
-        return grid._getCell(row, colIndex).cCodes;
+        return _getCell(grid, row, colIndex).cCodes;
     };
     grid.setCellDefaultCode = (row: number, colIndexOrColId: number | string, defaultCode: string): boolean => {
         grid.__checkRowIndex(row);
         const colIndex = grid.__getColIndex(colIndexOrColId, true);
         grid.__checkColIndex(colIndex);
         grid.__checkColRownumOrStatus(colIndex);
-        const cell = grid._getCell(row, colIndex);
+        const cell = _getCell(grid, row, colIndex);
         cell.cDefaultCode = defaultCode;
-        if(cell.cDataType === 'code') {
+        if(cell._colInfo.dataType === 'code') {
             cell.cValue = utils.getValidValue(cell, cell.cValue);
         }
         grid.__gridCellReConnectedWithControlSpan(cell);
@@ -2272,7 +2272,7 @@ const setGridMethod = (grid: Grid) => {
         grid.__checkRowIndex(row);
         const colIndex = grid.__getColIndex(colIndexOrColId, true);
         grid.__checkColIndex(colIndex);
-        return grid._getCell(row, colIndex).cDefaultCode;
+        return _getCell(grid, row, colIndex).cDefaultCode;
     };
     grid.setCellMaxLength = (row: number, colIndexOrColId: number | string, maxLength: number): boolean => {
         grid.__checkRowIndex(row);
@@ -2280,9 +2280,9 @@ const setGridMethod = (grid: Grid) => {
         grid.__checkColIndex(colIndex);
         grid.__checkColRownumOrStatus(colIndex);
         maxLength = utils.validatePositiveIntegerAndZero(maxLength);
-        const cell = grid._getCell(row, colIndex);
+        const cell = _getCell(grid, row, colIndex);
         cell.cMaxLength = maxLength;
-        if(cell.cDataType === 'text') {
+        if(cell._colInfo.dataType === 'text') {
             cell.cValue = utils.getValidValue(cell, cell.cValue);
         }
         grid.__gridCellReConnectedWithControlSpan(cell);
@@ -2293,7 +2293,7 @@ const setGridMethod = (grid: Grid) => {
         grid.__checkRowIndex(row);
         const colIndex = grid.__getColIndex(colIndexOrColId, true);
         grid.__checkColIndex(colIndex);
-        return grid._getCell(row, colIndex).cMaxLength;
+        return _getCell(grid, row, colIndex).cMaxLength;
     };
     grid.setCellMaxByte = (row: number, colIndexOrColId: number | string, maxByte: number): boolean => {
         grid.__checkRowIndex(row);
@@ -2301,9 +2301,9 @@ const setGridMethod = (grid: Grid) => {
         grid.__checkColIndex(colIndex);
         grid.__checkColRownumOrStatus(colIndex);
         maxByte = utils.validatePositiveIntegerAndZero(maxByte);
-        const cell = grid._getCell(row, colIndex);
+        const cell = _getCell(grid, row, colIndex);
         cell.cMaxByte = maxByte;
-        if(cell.cDataType === 'text') {
+        if(cell._colInfo.dataType === 'text') {
             cell.cValue = utils.getValidValue(cell, cell.cValue);
         }
         grid.__gridCellReConnectedWithControlSpan(cell);
@@ -2314,7 +2314,7 @@ const setGridMethod = (grid: Grid) => {
         grid.__checkRowIndex(row);
         const colIndex = grid.__getColIndex(colIndexOrColId, true);
         grid.__checkColIndex(colIndex);
-        return grid._getCell(row, colIndex).cMaxByte;
+        return _getCell(grid, row, colIndex).cMaxByte;
     };
     grid.setCellMaxNumber = (row: number, colIndexOrColId: number | string, maxNumber: number): boolean => {
         grid.__checkRowIndex(row);
@@ -2322,9 +2322,9 @@ const setGridMethod = (grid: Grid) => {
         grid.__checkColIndex(colIndex);
         grid.__checkColRownumOrStatus(colIndex);
         maxNumber = utils.validateNumber(maxNumber);
-        const cell = grid._getCell(row, colIndex);
+        const cell = _getCell(grid, row, colIndex);
         cell.cMaxNumber = maxNumber;
-        if(cell.cDataType === 'number') {
+        if(cell._colInfo.dataType === 'number') {
             cell.cValue = utils.getValidValue(cell, cell.cValue);
         }
         grid.__gridCellReConnectedWithControlSpan(cell);
@@ -2335,7 +2335,7 @@ const setGridMethod = (grid: Grid) => {
         grid.__checkRowIndex(row);
         const colIndex = grid.__getColIndex(colIndexOrColId, true);
         grid.__checkColIndex(colIndex);
-        return grid._getCell(row, colIndex).cMaxNumber;
+        return _getCell(grid, row, colIndex).cMaxNumber;
     };
     grid.setCellMinNumber = (row: number, colIndexOrColId: number | string, minNumber: number): boolean => {
         grid.__checkRowIndex(row);
@@ -2343,9 +2343,9 @@ const setGridMethod = (grid: Grid) => {
         grid.__checkColIndex(colIndex);
         grid.__checkColRownumOrStatus(colIndex);
         minNumber = utils.validateNumber(minNumber);
-        const cell = grid._getCell(row, colIndex);
+        const cell = _getCell(grid, row, colIndex);
         cell.cMinNumber = minNumber;
-        if(cell.cDataType === 'number') {
+        if(cell._colInfo.dataType === 'number') {
             cell.cValue = utils.getValidValue(cell, cell.cValue);
         }
         grid.__gridCellReConnectedWithControlSpan(cell);
@@ -2356,7 +2356,7 @@ const setGridMethod = (grid: Grid) => {
         grid.__checkRowIndex(row);
         const colIndex = grid.__getColIndex(colIndexOrColId, true);
         grid.__checkColIndex(colIndex);
-        return grid._getCell(row, colIndex).cMinNumber;
+        return _getCell(grid, row, colIndex).cMinNumber;
     };
     grid.setCellRoundNumber = (row: number, colIndexOrColId: number | string, roundNumber: number): boolean => {
         grid.__checkRowIndex(row);
@@ -2364,9 +2364,9 @@ const setGridMethod = (grid: Grid) => {
         grid.__checkColIndex(colIndex);
         grid.__checkColRownumOrStatus(colIndex);
         roundNumber = utils.validateIntegerAndZero(roundNumber);
-        const cell = grid._getCell(row, colIndex);
+        const cell = _getCell(grid, row, colIndex);
         cell.cRoundNumber = roundNumber;
-        if(cell.cDataType === 'number') {
+        if(cell._colInfo.dataType === 'number') {
             cell.cValue = utils.getValidValue(cell, cell.cValue);
         }
         grid.__gridCellReConnectedWithControlSpan(cell);
@@ -2377,14 +2377,14 @@ const setGridMethod = (grid: Grid) => {
         grid.__checkRowIndex(row);
         const colIndex = grid.__getColIndex(colIndexOrColId, true);
         grid.__checkColIndex(colIndex);
-        return grid._getCell(row, colIndex).cRoundNumber;
+        return _getCell(grid, row, colIndex).cRoundNumber;
     };
     grid.setCellAlign = (row: number, colIndexOrColId: number | string, align: Align.LEFT | Align.CENTER | Align.RIGHT): boolean => {
         grid.__checkRowIndex(row);
         const colIndex = grid.__getColIndex(colIndexOrColId, true);
         grid.__checkColIndex(colIndex);
         if(!utils.isIncludeEnum(alignUnit, align)) throw new Error('Please insert a vaild align. (left, center, right)');
-        const cell = grid._getCell(row, colIndex);
+        const cell = _getCell(grid, row, colIndex);
         cell.cAlign = align;
         grid.__gridCellReConnectedWithControlSpan(cell);
         return true;
@@ -2393,14 +2393,14 @@ const setGridMethod = (grid: Grid) => {
         grid.__checkRowIndex(row);
         const colIndex = grid.__getColIndex(colIndexOrColId, true);
         grid.__checkColIndex(colIndex);
-        return grid._getCell(row, colIndex).cAlign;
+        return _getCell(grid, row, colIndex).cAlign;
     };
     grid.setCellVerticalAlign = (row: number, colIndexOrColId: number | string, verticalAlign: VerticalAlign.TOP | VerticalAlign.CENTER | VerticalAlign.BOTTOM): boolean => {
         grid.__checkRowIndex(row);
         const colIndex = grid.__getColIndex(colIndexOrColId, true);
         grid.__checkColIndex(colIndex);
         if(!utils.isIncludeEnum(verticalAlignUnit, verticalAlign)) throw new Error('Please insert a vaild align. (top, center, bottom)');
-        const cell = grid._getCell(row, colIndex);
+        const cell = _getCell(grid, row, colIndex);
         cell.cVerticalAlign = verticalAlign;
         grid.__gridCellReConnectedWithControlSpan(cell);
         return true;
@@ -2409,13 +2409,13 @@ const setGridMethod = (grid: Grid) => {
         grid.__checkRowIndex(row);
         const colIndex = grid.__getColIndex(colIndexOrColId, true);
         grid.__checkColIndex(colIndex);
-        return grid._getCell(row, colIndex).cVerticalAlign;
+        return _getCell(grid, row, colIndex).cVerticalAlign;
     };
     grid.setCellOverflowWrap = (row: number, colIndexOrColId: number | string, overflowWrap: string): boolean => {
         grid.__checkRowIndex(row);
         const colIndex = grid.__getColIndex(colIndexOrColId, true);
         grid.__checkColIndex(colIndex);
-        const cell = grid._getCell(row, colIndex);
+        const cell = _getCell(grid, row, colIndex);
         cell.cOverflowWrap = overflowWrap;
         grid.__gridCellReConnectedWithControlSpan(cell);
         return true;
@@ -2424,13 +2424,13 @@ const setGridMethod = (grid: Grid) => {
         grid.__checkRowIndex(row);
         const colIndex = grid.__getColIndex(colIndexOrColId, true);
         grid.__checkColIndex(colIndex);
-        return grid._getCell(row, colIndex).cOverflowWrap;
+        return _getCell(grid, row, colIndex).cOverflowWrap;
     };
     grid.setCellWordBreak = (row: number, colIndexOrColId: number | string, wordBreak: string): boolean => {
         grid.__checkRowIndex(row);
         const colIndex = grid.__getColIndex(colIndexOrColId, true);
         grid.__checkColIndex(colIndex);
-        const cell = grid._getCell(row, colIndex);
+        const cell = _getCell(grid, row, colIndex);
         cell.cWordBreak = wordBreak;
         grid.__gridCellReConnectedWithControlSpan(cell);
         return true;
@@ -2439,13 +2439,13 @@ const setGridMethod = (grid: Grid) => {
         grid.__checkRowIndex(row);
         const colIndex = grid.__getColIndex(colIndexOrColId, true);
         grid.__checkColIndex(colIndex);
-        return grid._getCell(row, colIndex).cWordBreak;
+        return _getCell(grid, row, colIndex).cWordBreak;
     };
     grid.setCellWhiteSpace = (row: number, colIndexOrColId: number | string, whiteSpace: string): boolean => {
         grid.__checkRowIndex(row);
         const colIndex = grid.__getColIndex(colIndexOrColId, true);
         grid.__checkColIndex(colIndex);
-        const cell = grid._getCell(row, colIndex);
+        const cell = _getCell(grid, row, colIndex);
         cell.cWhiteSpace = whiteSpace;
         grid.__gridCellReConnectedWithControlSpan(cell);
         return true;
@@ -2454,7 +2454,7 @@ const setGridMethod = (grid: Grid) => {
         grid.__checkRowIndex(row);
         const colIndex = grid.__getColIndex(colIndexOrColId, true);
         grid.__checkColIndex(colIndex);
-        return grid._getCell(row, colIndex).cWhiteSpace;
+        return _getCell(grid, row, colIndex).cWhiteSpace;
     };
     grid.setCellVisible = (row: number, colIndexOrColId: number | string, isVisible: boolean): boolean => {
         grid.__checkRowIndex(row);
@@ -2462,7 +2462,7 @@ const setGridMethod = (grid: Grid) => {
         grid.__checkColIndex(colIndex);
         if (typeof isVisible !== 'boolean') throw new Error('Please insert a boolean type.');
 
-        const cell = grid._getCell(row, colIndex);
+        const cell = _getCell(grid, row, colIndex);
         if (isVisible) {
             if (cell.firstChild) cell.firstChild.style.removeProperty('display');
         }
@@ -2476,7 +2476,7 @@ const setGridMethod = (grid: Grid) => {
         grid.__checkRowIndex(row);
         const colIndex = grid.__getColIndex(colIndexOrColId, true);
         grid.__checkColIndex(colIndex);
-        const cell = grid._getCell(row, colIndex);
+        const cell = _getCell(grid, row, colIndex);
         if(cell.firstChild) cell.firstChild.style.display !== 'none';
         return false;
     };
@@ -2485,7 +2485,7 @@ const setGridMethod = (grid: Grid) => {
         const colIndex = grid.__getColIndex(colIndexOrColId, true);
         grid.__checkColIndex(colIndex);
         if(hexadecimalBackColor !== '#000' && hexadecimalBackColor !== '#000000' && utils.getHexColorFromColorName(hexadecimalBackColor) === '#000000') throw new Error('Please enter the correct hexadecimal color. (#ffffff)');
-        const cell = grid._getCell(row, colIndex);
+        const cell = _getCell(grid, row, colIndex);
         cell.cBackColor = hexadecimalBackColor;
         grid.__gridCellReConnectedWithControlSpan(cell);
         return true;
@@ -2494,14 +2494,14 @@ const setGridMethod = (grid: Grid) => {
         grid.__checkRowIndex(row);
         const colIndex = grid.__getColIndex(colIndexOrColId, true);
         grid.__checkColIndex(colIndex);
-        return grid._getCell(row, colIndex).cBackColor;
+        return _getCell(grid, row, colIndex).cBackColor;
     };
     grid.setCellFontColor = (row: number, colIndexOrColId: number | string, hexadecimalFontColor: string): boolean => {
         grid.__checkRowIndex(row);
         const colIndex = grid.__getColIndex(colIndexOrColId, true);
         grid.__checkColIndex(colIndex);
         if(hexadecimalFontColor !== '#000' && hexadecimalFontColor !== '#000000' && utils.getHexColorFromColorName(hexadecimalFontColor) === '#000000') throw new Error('Please enter the correct hexadecimal color. (#ffffff)');
-        const cell = grid._getCell(row, colIndex);
+        const cell = _getCell(grid, row, colIndex);
         cell.cFontColor = hexadecimalFontColor;
         grid.__gridCellReConnectedWithControlSpan(cell);
         return true;
@@ -2510,14 +2510,14 @@ const setGridMethod = (grid: Grid) => {
         grid.__checkRowIndex(row);
         const colIndex = grid.__getColIndex(colIndexOrColId, true);
         grid.__checkColIndex(colIndex);
-        return grid._getCell(row, colIndex).cFontColor;
+        return _getCell(grid, row, colIndex).cFontColor;
     };
     grid.setCellFontBold = (row: number, colIndexOrColId: number | string, isFontBold: boolean): boolean => {
         grid.__checkRowIndex(row);
         const colIndex = grid.__getColIndex(colIndexOrColId, true);
         grid.__checkColIndex(colIndex);
         if (typeof isFontBold !== 'boolean') throw new Error('Please insert a boolean type.');
-        const cell = grid._getCell(row, colIndex);
+        const cell = _getCell(grid, row, colIndex);
         cell.cFontBold = isFontBold;
         grid.__gridCellReConnectedWithControlSpan(cell);
         return true;
@@ -2526,14 +2526,14 @@ const setGridMethod = (grid: Grid) => {
         grid.__checkRowIndex(row);
         const colIndex = grid.__getColIndex(colIndexOrColId, true);
         grid.__checkColIndex(colIndex);
-        return grid._getCell(row, colIndex).cFontBold;
+        return _getCell(grid, row, colIndex).cFontBold;
     };
     grid.setCellFontItalic = (row: number, colIndexOrColId: number | string, isFontItalic: boolean): boolean => {
         grid.__checkRowIndex(row);
         const colIndex = grid.__getColIndex(colIndexOrColId, true);
         grid.__checkColIndex(colIndex);
         if (typeof isFontItalic !== 'boolean') throw new Error('Please insert a boolean type.');
-        const cell = grid._getCell(row, colIndex);
+        const cell = _getCell(grid, row, colIndex);
         cell.cFontItalic = isFontItalic;
         grid.__gridCellReConnectedWithControlSpan(cell);
         return true;
@@ -2542,14 +2542,14 @@ const setGridMethod = (grid: Grid) => {
         grid.__checkRowIndex(row);
         const colIndex = grid.__getColIndex(colIndexOrColId, true);
         grid.__checkColIndex(colIndex);
-        return grid._getCell(row, colIndex).cFontItalic;
+        return _getCell(grid, row, colIndex).cFontItalic;
     };
     grid.setCellFontThruline = (row: number, colIndexOrColId: number | string, isFontThruline: boolean): boolean => {
         grid.__checkRowIndex(row);
         const colIndex = grid.__getColIndex(colIndexOrColId, true);
         grid.__checkColIndex(colIndex);
         if (typeof isFontThruline !== 'boolean') throw new Error('Please insert a boolean type.');
-        const cell = grid._getCell(row, colIndex);
+        const cell = _getCell(grid, row, colIndex);
         cell.cFontThruline = isFontThruline;
         grid.__gridCellReConnectedWithControlSpan(cell);
         return true;
@@ -2558,14 +2558,14 @@ const setGridMethod = (grid: Grid) => {
         grid.__checkRowIndex(row);
         const colIndex = grid.__getColIndex(colIndexOrColId, true);
         grid.__checkColIndex(colIndex);
-        return grid._getCell(row, colIndex).cFontThruline;
+        return _getCell(grid, row, colIndex).cFontThruline;
     };
     grid.setCellFontUnderline = (row: number, colIndexOrColId: number | string, isFontUnderline: boolean): boolean => {
         grid.__checkRowIndex(row);
         const colIndex = grid.__getColIndex(colIndexOrColId, true);
         grid.__checkColIndex(colIndex);
         if (typeof isFontUnderline !== 'boolean') throw new Error('Please insert a boolean type.');
-        const cell = grid._getCell(row, colIndex);
+        const cell = _getCell(grid, row, colIndex);
         cell.cFontUnderline = isFontUnderline;
         grid.__gridCellReConnectedWithControlSpan(cell);
         return true;
@@ -2574,14 +2574,14 @@ const setGridMethod = (grid: Grid) => {
         grid.__checkRowIndex(row);
         const colIndex = grid.__getColIndex(colIndexOrColId, true);
         grid.__checkColIndex(colIndex);
-        return grid._getCell(row, colIndex).cFontUnderline;
+        return _getCell(grid, row, colIndex).cFontUnderline;
     };
     grid.setTargetCell = (row:number, colIndexOrColId: number | string): boolean => {
         grid.__checkRowIndex(row);
         const colIndex = grid.__getColIndex(colIndexOrColId, true);
         grid.__checkColIndex(colIndex);
 
-        const targetCell = grid._getCell(row, colIndex);
+        const targetCell = _getCell(grid, row, colIndex);
         if (!utils.isCellVisible(targetCell)) return false;
 
         utils.activeGrid = grid;
@@ -2601,8 +2601,8 @@ const setGridMethod = (grid: Grid) => {
         grid.__checkColIndex(startColIndex);
         grid.__checkColIndex(endColIndex);
 
-        const startCell = grid._getCell(startRow, startColIndex);
-        const endCell = grid._getCell(endRow, endColIndex);
+        const startCell = _getCell(grid, startRow, startColIndex);
+        const endCell = _getCell(grid, endRow, endColIndex);
         
         if (!utils.isCellVisible(startCell)) return false;
         if (!utils.isCellVisible(endCell)) return false;
@@ -2648,8 +2648,8 @@ const setGridMethod = (grid: Grid) => {
         const colIndex = grid.__getColIndex(colIndexOrColId, true);
         grid.__checkColIndex(colIndex);
         grid.__checkColRownumOrStatus(colIndex);
-        const cell = grid._getCell(row, colIndexOrColId);
-        if (['select','checkbox','button','link'].indexOf(cell.cDataType) >= 0) return false;
+        const cell = _getCell(grid, row, colIndexOrColId);
+        if (['select','checkbox','button','link'].indexOf(cell._colInfo.dataType) >= 0) return false;
         if (!grid.setTargetCell(row, colIndexOrColId)) return false;
         utils.createGridEditor(cell);
         return true;

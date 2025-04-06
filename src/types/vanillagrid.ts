@@ -1,5 +1,5 @@
-import type { DefaultGridCssInfo, DefaultGridInfo } from "./gridInfo";
-import type { DefaultColInfo } from "./colInfo";
+import type { DefaultGridCssInfo, DefaultGridInfo, GridCssInfo, GridInfo } from "./gridInfo";
+import type { ColInfo, DefaultColInfo } from "./colInfo";
 import type { DataType } from "./dataType";
 import type { GridMethods } from "./gridMethods";
 import type { documentEvent } from "./event";
@@ -25,7 +25,7 @@ import { Cell, CellRecord } from "./cell";
  * ```
  */
 export interface Vanillagrid extends VanillagridConfig{
-    gridMethods : Record<string, Grid>;
+    grids : Record<string, Grid>;
     /**
      * An array containing IDs of all grids managed by this instance.
      */
@@ -42,7 +42,7 @@ export interface Vanillagrid extends VanillagridConfig{
      * @param gridId - Unique identifier of the grid instance.
      * @returns Methods available for managing the specified grid instance.
      */
-    getGrid(gridId: string): Grid;
+    getGrid(gridId: string): GridMethods;
 
     init(): void,
     /**
@@ -150,20 +150,41 @@ export interface CheckByte {
      */
     greater0xffffByte: number;
 }
-
-export interface Grid extends GridMethods{
+export interface Grid extends GridMethods, HTMLElement{
     _id: string;
+    _gridInfo: GridInfo;
+    _gridCssInfo: GridCssInfo;
+    _colInfos: ColInfo[];
+    _defaultColInfo: DefaultColInfo;
     _variables: GridVariables;
+    gridHeader: GridHeader;
+    gridBody: GridBody;
+    gridFooter: GridFooter;
+    _vg: Vanillagrid;
 }
-
 interface GridVariables {
     _activeRows: number[];
     _activeCols: number[];
     _activeCells: Cell[];
     _targetCell: Cell | null;
-    _records: CellRecord[];
-    _recordseq: 0;
+    _records: CellRecord[][];
+    _recordseq: number;
     _sortToggle: Record<string, boolean>;
     _filters: { colId : string, value : string }[];
     _isDrawable: true;
+}
+interface GridHeader extends HTMLElement{
+    _gridId: string;
+    _type: string;
+    _gridHeaderCells: Cell[][];
+}
+interface GridBody extends HTMLElement{
+    _gridId: string;
+    _type: string;
+    _gridBodyCells: Cell[][];
+}
+interface GridFooter extends HTMLElement{
+    _gridId: string;
+    _type: string;
+    _gridFooterCells: Cell[][];
 }

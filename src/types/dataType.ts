@@ -58,7 +58,7 @@ export interface DataType {
      * @param event - Keyboard event object.
      * @param data - Data object of the selected cell.
      */
-    onSelectedAndKeyDown?: (event: KeyboardEvent, data: CellData) => void;
+    onSelectedAndKeyDown?: (event: KeyboardEvent, data: CellData) => boolean;
     /**
      * Triggered when a cell is clicked.
      *

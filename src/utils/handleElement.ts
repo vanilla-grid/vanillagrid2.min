@@ -1,18 +1,17 @@
+import { Cell } from "../types/cell";
+import { Grid, Vanillagrid } from "../types/vanillagrid";
+import { reConnectedCallbackElement } from "./handleActive";
+import { getCellText, isCellVisible } from "./handleCell";
+import { __getColInfo, __getHeaderFilter, _getCell, _getCells, _getFooterCells } from "./handleGrid";
+import { nvl } from "./utils";
 
-modifyColSize (gId: string, targetCell: Cell, modifySize: number) {
+export const modifyColSize = (grid: Grid, targetCell: Cell, modifySize: number) => {
     if (!targetCell) return;
-    if (!targetCell.cResizable) return;
-    if (targetCell.cId === 'v-g-rownum' || targetCell.cId === 'v-g-status') return;
-    if ((this as any).doEventWithCheckChanged(gId, '_onResize', targetCell.cId) === false) {
-        return;
-    }
+    if (!targetCell._colInfo.resizable) return;
+    if (targetCell._colInfo.id === 'v-g-rownum' || targetCell._colInfo.id === 'v-g-status') return;
 
-    const gHeader = (this as any)[gId]._getHeader();
-    const gBody = (this as any)[gId]._getBody();
-    const gFooter = (this as any)[gId]._getFooter();
-
-    const styleGridTemplateColumnsArr = gHeader.style.gridTemplateColumns.split(' ');
-    const oldColWidth = styleGridTemplateColumnsArr[targetCell.col - 1];
+    const styleGridTemplateColumnsArr = grid.gridHeader.style.gridTemplateColumns.split(' ');
+    const oldColWidth = styleGridTemplateColumnsArr[targetCell._col - 1];
     if ((this as any).extractNumberAndUnit(oldColWidth).unit === '%') {
         if (modifySize > 0) {
             modifySize = 1;
@@ -25,13 +24,13 @@ modifyColSize (gId: string, targetCell: Cell, modifySize: number) {
         }
     }
     const newColWidth = ((this as any).extractNumberAndUnit(oldColWidth).number + modifySize) + (this as any).extractNumberAndUnit(oldColWidth).unit;
-    styleGridTemplateColumnsArr[targetCell.col - 1] = newColWidth;
+    styleGridTemplateColumnsArr[targetCell._col - 1] = newColWidth;
     const styleGridTemplateColumns = styleGridTemplateColumnsArr.join(' ');
-    gHeader.style.gridTemplateColumns = styleGridTemplateColumns;
-    gBody.style.gridTemplateColumns = styleGridTemplateColumns;
-    gFooter.style.gridTemplateColumns = styleGridTemplateColumns;
-},
-changeColSize (gId: string, targetCol: number, changeSize: number) {
+    grid.gridHeader.style.gridTemplateColumns = styleGridTemplateColumns;
+    grid.gridBody.style.gridTemplateColumns = styleGridTemplateColumns;
+    grid.gridFooter.style.gridTemplateColumns = styleGridTemplateColumns;
+};
+export const changeColSize = (gId: string, targetCol: number, changeSize: number) => {
     if (typeof changeSize !== 'number' || changeSize < 0) throw new Error('The format of size is only zero or positive integers.');
 
     const _grid = (this as any)[gId];
@@ -63,8 +62,8 @@ changeColSize (gId: string, targetCol: number, changeSize: number) {
     header.style.gridTemplateColumns = styleGridTemplateColumns;
     body.style.gridTemplateColumns = styleGridTemplateColumns;
     footer.style.gridTemplateColumns = styleGridTemplateColumns;
-},
-modifyCellValue (cell: Cell, value: any, records: CellRecord[], isMethodCalled = false) {
+};
+export const modifyCellValue = (cell: Cell, value: any, records: CellRecord[], isMethodCalled = false) => {
     const _grid = (this as any)[cell.gId];
     if (!isMethodCalled) {
         if (!(this as any).isCellVisible(cell)) return;
@@ -88,8 +87,8 @@ modifyCellValue (cell: Cell, value: any, records: CellRecord[], isMethodCalled =
     cell.cValue  = value; 
     utils.reConnectedCallbackElement(cell);
     (this as any).reloadGridWithModifyCell(cell.gId, cell.cIndex);
-},
-modifyCell () {
+};
+export const modifyCell = (vg: Vanillagrid) => {
     if (!(this as any).activeGridEditor) return;
     let cell = (this as any).activeGridEditor.parentNode;
     if (cell.cUntarget || cell.cLocked) return;
@@ -106,16 +105,12 @@ modifyCell () {
         }
     });
     (this as any).removeGridEditor();
-    if ((this as any).doEventWithCheckChanged(cell.gId, '_onBeforeChange', cell.row, cell.cId, (this as any).editOldValue, (this as any).editNewValue) === false) {
-        return false;
-    }
     const value = (this as any).editNewValue;
     const records = (this as any).getRecordsWithModifyValue(cell, value);
     (this as any).recordGridModify(cell.gId, records);
-    (this as any).doEventWithCheckChanged(cell.gId, '_onAfterChange', cell.row, cell.cId, (this as any).editOldValue, (this as any).editNewValue);
     return;
-},
-sort (gId: string, arr: Record<string, any>[], id: string, isAsc = true, isNumSort = false): Record<string, any>[] {
+};
+export const sort = (gId: string, arr: Record<string, any>[], id: string, isAsc = true, isNumSort = false) => {
     const copiedArr = (this as any).deepCopy(arr);
     const _grid = (this as any)[gId];
     
@@ -223,8 +218,8 @@ sort (gId: string, arr: Record<string, any>[], id: string, isAsc = true, isNumSo
     });
     _grid.variables._sortToggle[id] = isAsc;
     return copiedArr;
-},
-setFilterOptions (select: any, options: any) {
+};
+export const setFilterOptions = (select: any, options: any) => {
     const selectedValue = select.value;
     (this as any).removeAllChild(select);
     options.forEach((opt: any) => {
@@ -236,41 +231,39 @@ setFilterOptions (select: any, options: any) {
     if (selectedValue) {
         select.value = selectedValue;
     }
-},
-reloadFilterValue (gId: string, colId: number | string) {
-    const _grid = (this as any)[gId];
-    if (!_grid || !_grid.info.gFilterable) return;
-    const colInfo = _grid.__getColInfo(colId);
-    if (!colInfo.cFilterable) return;
+};
+export const reloadFilterValue = (grid: Grid, colId: number | string) => {
+    if (!grid || !grid._gridInfo.filterable) return;
+    const colInfo = __getColInfo(grid, colId);
+    if (!colInfo!.filterable) return;
 
-    colInfo.cFilterValues = new Set();
-    for(let r = 1; r <= _grid.getRowCount(); r++) {
+    colInfo!.filterValues = new Set();
+    for(let r = 1; r <= grid.getRowCount(); r++) {
         let filterValue;
-        let tempCell = _grid._getCell(r, colInfo.cIndex);
-        if (!tempCell || !tempCell.cRowVisible || !tempCell.cColVisible) continue;
+        let tempCell = _getCell(grid, r, colInfo!.index!);
+        if (!tempCell || !tempCell._colInfo.rowVisible || !tempCell._colInfo.colVisible) continue;
         filterValue = (this as any).getCellText(tempCell);
 
-        Object.keys(vg.dataType).forEach((key) => {
-            if(tempCell.cDataType === key) {
-                if(vg.dataType[key].getFilterValue) {
-                    if(typeof vg.dataType[key].getFilterValue !== 'function') throw new Error('getFilterValue must be a function.');
-                    filterValue = vg.dataType[key].getFilterValue(tempCell.cValue);
+        Object.keys(grid._vg.dataType).forEach((key) => {
+            if(tempCell._colInfo.dataType === key) {
+                if(grid._vg.dataType[key].getFilterValue) {
+                    if(typeof grid._vg.dataType[key].getFilterValue !== 'function') throw new Error('getFilterValue must be a function.');
+                    filterValue = grid._vg.dataType[key].getFilterValue(tempCell._value);
                 }
             }
         });
 
-        if(filterValue === '' || filterValue === null || filterValue === undefined || filterValue === _grid.info.gNullValue) filterValue = '$$NULL';
-        colInfo.cFilterValues.add(filterValue);
+        if(filterValue === '' || filterValue === null || filterValue === undefined || filterValue === grid._gridInfo.nullValue) filterValue = '$$NULL';
+        colInfo!.filterValues.add(filterValue);
     }
-    (this as any).reloadFilter(gId, colId);
-},
-reloadFilter (gId: string, colId: string) {
-    const _grid = (this as any)[gId];
-    const filterSelect = _grid.__getHeaderFilter(colId);
+    (this as any).reloadFilter(grid, colId);
+};
+export const reloadFilter = (grid: Grid, colId: string) => {
+    const filterSelect = __getHeaderFilter(grid, colId);
     if (!filterSelect) return;
-    const colInfo = _grid.__getColInfo(colId);
-    const filterValues = colInfo.cFilterValues;
-    const dataType = colInfo.cDataType;
+    const colInfo = __getColInfo(grid, colId);
+    const filterValues = colInfo!.filterValues;
+    const dataType = colInfo!.dataType;
     if (!filterValues) return;
     let options = [];
     let option = {
@@ -284,9 +277,9 @@ reloadFilter (gId: string, colId: string) {
             value : value,
             text : value
         };
-        if (value === '$$NULL') option.text = _grid.info.gNullValue;
+        if (value === '$$NULL') option.text = grid._gridInfo.nullValue;
         if (dataType === 'checkbox') {
-            option.text = value === _grid.info.gCheckedValue ? '☑' : '☐';
+            option.text = value === grid._gridInfo.checkedValue ? '☑' : '☐';
         }
         options.push(option);
     });
@@ -301,133 +294,134 @@ reloadFilter (gId: string, colId: string) {
     });
     if (selectedValue) {
         filterSelect.value = selectedValue;
-        colInfo.cFilterValue = selectedValue;
+        colInfo!.filterValue = selectedValue;
     }
-},
-reloadColForMerge (gId: string, colIndex: number) {
-    const _grid = (this as any)[gId];
-    const colInfo = _grid.__getColInfo(colIndex);
+};
+export const reloadColForMerge = (grid: Grid, colIndex: number) => {
+    const colInfo = __getColInfo(grid, colIndex);
+    if(!colInfo) return;
     let preCell, nowCell;
     let r, c;
     
-    if (colInfo.cRowMerge) {
-        c = colInfo.cIndex;
+    if (colInfo.rowMerge) {
+        c = colInfo.index;
         
-        for(r = 1; r <= _grid.getRowCount(); r++) {
-            nowCell = _grid._getCell(r, c);
-            delete nowCell.rowSpan;
-            delete nowCell.rowMerge;
-            delete nowCell.colSpan;
-            delete nowCell.colMerge;
+        for(r = 1; r <= grid.getRowCount(); r++) {
+            nowCell = _getCell(grid, r, c!);
+            delete nowCell!._rowSpan;
+            delete nowCell!._isRowMerge;
+            delete nowCell!._colSpan;
+            delete nowCell!._isColMerge;
         }
         
-        for(r = 2; r <= _grid.getRowCount(); r++) {
-            preCell = _grid._getCell(r - 1, c);
-            nowCell = _grid._getCell(r, c);
+        for(r = 2; r <= grid.getRowCount(); r++) {
+            preCell = _getCell(grid, r - 1, c!);
+            nowCell = _getCell(grid, r, c!);
             if (preCell
-                && (this as any).isCellVisible(preCell)
-                && preCell.cDataType === nowCell.cDataType
-                && (this as any).getCellText(preCell) === (this as any).getCellText(nowCell)
+                && isCellVisible(preCell)
+                && preCell._colInfo.dataType === nowCell!._colInfo.dataType
+                && getCellText(preCell) === getCellText(nowCell!)
             ) {
-                for(let rSpan = preCell.row - 1; rSpan > 0; rSpan--) {
-                    preCell = _grid._getCell(rSpan, c);
-                    if (preCell.rowMerge !== true) {
-                        preCell.rowSpan = (this as any).nvl(preCell.rowSpan, 1) + 1;
+                for(let rSpan = preCell._row - 1; rSpan > 0; rSpan--) {
+                    preCell = _getCell(grid, rSpan, c!);
+                    if (preCell!._isRowMerge !== true) {
+                        preCell!._rowSpan = nvl(preCell!._rowSpan, 1) + 1;
                         break;
                     }
                 }
-                nowCell.rowMerge = true;
+                nowCell!._isRowMerge = true;
             }
         }
         
-        for(r = 1; r <= _grid.getRowCount(); r++) {
-            nowCell = _grid._getCell(r, c);
-            (this as any).reConnectedCallbackElement(nowCell);
+        for(r = 1; r <= grid.getRowCount(); r++) {
+            nowCell = _getCell(grid, r, c!);
+            reConnectedCallbackElement(nowCell!);
         }
     }
-    if (colInfo.cColMerge && !_grid.__getColInfo(colIndex - 1).cRowMerge) {
-        const cells = _grid._getCells();
+    if (colInfo.colMerge && !__getColInfo(grid, colIndex - 1)!.rowMerge) {
+        const cells = _getCells(grid);
         
-        for(r = 1; r <= _grid.getRowCount(); r++) {
-            for(c = colInfo.cIndex - 1; c <= colInfo.cIndex; c++) {
-                nowCell = _grid._getCell(r, c);
-                delete nowCell.rowSpan;
-                delete nowCell.rowMerge;
-                delete nowCell.colSpan;
-                delete nowCell.colMerge;
+        for(r = 1; r <= grid.getRowCount(); r++) {
+            for(c = colInfo.index! - 1; c <= colInfo.index!; c++) {
+                nowCell = _getCell(grid, r, c!);
+                delete nowCell!._rowSpan;
+                delete nowCell!._isRowMerge;
+                delete nowCell!._colSpan;
+                delete nowCell!._isColMerge;
             }
         }
         
-        c = colInfo.cIndex;
-        for(r = 1; r <= _grid.getRowCount(); r++) {
+        c = colInfo.index;
+        for(r = 1; r <= grid.getRowCount(); r++) {
             preCell = cells[r - 1][c - 2]
             nowCell = cells[r - 1][c - 1]
             if (preCell
                 && (this as any).isCellVisible(preCell)
-                && preCell.cDataType === nowCell.cDataType
+                && preCell._colInfo.dataType === nowCell._colInfo.dataType
                 && (this as any).getCellText(preCell) === (this as any).getCellText(nowCell)
             ) {
-                for(let cSpan = preCell.col - 1; cSpan > 2; cSpan--) {
+                for(let cSpan = preCell._col - 1; cSpan > 2; cSpan--) {
                     preCell = cells[r - 1][cSpan];
-                    if (preCell.colMerge !== true) {
-                        preCell.colSpan = (this as any).nvl(preCell.colSpan, 1) + 1;
+                    if (preCell._isColMerge !== true) {
+                        preCell._colSpan = (this as any).nvl(preCell._colSpan, 1) + 1;
                         break;
                     }
                 }
-                nowCell.colMerge = true;
+                nowCell._isColMerge = true;
             }
         }
         
-        for(r = 1; r <= _grid.getRowCount(); r++) {
-            for(c = colInfo.cIndex - 1; c <= colInfo.cIndex; c++) {
-                nowCell = _grid._getCell(r, c);
+        for(r = 1; r <= grid.getRowCount(); r++) {
+            for(c = colInfo.index! - 1; c <= colInfo.index!; c++) {
+                nowCell = _getCell(grid, r, c!);
                 (this as any).reConnectedCallbackElement(nowCell);
             }
         }
     }
-},
-reloadGridWithModifyCell (gId: string, colIndex: number) {
-    (this as any).reloadFooterValue(gId);
-    (this as any).reloadFilterValue(gId, colIndex);
-    const nextColInfo = (this as any)[gId].__getColInfo(colIndex + 1);
-    if (nextColInfo && nextColInfo.cColMerge) {
-        (this as any).reloadColForMerge(gId, colIndex + 1);
+};
+export const reloadGridWithModifyCell = (grid: Grid, colIndex: number) => {
+    (this as any).reloadFooterValue(grid);
+    (this as any).reloadFilterValue(grid, colIndex);
+    const nextColInfo = __getColInfo(grid, colIndex + 1);
+    if (nextColInfo && nextColInfo.colMerge) {
+        (this as any).reloadColForMerge(grid, colIndex + 1);
     }
     else {
-        (this as any).reloadColForMerge(gId, colIndex);
+        (this as any).reloadColForMerge(grid, colIndex);
     }
-},
-reloadGridForMerge (gId: string) {
-    for(let c = 3; c <= (this as any)[gId].getColCount(); c++) {
-        (this as any).reloadColForMerge(gId, c);
+};
+export const reloadGridForMerge = (grid: Grid) => {
+    for(let c = 3; c <= grid.getColCount(); c++) {
+        reloadColForMerge(grid, c);
     }
-},
-reloadFooterValue (gId: string) {
-    const _grid = (this as any)[gId];
-    const footerCells = _grid._getFooterCells();
+};
+export const reloadFooterValue = (grid: Grid) => {
+    const footerCells = _getFooterCells(grid);
     for(const footers of footerCells) {
         for(const footerCell of footers) {
-            if (footerCell.cFooter !== null && footerCell.cFooter !== undefined) {
+            if (footerCell._colInfo.footer !== null && footerCell._colInfo.footer !== undefined) {
                 (this as any).reConnectedCallbackElement(footerCell);
             }
         }
     }
-},
-setGridDataRowCol (el: Cell, row: number, col: number) {
-    el.row = row;
-    el.col = col;
-    el.cIndex = col;
+
+    
+};
+export const setGridDataRowCol = (el: Cell, row: number, col: number) => {
+    el._row = row;
+    el._col = col;
+    el._colInfo.index = col;
     (this as any).setGridDataPosition(el);
-},
-setGridDataPosition (el: Cell) {
+};
+export const setGridDataPosition = (el: Cell) => {
     const row = el.row;
     const col = el.col;
     el.style.gridRowStart = String(row);
     el.style.gridRowEnd = String(row + 1);
     el.style.gridColumnStart = String(col);
     el.style.gridColumnEnd = String(col + 1);
-},
-getGridCell (gId: string, colInfo: CellColInfo, valueOrData: any, rowCount: number, colCount: number): Cell {
+};
+export const getGridCell = (gId: string, colInfo: CellColInfo, valueOrData: any, rowCount: number, colCount: number) => {
     let data, dataKey, tempData;
 
     if (valueOrData && valueOrData.constructor === Object) {
@@ -474,4 +468,4 @@ getGridCell (gId: string, colInfo: CellColInfo, valueOrData: any, rowCount: numb
     if (colInfo.cFilterable && tempGridData.cColVisible) colInfo.cFilterValues!.add(tempGridData.textContent);
     (this as any).setGridDataRowCol(tempGridData, rowCount, colCount);
     return tempGridData as Cell;
-},
+};
