@@ -528,7 +528,7 @@ export const __checkColIndex = (grid: Grid, col: number) => {
     if (!col || col < 1 || col > grid.getColCount()) throw new Error('Please insert a col of valid range.');
 };
 //수정필요 cell data 형태
-export const ___getDatasWithoutExceptedProperty = (grid: Grid, exceptedProperty = []) => {
+export const ___getDatasWithoutExceptedProperty = (grid: Grid, exceptedProperty: string[] = []) => {
     const datas = [];
     let cols;
     for(const rows of grid.gridBody._gridBodyCells) {

@@ -400,7 +400,7 @@ export interface GridMethods {
      * @param func A user-defined function to handle empty required cells. Defaults to the system validation function if not provided.
      * @returns `true` if all required cells have valid values, otherwise `false`.
      */
-    checkRequired(func: Function): boolean;
+    checkRequired: <T>(func?: (data: CellData) => T) => CellData | T | null;
     /**
      * Controls whether the grid should be re-mounted after modifications.
      * 

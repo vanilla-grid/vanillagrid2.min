@@ -27,7 +27,7 @@ export interface ColInfo {
      * $$SUM: Calculate and display the sum in the footer.
      * $$AVG: Calculate and display the average in the footer (excluding null).
      */
-    footer: string[] | null;
+    footer: any;
     /**
      * If untarget is true, the cells in this column cannot be selected.
      */

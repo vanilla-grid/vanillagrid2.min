@@ -209,7 +209,7 @@ interface GridVariables {
     _recordseq: number;
     _sortToggle: Record<string, boolean>;
     _filters: { colId : string, value : string }[];
-    _isDrawable: true;
+    _isDrawable: boolean;
 }
 export interface GridHeader extends HTMLElement{
     _gridId: string;
