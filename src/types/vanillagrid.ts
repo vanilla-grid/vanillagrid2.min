@@ -82,6 +82,12 @@ export interface Vanillagrid extends VanillagridConfig{
         scrollInterval: number | null,
     }
     _initialized: boolean;
+
+    _VanillaGrid: any;
+    _GridHeader: any;
+    _GridBody: any;
+    _GridFooter: any;
+    _GridData: any;
 }
 
 /**
@@ -157,6 +163,38 @@ export interface Grid extends GridMethods, HTMLElement{
     _colInfos: ColInfo[];
     _defaultColInfo: DefaultColInfo;
     _variables: GridVariables;
+    _events: {
+        onActiveCell(row: number, colId: string): boolean;
+        onActiveCells(startRow: number, startColId: string, endRow: number, endColId: string): boolean;
+        onActiveRow(row: number): boolean;
+        onActiveRows(startRow: number, endRow: number): boolean;
+        onActiveCol(colId: string): boolean;
+        onActiveCols(startColId: string, endColId: string): boolean;
+        onBeforeChange(row: number, colId: string, oldValue: any, newValue: any): boolean;
+        onAfterChange(row: number, colId: string, oldValue: any, newValue: any): boolean;
+        onBeforeClickCell(row: number, colId: string): boolean;
+        onAfterClickCell(row: number, colId: string): boolean;
+        onClickSelect(row: number, colId: string, selectNode: HTMLElement): boolean;
+        onClickCheckbox(row: number, colId: string, checkboxNode: HTMLElement): boolean;
+        onClickButton(row: number, colId: string, buttonNude: HTMLElement): boolean;
+        onClickLink(row: number, colId: string, linkNode: HTMLElement): boolean;
+        onBeforeDblClickCell(row: number, colId: string): boolean;
+        onAfterDblClickCell(row: number, colId: string): boolean;
+        onBeforeClickHeader(row: number, colId: string): boolean;
+        onAfterClickHeader(row: number, colId: string): boolean;
+        onBeforeDblClickHeader(row: number, colId: string): boolean;
+        onAfterDblClickHeader(row: number, colId: string): boolean;
+        onEditEnter(row: number, colId: string, editorNode: HTMLElement): boolean;
+        onEditEnding(row: number, colId: string, oldValue: any, newValue: any): boolean;
+        onClickFilter(row: number, colId: string, filterNode: HTMLElement): boolean;
+        onChooseFilter(row: number, colId: string, oldValue: any, newValue: any): boolean;
+        onPaste(startRow: number, startColId: string, clipboardText: string): boolean;
+        onCopy(startRow: number, startColId: string, endRow: number, endColId: string): boolean;
+        onResize(colId: string): boolean;
+        onKeydownEditor(event: KeyboardEvent): boolean;
+        onInputEditor(event: InputEvent): boolean;
+        onKeydownGrid(event: KeyboardEvent): boolean;
+    };
     gridHeader: GridHeader;
     gridBody: GridBody;
     gridFooter: GridFooter;
@@ -173,17 +211,17 @@ interface GridVariables {
     _filters: { colId : string, value : string }[];
     _isDrawable: true;
 }
-interface GridHeader extends HTMLElement{
+export interface GridHeader extends HTMLElement{
     _gridId: string;
     _type: string;
     _gridHeaderCells: Cell[][];
 }
-interface GridBody extends HTMLElement{
+export interface GridBody extends HTMLElement{
     _gridId: string;
     _type: string;
     _gridBodyCells: Cell[][];
 }
-interface GridFooter extends HTMLElement{
+export interface GridFooter extends HTMLElement{
     _gridId: string;
     _type: string;
     _gridFooterCells: Cell[][];
