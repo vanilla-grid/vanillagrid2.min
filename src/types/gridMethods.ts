@@ -362,7 +362,7 @@ export interface GridMethods {
      * 
      * @returns A nested array representing grid data, where each row contains an array of cell objects.
      */
-    getDatas(): Record<string, any>[];
+    getDatas(): CellData[][];
     /**
      * Sorts the grid data by the specified column.
      * 
