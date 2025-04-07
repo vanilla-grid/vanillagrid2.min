@@ -56,9 +56,12 @@ export const toUpperCase = (val: string | null) => {
 export const isIncludeEnum = (enumObj: Record<string, string>, value: string) => {
     return Object.values(enumObj).includes(value);
 };
-export const isValidDate = (year: number, month: number, day: number) => {
-    const date = new Date(year, month - 1, day);
-    return date.getFullYear() == year && date.getMonth() + 1 == month && date.getDate() == day;
+export const isValidDate = (year: number | string, month: number | string, day: number | string) => {
+    const y = Number(year);
+    const m = Number(month);
+    const d = Number(day);
+    const date = new Date(y, m - 1, d);
+    return date.getFullYear() == y && date.getMonth() + 1 == m && date.getDate() == d;
 };
 export const isValidEmail = (email: string) => {
     const regex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
