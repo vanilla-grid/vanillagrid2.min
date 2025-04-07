@@ -9,6 +9,9 @@ export interface Cell extends CellData, HTMLElement{
      * The ID of the grid to which the cell belongs.
      */
     _grid: Grid;
+    _frozenCol?: boolean;
+    _frozenRow?: boolean;
+    _isLastCell?: boolean;
 }
 
 
@@ -52,10 +55,11 @@ export interface CellData {
      * Whether the cell uses the col Merge feature.
      */
     _isColMerge?: boolean;
+    _text?: string;
     /**
      * colInfo which cell has
      */
-    _colInfo: ColInfo;
+    _colInfo: ColInfo & { header: string | null;  footer: string | null }
 }
 
 /**
