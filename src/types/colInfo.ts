@@ -19,7 +19,7 @@ export interface ColInfo {
     /**
      * Header text value. Use ';' as the delimiter. Empty values are automatically merged.
      */
-    header: string | null;
+    header: string[] | null;
     /**
      * Insert the footer using ';' as the delimiter. General text: Insert the string as text in the footer.
      * $$MAX: Calculate and display the maximum value in the footer.
@@ -27,7 +27,7 @@ export interface ColInfo {
      * $$SUM: Calculate and display the sum in the footer.
      * $$AVG: Calculate and display the average in the footer (excluding null).
      */
-    footer: string | null;
+    footer: string[] | null;
     /**
      * If untarget is true, the cells in this column cannot be selected.
      */
