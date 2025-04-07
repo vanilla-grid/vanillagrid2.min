@@ -1,9 +1,10 @@
-import { Cell } from "../types/cell";
+import { Cell, CellData, CellRecord } from "../types/cell";
+import { ColInfo } from "../types/colInfo";
 import { Grid, Vanillagrid } from "../types/vanillagrid";
-import { reConnectedCallbackElement } from "./handleActive";
-import { getCellText, isCellVisible } from "./handleCell";
-import { __getColInfo, __getHeaderFilter, _getCell, _getCells, _getFooterCells } from "./handleGrid";
-import { nvl } from "./utils";
+import { getRecordsWithModifyValue, reConnectedCallbackElement, recordGridModify } from "./handleActive";
+import { getCellText, getCodeValue, getValidValue, isCellVisible, removeGridEditor } from "./handleCell";
+import { __getColInfo, __getData, __getHeaderFilter, _getCell, _getCells, _getFooterCell, _getFooterCells, _getHeaderCell } from "./handleGrid";
+import { deepCopy, extractNumberAndUnit, nvl, removeAllChild } from "./utils";
 
 export const modifyColSize = (grid: Grid, targetCell: Cell, modifySize: number) => {
     if (!targetCell) return;
@@ -12,7 +13,7 @@ export const modifyColSize = (grid: Grid, targetCell: Cell, modifySize: number) 
 
     const styleGridTemplateColumnsArr = grid.gridHeader.style.gridTemplateColumns.split(' ');
     const oldColWidth = styleGridTemplateColumnsArr[targetCell._col - 1];
-    if ((this as any).extractNumberAndUnit(oldColWidth).unit === '%') {
+    if (extractNumberAndUnit(oldColWidth)!.unit === '%') {
         if (modifySize > 0) {
             modifySize = 1;
         }
@@ -23,40 +24,39 @@ export const modifyColSize = (grid: Grid, targetCell: Cell, modifySize: number) 
             modifySize = 0;
         }
     }
-    const newColWidth = ((this as any).extractNumberAndUnit(oldColWidth).number + modifySize) + (this as any).extractNumberAndUnit(oldColWidth).unit;
+    const newColWidth = (extractNumberAndUnit(oldColWidth)!.number + modifySize) + extractNumberAndUnit(oldColWidth)!.unit!;
     styleGridTemplateColumnsArr[targetCell._col - 1] = newColWidth;
     const styleGridTemplateColumns = styleGridTemplateColumnsArr.join(' ');
     grid.gridHeader.style.gridTemplateColumns = styleGridTemplateColumns;
     grid.gridBody.style.gridTemplateColumns = styleGridTemplateColumns;
     grid.gridFooter.style.gridTemplateColumns = styleGridTemplateColumns;
 };
-export const changeColSize = (gId: string, targetCol: number, changeSize: number) => {
+export const changeColSize = (grid: Grid, targetCol: number, changeSize: number) => {
     if (typeof changeSize !== 'number' || changeSize < 0) throw new Error('The format of size is only zero or positive integers.');
 
-    const _grid = (this as any)[gId];
-    if (_grid._getHeaderCell(1, targetCol).frozenCol) return;
+    if (_getHeaderCell(grid, 1, targetCol)!._frozenCol) return;
     const isVisible = changeSize !== 0;
-    for(let row = 1; row <= (this as any)[gId].getHeaderRowCount(); row++) {
-        const tempHeaderCell = _grid._getHeaderCell(row, targetCol);
-        tempHeaderCell.cColVisible = isVisible;
-        (this as any).reConnectedCallbackElement(tempHeaderCell);
+    for(let row = 1; row <= grid.getHeaderRowCount(); row++) {
+        const tempHeaderCell = _getHeaderCell(grid, row, targetCol);
+        tempHeaderCell._colInfo.colVisible = isVisible;
+        reConnectedCallbackElement(tempHeaderCell);
     }
-    for(let row = 1; row <= (this as any)[gId].getRowCount(); row++) {
-        _grid._getCell(row, targetCol).cColVisible = isVisible;
+    for(let row = 1; row <= grid.getRowCount(); row++) {
+        _getCell(grid, row, targetCol)!._colInfo.colVisible = isVisible;
     }
-    for(let row = 1; row <= (this as any)[gId].getFooterRowCount(); row++) {
-        const tempFooterCell = _grid._getFooterCell(row, targetCol);
-        tempFooterCell.cColVisible = isVisible;
-        (this as any).reConnectedCallbackElement(tempFooterCell);
+    for(let row = 1; row <= grid.getFooterRowCount(); row++) {
+        const tempFooterCell = _getFooterCell(grid, row, targetCol);
+        tempFooterCell._colInfo.colVisible = isVisible;
+        reConnectedCallbackElement(tempFooterCell);
     }
     
-    const header = _grid._getHeader();
-    const body = _grid._getBody();
-    const footer = _grid._getFooter();
+    const header = grid.gridHeader;
+    const body = grid.gridBody;
+    const footer = grid.gridFooter;
 
     const styleGridTemplateColumnsArr = header.style.gridTemplateColumns.split(' ');
     const oldColWidth = styleGridTemplateColumnsArr[targetCol - 1];
-    const newColWidth = changeSize + (this as any).extractNumberAndUnit(oldColWidth).unit;
+    const newColWidth = changeSize + extractNumberAndUnit(oldColWidth)!.unit!;
     styleGridTemplateColumnsArr[targetCol - 1] = newColWidth;
     const styleGridTemplateColumns = styleGridTemplateColumnsArr.join(' ');
     header.style.gridTemplateColumns = styleGridTemplateColumns;
@@ -64,15 +64,14 @@ export const changeColSize = (gId: string, targetCol: number, changeSize: number
     footer.style.gridTemplateColumns = styleGridTemplateColumns;
 };
 export const modifyCellValue = (cell: Cell, value: any, records: CellRecord[], isMethodCalled = false) => {
-    const _grid = (this as any)[cell.gId];
     if (!isMethodCalled) {
-        if (!(this as any).isCellVisible(cell)) return;
-        if (cell.cUntarget || cell.cLocked) return;
+        if (!isCellVisible(cell)) return;
+        if (cell._colInfo.untarget || cell._colInfo.locked) return;
     }
-    value = (this as any).getValidValue(cell, value);
-    if (cell.cValue === value) return;
+    value = getValidValue(cell, value);
+    if (cell._value === value) return;
 
-    const oldValue = cell.cValue;
+    const oldValue = cell._value;
     const newValue = value;
     
     if (records && Array.isArray(records)) {
@@ -83,50 +82,49 @@ export const modifyCellValue = (cell: Cell, value: any, records: CellRecord[], i
         })
     }
     
-    if(!_grid.getRowStatus(cell.row)) _grid.setRowStatus(cell.row, 'U');
-    cell.cValue  = value; 
-    utils.reConnectedCallbackElement(cell);
-    (this as any).reloadGridWithModifyCell(cell.gId, cell.cIndex);
+    if(!cell._grid.getRowStatus(cell._row)) cell._grid.setRowStatus(cell._row, 'U');
+    cell._value  = value;
+    reConnectedCallbackElement(cell);
+    reloadGridWithModifyCell(cell._grid, cell._colInfo.index!);
 };
 export const modifyCell = (vg: Vanillagrid) => {
-    if (!(this as any).activeGridEditor) return;
-    let cell = (this as any).activeGridEditor.parentNode;
-    if (cell.cUntarget || cell.cLocked) return;
-    (this as any).editNewValue = (this as any).activeGridEditor.value;
+    if (!vg._status.activeGridEditor) return;
+    let cell = vg._status.activeGridEditor.parentNode as Cell;
+    if (cell._colInfo.untarget || cell._colInfo.locked) return;
+    vg._status.editNewValue = (vg._status.activeGridEditor as any).value;
     Object.keys(vg.dataType).forEach((key) => {
-        if(cell.cDataType === key) {
+        if(cell._colInfo.dataType === key) {
             if(vg.dataType[key].getEditedValue) {
                 if(typeof vg.dataType[key].getEditedValue !== 'function') throw new Error('getEditedValue must be a function.');
-                (this as any).editNewValue = vg.dataType[key].getEditedValue((this as any).activeGridEditor, (this as any)[cell.gId].__getData(cell));
+                vg._status.editNewValue = vg.dataType[key].getEditedValue(vg._status.activeGridEditor!, __getData(cell));
             }
             else {
-                (this as any).editNewValue = (this as any).editOldValue;
+                vg._status.editNewValue = vg._status.editOldValue;
             }
         }
     });
-    (this as any).removeGridEditor();
-    const value = (this as any).editNewValue;
-    const records = (this as any).getRecordsWithModifyValue(cell, value);
-    (this as any).recordGridModify(cell.gId, records);
+    removeGridEditor(vg._status.activeGridEditor);
+    const value = vg._status.editNewValue;
+    const records = getRecordsWithModifyValue(cell, value);
+    recordGridModify(cell._grid, records);
     return;
 };
-export const sort = (gId: string, arr: Record<string, any>[], id: string, isAsc = true, isNumSort = false) => {
-    const copiedArr = (this as any).deepCopy(arr);
-    const _grid = (this as any)[gId];
+export const sort = (grid: Grid, arr: CellData[][], id: string, isAsc = true, isNumSort = false) => {
+    const copiedArr = deepCopy(arr);
     
-    copiedArr.sort((a: Record<string, any>, b: Record<string, any>) => {
-        const aItem = a.find((item: Record<string, any>) => item.id === id);
-        const bItem = b.find((item: Record<string, any>) => item.id === id);
-        let aValue = aItem ? aItem.value : null
-        const aDataType = aItem ? aItem.dataType : null
-        let bValue = bItem ? bItem.value : null
-        const bDataType = bItem ? bItem.dataType : null
+    copiedArr.sort((a: CellData[], b: CellData[]) => {
+        const aItem = a.find((item: CellData) => item._colInfo.id === id);
+        const bItem = b.find((item: CellData) => item._colInfo.id === id);
+        let aValue = aItem ? aItem._value : null
+        const aDataType = aItem ? aItem._colInfo.dataType : null
+        let bValue = bItem ? bItem._value : null
+        const bDataType = bItem ? bItem._colInfo.dataType : null
         
         let _isNumSort = isNumSort;
         if (typeof aValue === 'number' || typeof bValue === 'number') _isNumSort = true;
 
-        if (aValue === _grid.info.gNullValue) aValue = null;
-        if (bValue === _grid.info.gNullValue) bValue = null;
+        if (aValue === grid._gridInfo.nullValue) aValue = null;
+        if (bValue === grid._gridInfo.nullValue) bValue = null;
 
         if (aDataType === 'select' && aValue !== null && Array.isArray(aValue)) {
             let aSelectOption = aValue.find(item => item.selected);
@@ -164,29 +162,28 @@ export const sort = (gId: string, arr: Record<string, any>[], id: string, isAsc 
             bValue = bValue.text;
         }
 
-        if(vg.dataType) {
-            Object.keys(vg.dataType).forEach((key) => {
+        if(grid._vg.dataType) {
+            Object.keys(grid._vg.dataType).forEach((key) => {
                 if(aDataType === key) {
-                    if(vg.dataType[key].getSortValue) {
-                        if(typeof vg.dataType[key].getSortValue !== 'function') throw new Error('getSortValue must be a function.');
-                        aValue = vg.dataType[key].getSortValue(aValue);
+                    if(grid._vg.dataType[key].getSortValue) {
+                        if(typeof grid._vg.dataType[key].getSortValue !== 'function') throw new Error('getSortValue must be a function.');
+                        aValue = grid._vg.dataType[key].getSortValue(aValue);
                     }
                     else {
-                        aValue = aItem.text
+                        aValue = aItem!._text
                     }
                 }
                 if(bDataType === key) {
-                    if(vg.dataType[key].getSortValue) {
-                        if(typeof vg.dataType[key].getSortValue !== 'function') throw new Error('getSortValue must be a function.');
-                        bValue = vg.dataType[key].getSortValue(bValue);
+                    if(grid._vg.dataType[key].getSortValue) {
+                        if(typeof grid._vg.dataType[key].getSortValue !== 'function') throw new Error('getSortValue must be a function.');
+                        bValue = grid._vg.dataType[key].getSortValue(bValue);
                     }
                     else {
-                        bValue = bItem.text
+                        bValue = bItem!._text
                     }
                 }
             });
         }
-
         
         if (_isNumSort) {
             const aNumber = aValue === null ? NaN : Number(aValue);
@@ -198,7 +195,6 @@ export const sort = (gId: string, arr: Record<string, any>[], id: string, isAsc 
             if (isNaN(aNumber)) aValue = null;
             if (isNaN(bNumber)) bValue = null;
         }
-        
         
         if (aValue === null && bValue === null) return 0; 
         if (aValue === null) return isAsc !== false ? 1 : -1; 
@@ -216,12 +212,12 @@ export const sort = (gId: string, arr: Record<string, any>[], id: string, isAsc 
             return isAsc !== false ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
         }
     });
-    _grid.variables._sortToggle[id] = isAsc;
+    grid._variables._sortToggle[id] = isAsc;
     return copiedArr;
 };
 export const setFilterOptions = (select: any, options: any) => {
     const selectedValue = select.value;
-    (this as any).removeAllChild(select);
+    removeAllChild(select);
     options.forEach((opt: any) => {
         const option = document.createElement('option');
         option.value = opt.value;
@@ -242,7 +238,7 @@ export const reloadFilterValue = (grid: Grid, colId: number | string) => {
         let filterValue;
         let tempCell = _getCell(grid, r, colInfo!.index!);
         if (!tempCell || !tempCell._colInfo.rowVisible || !tempCell._colInfo.colVisible) continue;
-        filterValue = (this as any).getCellText(tempCell);
+        filterValue = getCellText(tempCell);
 
         Object.keys(grid._vg.dataType).forEach((key) => {
             if(tempCell._colInfo.dataType === key) {
@@ -256,9 +252,9 @@ export const reloadFilterValue = (grid: Grid, colId: number | string) => {
         if(filterValue === '' || filterValue === null || filterValue === undefined || filterValue === grid._gridInfo.nullValue) filterValue = '$$NULL';
         colInfo!.filterValues.add(filterValue);
     }
-    (this as any).reloadFilter(grid, colId);
+    reloadFilter(grid, colId);
 };
-export const reloadFilter = (grid: Grid, colId: string) => {
+export const reloadFilter = (grid: Grid, colId: number | string) => {
     const filterSelect = __getHeaderFilter(grid, colId);
     if (!filterSelect) return;
     const colInfo = __getColInfo(grid, colId);
@@ -285,7 +281,7 @@ export const reloadFilter = (grid: Grid, colId: string) => {
     });
 
     const selectedValue = filterSelect.value;
-    (this as any).removeAllChild(filterSelect);
+    removeAllChild(filterSelect);
     options.forEach((opt: any) => {
         const option = document.createElement('option');
         option.value = opt.value;
@@ -351,19 +347,19 @@ export const reloadColForMerge = (grid: Grid, colIndex: number) => {
             }
         }
         
-        c = colInfo.index;
+        c = colInfo.index!;
         for(r = 1; r <= grid.getRowCount(); r++) {
             preCell = cells[r - 1][c - 2]
             nowCell = cells[r - 1][c - 1]
             if (preCell
-                && (this as any).isCellVisible(preCell)
+                && isCellVisible(preCell)
                 && preCell._colInfo.dataType === nowCell._colInfo.dataType
-                && (this as any).getCellText(preCell) === (this as any).getCellText(nowCell)
+                && getCellText(preCell) === getCellText(nowCell)
             ) {
                 for(let cSpan = preCell._col - 1; cSpan > 2; cSpan--) {
                     preCell = cells[r - 1][cSpan];
                     if (preCell._isColMerge !== true) {
-                        preCell._colSpan = (this as any).nvl(preCell._colSpan, 1) + 1;
+                        preCell._colSpan = nvl(preCell._colSpan, 1) + 1;
                         break;
                     }
                 }
@@ -374,20 +370,20 @@ export const reloadColForMerge = (grid: Grid, colIndex: number) => {
         for(r = 1; r <= grid.getRowCount(); r++) {
             for(c = colInfo.index! - 1; c <= colInfo.index!; c++) {
                 nowCell = _getCell(grid, r, c!);
-                (this as any).reConnectedCallbackElement(nowCell);
+                reConnectedCallbackElement(nowCell!);
             }
         }
     }
 };
 export const reloadGridWithModifyCell = (grid: Grid, colIndex: number) => {
-    (this as any).reloadFooterValue(grid);
-    (this as any).reloadFilterValue(grid, colIndex);
+    reloadFooterValue(grid);
+    reloadFilterValue(grid, colIndex);
     const nextColInfo = __getColInfo(grid, colIndex + 1);
     if (nextColInfo && nextColInfo.colMerge) {
-        (this as any).reloadColForMerge(grid, colIndex + 1);
+        reloadColForMerge(grid, colIndex + 1);
     }
     else {
-        (this as any).reloadColForMerge(grid, colIndex);
+        reloadColForMerge(grid, colIndex);
     }
 };
 export const reloadGridForMerge = (grid: Grid) => {
@@ -400,7 +396,7 @@ export const reloadFooterValue = (grid: Grid) => {
     for(const footers of footerCells) {
         for(const footerCell of footers) {
             if (footerCell._colInfo.footer !== null && footerCell._colInfo.footer !== undefined) {
-                (this as any).reConnectedCallbackElement(footerCell);
+                reConnectedCallbackElement(footerCell);
             }
         }
     }
@@ -411,27 +407,28 @@ export const setGridDataRowCol = (el: Cell, row: number, col: number) => {
     el._row = row;
     el._col = col;
     el._colInfo.index = col;
-    (this as any).setGridDataPosition(el);
+    setGridDataPosition(el);
 };
 export const setGridDataPosition = (el: Cell) => {
-    const row = el.row;
-    const col = el.col;
+    const row = el._row;
+    const col = el._col;
     el.style.gridRowStart = String(row);
     el.style.gridRowEnd = String(row + 1);
     el.style.gridColumnStart = String(col);
     el.style.gridColumnEnd = String(col + 1);
 };
-export const getGridCell = (gId: string, colInfo: CellColInfo, valueOrData: any, rowCount: number, colCount: number) => {
+//수정필요 cell data 형태
+export const getGridCell = (gId: string, colInfo: ColInfo, valueOrData: any, rowCount: number, colCount: number) => {
     let data, dataKey, tempData;
 
     if (valueOrData && valueOrData.constructor === Object) {
         data = {
-            value : valueOrData[colInfo.cId]
+            value : valueOrData[colInfo.id]
         };
     }
     else if (valueOrData && Array.isArray(valueOrData)) {
         for(tempData of valueOrData) {
-            if (tempData.id === colInfo.cId) {
+            if (tempData.id === colInfo.id) {
                 data = tempData;
                 break;
             }
@@ -440,32 +437,32 @@ export const getGridCell = (gId: string, colInfo: CellColInfo, valueOrData: any,
 
     if (!data) {
         data = {
-            value : null
+            _value : null
         };
     }
 
-    const tempGridData = document.createElement('v-g-d') as any;
-    tempGridData.gId = gId;
-    tempGridData.gType = 'gbd';
+    const tempGridData = document.createElement('v-g-d') as Cell;
+    tempGridData._gridId = gId;
+    tempGridData._type = 'gbd';
 
     Object.keys(colInfo).forEach(key => {
-        if (['cHeader', 'cFooter', 'cRowMerge', 'cColMerge', 'cFilterValue','cIndex'].indexOf(key) < 0) {
+        if (['header', 'footer', 'rowMerge', 'colMerge', 'filterValue','index'].indexOf(key) < 0) {
             dataKey = key.charAt(1).toLowerCase() + key.slice(2);
-            tempGridData[key] = dataKey in data ? data[dataKey] : colInfo[key as keyof CellColInfo];
+            (tempGridData as any)._colInfo[key] = dataKey in data ? data[dataKey] : colInfo[key as keyof ColInfo];
         }
     });
-    switch (tempGridData.cId) {
+    switch (tempGridData._colInfo.id) {
         case 'v-g-rownum':
-            tempGridData.cValue = rowCount;
+            tempGridData._value = rowCount;
             break;
         case 'v-g-status':
-            tempGridData.cValue = utils.getCodeValue(['C','U','D'], null, data.value);
+            tempGridData._value = getCodeValue(['C','U','D'], null, data.value);
             break;
         default:
-            tempGridData.cValue = utils.getValidValue(tempGridData, data.value);
+            tempGridData._value = getValidValue(tempGridData, data.value);
             break;
     }
-    if (colInfo.cFilterable && tempGridData.cColVisible) colInfo.cFilterValues!.add(tempGridData.textContent);
-    (this as any).setGridDataRowCol(tempGridData, rowCount, colCount);
+    if (colInfo.filterable && tempGridData._colInfo.colVisible) colInfo.filterValues!.add(tempGridData.textContent!);
+    setGridDataRowCol(tempGridData, rowCount, colCount);
     return tempGridData as Cell;
 };
