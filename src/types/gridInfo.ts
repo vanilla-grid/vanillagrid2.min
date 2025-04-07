@@ -5,10 +5,6 @@ import { ColorSet, SelectionPolicy, VerticalAlign } from "./enum";
  */
 export interface GridInfo {
     /**
-     * Required value. It is the id of the grid.
-     */
-    id: string;
-    /**
      * The name of the grid. If null, the grid Id is inserted.
      */
     name: string | null;
@@ -154,11 +150,11 @@ export interface GridCssInfo {
     /**
      * Specifies the default font-size of the grid cell. Enter a positive integer. The unit is px.
      */
-    cellFontSize: number | null;
+    cellFontSize: string | null;
     /**
      * Specifies the default min-height of the grid cell. Enter a positive integer. The unit is px.
      */
-    cellMinHeight: number | null;
+    cellMinHeight: string | null;
     /**
      * Sets the horizontal border size of the grid cell. The unit is px. Enter 0 or a positive integer.
      */
@@ -368,5 +364,7 @@ export interface GridCssInfo {
  * Default CSS configuration for grid styling.
  * Facilitates consistent UI across multiple grid instances.
  */
-export interface DefaultGridCssInfo extends GridCssInfo{
+export interface DefaultGridCssInfo extends Omit<GridCssInfo, 'cellFontSize' |'cellMinHeight'>{
+    cellFontSize: number | null;
+    cellMinHeight: number | null;
 }
