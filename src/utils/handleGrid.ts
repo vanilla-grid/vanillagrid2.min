@@ -7,16 +7,16 @@ import { modifyColSize, reloadGridForMerge, reloadGridWithModifyCell, setGridDat
 import { deepCopy, getArrayElementWithBoundCheck, removeAllChild, validatePositiveIntegerAndZero } from "./utils";
 
 export const __getDefaultColInfo = (grid: Grid, newColInfo: ColInfo, isAdd = false) => {
-    if (!newColInfo || !newColInfo.id) throw new Error('Column ID is required.');
+    if (!newColInfo || !newColInfo.colId) throw new Error('Column ID is required.');
     if (isAdd) {
         for(const colInfo of grid._colInfos) {
-            if (newColInfo.id === colInfo.id)  throw new Error('Column ID is primary key.');
+            if (newColInfo.colId === colInfo.colId)  throw new Error('Column ID is primary key.');
         }
     }
 
     const resultnewColInfo: ColInfo = {
-        id: newColInfo.id,
-        name : newColInfo.name ? newColInfo.name : newColInfo.id,
+        colId: newColInfo.colId,
+        name : newColInfo.name ? newColInfo.name : newColInfo.colId,
         index : null,
         header : null,
         footer : null,
@@ -67,7 +67,7 @@ export const __getDefaultColInfo = (grid: Grid, newColInfo: ColInfo, isAdd = fal
     }
     else {
         resultnewColInfo.header = new Array(grid.getHeaderRowCount());
-        resultnewColInfo.header[0] = newColInfo.id;
+        resultnewColInfo.header[0] = newColInfo.colId;
     }
     if (newColInfo.footer && (typeof newColInfo.footer === 'string')) {
         resultnewColInfo.cFooter = (newColInfo.footer as string).split(';');
@@ -84,7 +84,7 @@ export const __getColInfo = (grid: Grid, colIndexOrColId: string | number, useEr
     }
     else {
         for(const colInfo of grid._colInfos) {
-            if (colInfo.id === colIndexOrColId) {
+            if (colInfo.colId === colIndexOrColId) {
                 returncolInfo = colInfo;
             }
         }
@@ -105,7 +105,7 @@ export const __getColIndex = (grid: Grid, colIndexOrColId: number | string, useE
         return colIndexOrColId;
     }
     for(const colInfo of grid._colInfos) {
-        if (colInfo.id === colIndexOrColId) {
+        if (colInfo.colId === colIndexOrColId) {
             return colInfo.index;
         }
     }
@@ -133,48 +133,48 @@ export const __setGridColSize = (grid: Grid) => {
 export const _getCellChildNode = (cell: Cell): HTMLElement | null => {
     if (!cell) return null;
     let childNode: any;
-    switch (cell._colInfo.dataType) {
+    switch (cell.dataType) {
         case 'text':
             childNode = document.createElement('span');
             childNode.classList.add(cell._grid._id + '_data-value-text');
-            childNode.innerText = cell._value;
+            childNode.innerText = cell.value;
             childNode.nType = 'text';
             break;
         case 'number':
             childNode = document.createElement('span');
             childNode.classList.add(cell._grid._id + '_data-value-number');
-            if (cell._value === null || cell._value === undefined || cell._value === cell._grid._gridInfo.nullValue) childNode.innerText = cell._grid._gridInfo.nullValue;
+            if (cell.value === null || cell.value === undefined || cell.value === cell._grid._gridInfo.nullValue) childNode.innerText = cell._grid._gridInfo.nullValue;
             else childNode.innerText = getFormatNumberFromCell(cell);
             childNode.nType = 'number';
             break;
         case 'mask':
             childNode = document.createElement('span');
             childNode.classList.add(cell._grid._id + '_data-value-mask');
-            childNode.innerText = cell._value;
+            childNode.innerText = cell.value;
             childNode.nType = 'mask';
             break;
         case 'date':
             childNode = document.createElement('span');
             childNode.classList.add(cell._grid._id + '_data-value-date');
-            if (cell._value === null || cell._value === undefined || cell._value === cell._grid._gridInfo.nullValue) childNode.innerText = cell._grid._gridInfo.nullValue;
+            if (cell.value === null || cell.value === undefined || cell.value === cell._grid._gridInfo.nullValue) childNode.innerText = cell._grid._gridInfo.nullValue;
             else childNode.innerText = getDateWithGridDateFormat(cell);
             childNode.nType = 'date';
             break;
         case 'month':
             childNode = document.createElement('span');
             childNode.classList.add(cell._grid._id + '_data-value-month');
-            if (cell._value === null || cell._value === undefined || cell._value === cell._grid._gridInfo.nullValue) childNode.innerText = cell._grid._gridInfo.nullValue;
+            if (cell.value === null || cell.value === undefined || cell.value === cell._grid._gridInfo.nullValue) childNode.innerText = cell._grid._gridInfo.nullValue;
             else childNode.innerText = getDateWithGridMonthFormat(cell);
             childNode.nType = 'month';
             break;
         case 'select':
-            if (Array.isArray(cell._value) && cell._value.length > 0) {
+            if (Array.isArray(cell.value) && cell.value.length > 0) {
                 childNode = document.createElement('select');
                 childNode.classList.add(cell._grid._id + '_data-value-select');
                 childNode.addEventListener('change', function (e: any) { selectAndCheckboxOnChange(e.target); });
-                setSelectOptions(childNode, cell._value);
+                setSelectOptions(childNode, cell.value);
                 childNode.nType = 'select';
-                if (cell._colInfo.selectSize) childNode.style.width = cell._colInfo.selectSize;
+                if (cell.selectSize) childNode.style.width = cell.selectSize;
             }
             else {
                 childNode = document.createElement('span');
@@ -192,7 +192,7 @@ export const _getCellChildNode = (cell: Cell): HTMLElement | null => {
             if (getCheckboxCellTrueOrFalse(cell)) childNode.setAttribute('checked','');
             break;
         case 'button':
-            if (cell._value === null || cell._value === undefined || cell._value === cell._grid._gridInfo.nullValue) {
+            if (cell.value === null || cell.value === undefined || cell.value === cell._grid._gridInfo.nullValue) {
                 childNode = document.createElement('span');
                 childNode.classList.add(cell._grid._id + '_data-value-text');
                 childNode.innerText = cell._grid._gridInfo.nullValue;
@@ -201,7 +201,7 @@ export const _getCellChildNode = (cell: Cell): HTMLElement | null => {
             else {
                 childNode = document.createElement('button');
                 childNode.classList.add(cell._grid._id + '_data-value-button');
-                childNode.innerText = cell._value;
+                childNode.innerText = cell.value;
                 childNode.nType = 'button';
                 childNode.addEventListener('touchstart', function() {
                     childNode.classList.add('active');
@@ -212,7 +212,7 @@ export const _getCellChildNode = (cell: Cell): HTMLElement | null => {
             }
             break;
         case 'link':
-            if (cell._value === null || cell._value === undefined || cell._value === cell._grid._gridInfo.nullValue) {
+            if (cell.value === null || cell.value === undefined || cell.value === cell._grid._gridInfo.nullValue) {
                 childNode = document.createElement('span');
                 childNode.classList.add(cell._grid._id + '_data-value-text');
                 childNode.innerText = cell._grid._gridInfo.nullValue;
@@ -221,22 +221,22 @@ export const _getCellChildNode = (cell: Cell): HTMLElement | null => {
             else {
                 childNode = document.createElement('a');
                 childNode.classList.add(cell._grid._id + '_data-value-link');
-                childNode.innerText = cell._value.text;
-                childNode.setAttribute('href', cell._value.value);
-                childNode.setAttribute('target', cell._value.target ? cell._value.target : '_blank');
+                childNode.innerText = cell.value.text;
+                childNode.setAttribute('href', cell.value.value);
+                childNode.setAttribute('target', cell.value.target ? cell.value.target : '_blank');
                 childNode.nType = 'link';
             }
             break;
         case 'code':
             childNode = document.createElement('span');
             childNode.classList.add(cell._grid._id + '_data-value-code');
-            childNode.innerText = cell._value;
+            childNode.innerText = cell.value;
             childNode.nType = 'code';
             break;
         default:
             if(cell._grid._vg.dataType) {
                 Object.keys(cell._grid._vg.dataType).forEach((key) => {
-                    if(key === cell._colInfo.dataType) {
+                    if(key === cell.dataType) {
                         if(cell._grid._vg.dataType[key].getChildNode) {
                             if(typeof cell._grid._vg.dataType[key].getChildNode !== 'function') throw new Error('getChildNode must be a function.');
                             childNode = cell._grid._vg.dataType[key].getChildNode(__getData(cell));
@@ -245,12 +245,12 @@ export const _getCellChildNode = (cell: Cell): HTMLElement | null => {
                             }
                             else {
                                 childNode = document.createElement('span');
-                                childNode.innerText = cell._value;
+                                childNode.innerText = cell.value;
                             }
                         }
                         else {
                             childNode = document.createElement('span');
-                            childNode.innerText = cell._value;
+                            childNode.innerText = cell.value;
                         }
                         childNode.classList.add(cell._grid._id + '_data-value-' + key);
                         childNode.nType = key;
@@ -283,28 +283,28 @@ export const __loadHeader = (grid: Grid) => {
                 }
             });
             if (Array.isArray(colInfo.header)) {
-                tempGridData._value = colInfo.header[rowCount - 1] ? colInfo.header[rowCount - 1].replaceAll('\\n','\n') : '';
+                tempGridData.value = colInfo.header[rowCount - 1] ? colInfo.header[rowCount - 1].replaceAll('\\n','\n') : '';
             }
             else {
-                tempGridData._value = colInfo.header;
+                tempGridData.value = colInfo.header;
             }
             setGridDataRowCol(tempGridData, rowCount, colCount);
             if (colCount !== 1) {
                 if (!colInfo.header![rowCount - 1]) { 
                     
                     for(let r = rowCount - 2; r >= 0; r--) {
-                        if (colInfo.header![r]) tempGridData._isRowMerge = true;
+                        if (colInfo.header![r]) tempGridData.isRowMerge = true;
                     }
                     
-                    if (!tempGridData._isRowMerge) {
+                    if (!tempGridData.isRowMerge) {
                         for(let c = colCount - 2; c >= 0; c--) {
-                            if (grid._colInfos[c].header![rowCount - 1]) tempGridData._isColMerge = true;
+                            if (grid._colInfos[c].header![rowCount - 1]) tempGridData.isColMerge = true;
                         }
                     }
                 }
             }
             else { 
-                if (rowCount !== 1) tempGridData._isRowMerge = true;
+                if (rowCount !== 1) tempGridData.isRowMerge = true;
             }
             tempGridData.addEventListener('mousemove', function (e: any) {
                 const grid: Grid = e.target._grid;
@@ -320,9 +320,9 @@ export const __loadHeader = (grid: Grid) => {
                     if (e.target.frozenCol) return;
                     for(let col = e.target.col - 1; col > 1; col--) {
                         targetCell = _getHeaderCell(grid, 1, col);
-                        if (targetCell._colInfo.colVisible === true) break;
+                        if (targetCell.colVisible === true) break;
                     }
-                    if (!targetCell!._colInfo.resizable) return;
+                    if (!targetCell!.resizable) return;
 
                     e.target.style.cursor = 'ew-resize';
                     grid._vg._status.onHeaderDragging = true;
@@ -339,9 +339,9 @@ export const __loadHeader = (grid: Grid) => {
                     if (e.target.frozenCol) return;
                     for(let col = e.target.col; col > 1; col--) {
                         targetCell = _getHeaderCell(grid, 1, col);
-                        if (targetCell._colInfo.colVisible === true) break;
+                        if (targetCell.colVisible === true) break;
                     }
-                    if (!targetCell!._colInfo.resizable) return;
+                    if (!targetCell!.resizable) return;
                     
                     e.target.style.cursor = 'ew-resize';
                     grid._vg._status.onHeaderDragging = true;
@@ -385,7 +385,7 @@ export const _getHeaderCell = (grid: Grid, rowIndex: number, colIndexOrColId: nu
     }
     else {
         for(const cell of _getHeaderRow(grid, rowIndex)) {
-            if (cell._colInfo.id === colIndexOrColId) return cell;
+            if (cell.colId === colIndexOrColId) return cell;
         }
     }
     throw new Error('There is no ' + (typeof colIndexOrColId === 'number' ? colIndexOrColId + 'th' : colIndexOrColId) + ' colunm.');
@@ -425,7 +425,7 @@ export const __loadFooter = (grid: Grid) => {
                 }
             });
             if (colInfo.footer && colInfo.footer[rowCount - 1]) {
-                tempGridData._colInfo.footer = colInfo.footer[rowCount - 1];
+                tempGridData.footer = colInfo.footer[rowCount - 1];
             }
             
             setGridDataRowCol(tempGridData, rowCount, colCount);
@@ -468,7 +468,7 @@ export const _getCell = (grid: Grid, rowIndex: number, colIndexOrColId: number |
         }
         else {
             for(const cell of grid.gridBody._gridBodyCells[rowIndex - 1]) {
-                if (cell._colInfo.id === colIndexOrColId) return cell;
+                if (cell.colId === colIndexOrColId) return cell;
             }
         }
     } catch (error) {
@@ -547,7 +547,7 @@ export const _doFilter = (grid: Grid) => {
     grid.gridHeader.querySelectorAll('.' + grid._id + '_filterSelect').forEach(function (filterSelect: any) {
         if (filterSelect.value !== '$$ALL') {
             filter = {
-                id : filterSelect.id,
+                colId : filterSelect.colId,
                 value : filterSelect.value,
             };
             __getColInfo(grid, filterSelect.parentNode.parentNode.index)!.filterValue = filterSelect.value;
@@ -569,14 +569,14 @@ export const _doFilter = (grid: Grid) => {
             let _isFilter = false;
             cells.forEach(function (cell: any) {
                 grid._variables._filters.forEach(function (filter: any) {
-                    if (cell.cId === filter.cId) {
+                    if (cell.cId === filter.colId) {
                         let cellValue: any = getCellText(cell);
 
                         Object.keys(grid._vg.dataType).forEach((key) => {
-                            if(cell._colInfo.dataType === key) {
+                            if(cell.dataType === key) {
                                 if(grid._vg.dataType[key].getFilterValue) {
                                     if(typeof grid._vg.dataType[key].getFilterValue !== 'function') throw new Error('getFilterValue must be a function.');
-                                    cellValue = grid._vg.dataType[key].getFilterValue(cell._value);
+                                    cellValue = grid._vg.dataType[key].getFilterValue(cell.value);
                                 }
                             }
                         });
@@ -595,13 +595,13 @@ export const _doFilter = (grid: Grid) => {
 };
 export const __gridCellReConnectedWithControlSpan = (cell: Cell) => {
     reConnectedCallbackElement(cell);
-    if(cell._rowSpan) {
-        for(let row = cell._row + 1; row < cell._row + cell._rowSpan; row++) {
+    if(cell.rowSpan) {
+        for(let row = cell._row + 1; row < cell._row + cell.rowSpan; row++) {
             __gridCellReConnectedWithControlSpan(_getCell(cell._grid, row, cell._col)!);
         }
     }
-    if(cell._colSpan) {
-        for(let col = cell._col + 1; col < cell._col + cell._colSpan; col++) {
+    if(cell.colSpan) {
+        for(let col = cell._col + 1; col < cell._col + cell.colSpan; col++) {
             __gridCellReConnectedWithControlSpan(_getCell(cell._grid, cell._row, col)!);
         }
     }
@@ -609,49 +609,91 @@ export const __gridCellReConnectedWithControlSpan = (cell: Cell) => {
 //수정필요 cell data 형태
 export const __getData = (cell: Cell, exceptedProperty: string[] = []): CellData => {
     const data: CellData = {
-        _gridId : cell._gridId,
-        _type : cell._type,
-        _value : cell._value,
-        _row : cell._row,
-        _col : cell._col,
-        _rowSpan : cell._rowSpan,
-        _colSpan : cell._colSpan,
-        _isRowMerge : cell._isRowMerge,
-        _isColMerge : cell._isColMerge,
-        _colInfo : deepCopy(cell._colInfo),
+        //_gridId : cell._gridId,
+        //_type : cell._type,
+        //_row : cell._row,
+        //_col : cell._col,
+        value : cell.value,
+        //colInfo
+        colId : cell.colId,
+        index : cell.index,
+        name : cell.name,
+        header : cell.header,
+        footer : cell.footer,
+        untarget : cell.untarget,
+        rowMerge : cell.rowMerge,
+        colMerge : cell.colMerge,
+        colVisible : cell.colVisible,
+        required : cell.required,
+        resizable : cell.resizable,
+        sortable : cell.sortable,
+        filterable : cell.filterable,
+        originWidth : cell.originWidth,
+        dataType : cell.dataType,
+        selectSize : cell.selectSize,
+        locked : cell.locked,
+        lockedColor : cell.lockedColor,
+        format : cell.format,
+        codes : deepCopy(cell.codes),
+        defaultCode : cell.defaultCode,
+        maxLength : cell.maxLength,
+        maxByte : cell.maxByte,
+        maxNumber : cell.maxNumber,
+        minNumber : cell.minNumber,
+        roundNumber : cell.roundNumber,
+        align : cell.align,
+        verticalAlign : cell.verticalAlign,
+        overflowWrap : cell.overflowWrap,
+        wordBreak : cell.wordBreak,
+        whiteSpace : cell.whiteSpace,
+        backColor : cell.backColor,
+        fontColor : cell.fontColor,
+        fontBold : cell.fontBold,
+        fontItalic : cell.fontItalic,
+        fontThruline : cell.fontThruline,
+        fontUnderline : cell.fontUnderline,
     };
+    
+    data.text = getCellText(cell);
+    if(cell.rowSpan) data.rowSpan = cell.rowSpan;
+    if(cell.colSpan) data.colSpan = cell.colSpan;
+    if(cell.isRowMerge) data.isRowMerge = cell.isRowMerge;
+    if(cell.isColMerge) data.isColMerge = cell.isColMerge;
+    if(cell.filterValues) data.filterValues = deepCopy(cell.filterValues);
+    if(cell.filterValue) data.filterValue = cell.filterValue;
+    if(cell.filter) data.filter = cell.filter;
+    if(cell.rowVisible) data.rowVisible = cell.rowVisible;
 
     if (exceptedProperty) {
-        if (exceptedProperty.indexOf('untarget') >= 0) data._colInfo.untarget = null;
-        if (exceptedProperty.indexOf('colVisible') >= 0) data._colInfo.colVisible = null;
-        if (exceptedProperty.indexOf('rowVisible') >= 0) data._colInfo.rowVisible = null;
-        if (exceptedProperty.indexOf('required') >= 0) data._colInfo.required = null;
-        if (exceptedProperty.indexOf('resizable') >= 0) data._colInfo.resizable = null;
-        if (exceptedProperty.indexOf('originWidth') >= 0) data._colInfo.originWidth = null;
-        if (exceptedProperty.indexOf('dataType') >= 0) data._colInfo.dataType = null;
-        if (exceptedProperty.indexOf('selectSize') >= 0) data._colInfo.selectSize = null;
-        if (exceptedProperty.indexOf('locked') >= 0) data._colInfo.locked = null;
-        if (exceptedProperty.indexOf('lockedColor') >= 0) data._colInfo.lockedColor = null;
-        if (exceptedProperty.indexOf('format') >= 0) data._colInfo.format = null;
-        if (exceptedProperty.indexOf('codes') >= 0) data._colInfo.codes = null;
-        if (exceptedProperty.indexOf('defaultCode') >= 0) data._colInfo.defaultCode = null;
-        if (exceptedProperty.indexOf('maxLength') >= 0) data._colInfo.maxLength = null;
-        if (exceptedProperty.indexOf('maxByte') >= 0) data._colInfo.maxByte = null;
-        if (exceptedProperty.indexOf('maxNumber') >= 0) data._colInfo.maxNumber = null;
-        if (exceptedProperty.indexOf('minNumber') >= 0) data._colInfo.minNumber = null;
-        if (exceptedProperty.indexOf('roundNumber') >= 0) data._colInfo.roundNumber = null;
-        if (exceptedProperty.indexOf('align') >= 0) data._colInfo.align = null;
-        if (exceptedProperty.indexOf('verticalAlign') >= 0) data._colInfo.verticalAlign = null;
-        if (exceptedProperty.indexOf('backColor') >= 0) data._colInfo.backColor = null;
-        if (exceptedProperty.indexOf('fontColor') >= 0) data._colInfo.fontColor = null;
-        if (exceptedProperty.indexOf('fontBold') >= 0) data._colInfo.fontBold = null;
-        if (exceptedProperty.indexOf('fontItalic') >= 0) data._colInfo.fontItalic = null;
-        if (exceptedProperty.indexOf('fontThruline') >= 0) data._colInfo.fontThruline = null;
-        if (exceptedProperty.indexOf('fontUnderline') >= 0) data._colInfo.fontUnderline = null;
-        if (exceptedProperty.indexOf('filter') >= 0) data._colInfo.filter = null;
-        if (exceptedProperty.indexOf('value') >= 0) data._value = null;
+        if (exceptedProperty.indexOf('untarget') >= 0) data.untarget = null;
+        if (exceptedProperty.indexOf('colVisible') >= 0) data.colVisible = null;
+        if (exceptedProperty.indexOf('rowVisible') >= 0) data.rowVisible = null;
+        if (exceptedProperty.indexOf('required') >= 0) data.required = null;
+        if (exceptedProperty.indexOf('resizable') >= 0) data.resizable = null;
+        if (exceptedProperty.indexOf('originWidth') >= 0) data.originWidth = null;
+        if (exceptedProperty.indexOf('dataType') >= 0) data.dataType = null;
+        if (exceptedProperty.indexOf('selectSize') >= 0) data.selectSize = null;
+        if (exceptedProperty.indexOf('locked') >= 0) data.locked = null;
+        if (exceptedProperty.indexOf('lockedColor') >= 0) data.lockedColor = null;
+        if (exceptedProperty.indexOf('format') >= 0) data.format = null;
+        if (exceptedProperty.indexOf('codes') >= 0) data.codes = null;
+        if (exceptedProperty.indexOf('defaultCode') >= 0) data.defaultCode = null;
+        if (exceptedProperty.indexOf('maxLength') >= 0) data.maxLength = null;
+        if (exceptedProperty.indexOf('maxByte') >= 0) data.maxByte = null;
+        if (exceptedProperty.indexOf('maxNumber') >= 0) data.maxNumber = null;
+        if (exceptedProperty.indexOf('minNumber') >= 0) data.minNumber = null;
+        if (exceptedProperty.indexOf('roundNumber') >= 0) data.roundNumber = null;
+        if (exceptedProperty.indexOf('align') >= 0) data.align = null;
+        if (exceptedProperty.indexOf('verticalAlign') >= 0) data.verticalAlign = null;
+        if (exceptedProperty.indexOf('backColor') >= 0) data.backColor = null;
+        if (exceptedProperty.indexOf('fontColor') >= 0) data.fontColor = null;
+        if (exceptedProperty.indexOf('fontBold') >= 0) data.fontBold = null;
+        if (exceptedProperty.indexOf('fontItalic') >= 0) data.fontItalic = null;
+        if (exceptedProperty.indexOf('fontThruline') >= 0) data.fontThruline = null;
+        if (exceptedProperty.indexOf('fontUnderline') >= 0) data.fontUnderline = null;
+        if (exceptedProperty.indexOf('filter') >= 0) data.filter = null;
+        if (exceptedProperty.indexOf('value') >= 0) data.value = null;
     }
-    data._text = getCellText(cell);
     return data;
 };
 //수정필요 cell data 형태
@@ -663,37 +705,37 @@ export const __setCellData = (grid: Grid, row: number, colIndexOrColId: number |
         return false;
     }
     const cell = _getCell(grid, row, colIndex);
-    if (cellData._colInfo.untarget) cell!._colInfo.untarget = cellData._colInfo.untarget;
-    if (cellData._colInfo.dataType) cell!._colInfo.dataType = cellData._colInfo.dataType;
-    if (cellData._colInfo.selectSize) cell!._colInfo.selectSize = cellData._colInfo.selectSize;
-    if (cellData._colInfo.locked) cell!._colInfo.locked = cellData._colInfo.locked;
-    if (cellData._colInfo.lockedColor) cell!._colInfo.lockedColor = cellData._colInfo.lockedColor;
-    if (cellData._colInfo.format) cell!._colInfo.format = cellData._colInfo.format;
-    if (cellData._colInfo.codes) cell!._colInfo.codes = cellData._colInfo.codes;
-    if (cellData._colInfo.defaultCode) cell!._colInfo.defaultCode = cellData._colInfo.defaultCode;
-    if (cellData._colInfo.maxLength) cell!._colInfo.maxLength = cellData._colInfo.maxLength;
-    if (cellData._colInfo.maxByte) cell!._colInfo.maxByte = cellData._colInfo.maxByte;
-    if (cellData._colInfo.maxNumber) cell!._colInfo.maxNumber = cellData._colInfo.maxNumber;
-    if (cellData._colInfo.minNumber) cell!._colInfo.minNumber = cellData._colInfo.minNumber;
-    if (cellData._colInfo.roundNumber) cell!._colInfo.roundNumber = cellData._colInfo.roundNumber;
-    if (cellData._colInfo.align) cell!._colInfo.align = cellData._colInfo.align;
-    if (cellData._colInfo.verticalAlign) cell!._colInfo.verticalAlign = cellData._colInfo.verticalAlign;
-    if (cellData._colInfo.overflowWrap) cell!._colInfo.overflowWrap = cellData._colInfo.overflowWrap;
-    if (cellData._colInfo.wordBreak) cell!._colInfo.wordBreak = cellData._colInfo.wordBreak;
-    if (cellData._colInfo.whiteSpace) cell!._colInfo.whiteSpace = cellData._colInfo.whiteSpace;
-    if (cellData._colInfo.backColor) cell!._colInfo.backColor = cellData._colInfo.backColor;
-    if (cellData._colInfo.fontColor) cell!._colInfo.fontColor = cellData._colInfo.fontColor;
-    if (cellData._colInfo.fontBold) cell!._colInfo.fontBold = cellData._colInfo.fontBold;
-    if (cellData._colInfo.fontItalic) cell!._colInfo.fontItalic = cellData._colInfo.fontItalic;
-    if (cellData._colInfo.fontThruline) cell!._colInfo.fontThruline = cellData._colInfo.fontThruline;
-    if (cellData._colInfo.fontUnderline) cell!._colInfo.fontUnderline = cellData._colInfo.fontUnderline;
-    if (cellData._value) cell!._value = cellData._value;
+    if (cellData.untarget) cell!.untarget = cellData.untarget;
+    if (cellData.dataType) cell!.dataType = cellData.dataType;
+    if (cellData.selectSize) cell!.selectSize = cellData.selectSize;
+    if (cellData.locked) cell!.locked = cellData.locked;
+    if (cellData.lockedColor) cell!.lockedColor = cellData.lockedColor;
+    if (cellData.format) cell!.format = cellData.format;
+    if (cellData.codes) cell!.codes = cellData.codes;
+    if (cellData.defaultCode) cell!.defaultCode = cellData.defaultCode;
+    if (cellData.maxLength) cell!.maxLength = cellData.maxLength;
+    if (cellData.maxByte) cell!.maxByte = cellData.maxByte;
+    if (cellData.maxNumber) cell!.maxNumber = cellData.maxNumber;
+    if (cellData.minNumber) cell!.minNumber = cellData.minNumber;
+    if (cellData.roundNumber) cell!.roundNumber = cellData.roundNumber;
+    if (cellData.align) cell!.align = cellData.align;
+    if (cellData.verticalAlign) cell!.verticalAlign = cellData.verticalAlign;
+    if (cellData.overflowWrap) cell!.overflowWrap = cellData.overflowWrap;
+    if (cellData.wordBreak) cell!.wordBreak = cellData.wordBreak;
+    if (cellData.whiteSpace) cell!.whiteSpace = cellData.whiteSpace;
+    if (cellData.backColor) cell!.backColor = cellData.backColor;
+    if (cellData.fontColor) cell!.fontColor = cellData.fontColor;
+    if (cellData.fontBold) cell!.fontBold = cellData.fontBold;
+    if (cellData.fontItalic) cell!.fontItalic = cellData.fontItalic;
+    if (cellData.fontThruline) cell!.fontThruline = cellData.fontThruline;
+    if (cellData.fontUnderline) cell!.fontUnderline = cellData.fontUnderline;
+    if (cellData.value) cell!.value = cellData.value;
     reConnectedCallbackElement(cell!);
-    reloadGridWithModifyCell(grid, cell!._colInfo.index!);
+    reloadGridWithModifyCell(grid, cell!.index!);
     return true;
 };
 export const _getDataTypeStyle = (grid: Grid) => {
-    const dataTypeStyle = {};
+    const dataTypeStyle: any = {};
     Object.keys(grid._vg.dataType).forEach((key) => {
         if(grid._vg.dataType[key].cellStyle) {
             (dataTypeStyle as any)[key] = grid._vg.dataType[key].cellStyle;
