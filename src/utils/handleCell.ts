@@ -7,7 +7,7 @@ import { getCutByteLength, getOnlyNumberWithNaNToNull, isValidDate, nvl, removeA
 
 export const isCellVisible = (cell: Cell) => {
     if (!cell) return;
-    return !(cell._colInfo.colVisible === false || cell._colInfo.rowVisible === false || cell._colInfo.filter === true);
+    return !(cell.colVisible === false || cell.rowVisible === false || cell.filter === true);
 };
 export const getFirstCellValidNumber = (footerCell: Cell) => {
     let returnNumber;
@@ -15,7 +15,7 @@ export const getFirstCellValidNumber = (footerCell: Cell) => {
     for(let r = 1; r < footerCell._grid.getRowCount(); r++ ) {
         tempCell = _getCell(footerCell._grid, r, footerCell._col);
         if (!isCellVisible(tempCell!)) continue;
-        returnNumber = getOnlyNumberWithNaNToNull(tempCell!._value);
+        returnNumber = getOnlyNumberWithNaNToNull(tempCell!.value);
         if (returnNumber) return returnNumber;
     }
     return null;
@@ -79,7 +79,7 @@ export const createGridEditorTextarea = (cell: Cell) => {
     setBagicAttributesToGridEditor(gridEditor, cell);
     gridEditor.placeholder;
     gridEditor.classList.add(gridEditor.gId + '_editor_textarea');
-    const value = cell._grid._gridInfo.nullValue === cell._value? null : cell._value;
+    const value = cell._grid._gridInfo.nullValue === cell.value? null : cell.value;
     cell._grid._vg._status.editOldValue = value;
     gridEditor.value = cell._grid._vg._status.editOldValue; 
     
@@ -107,7 +107,7 @@ export const createGridEditorNumber = (cell: Cell) => {
     setBagicAttributesToGridEditor(gridEditor, cell);
     gridEditor.classList.add((gridEditor as any).gId + '_editor_number');
     gridEditor.setAttribute('type','number');
-    const value = cell._grid._gridInfo.nullValue === cell._value? null : cell._value;
+    const value = cell._grid._gridInfo.nullValue === cell.value? null : cell.value;
     cell._grid._vg._status.editOldValue = value;
     gridEditor.value = cell._grid._vg._status.editOldValue; 
     addBagicEventListenerToGridEditor(gridEditor, cell._grid);
@@ -118,7 +118,7 @@ export const createGridEditorDate = (cell: Cell) => {
     setBagicAttributesToGridEditor(gridEditor, cell);
     gridEditor.classList.add((gridEditor as any).gId + '_editor_date');
     gridEditor.setAttribute('type','date');
-    cell._grid._vg._status.editOldValue = getDateWithInputDateFormat(cell._value);
+    cell._grid._vg._status.editOldValue = getDateWithInputDateFormat(cell.value);
     gridEditor.value = cell._grid._vg._status.editOldValue;
     addBagicEventListenerToGridEditor(gridEditor, cell._grid);
     return gridEditor;
@@ -128,7 +128,7 @@ export const createGridEditorMonth = (cell: Cell) => {
     setBagicAttributesToGridEditor(gridEditor, cell);
     gridEditor.classList.add((gridEditor as any).gId + '_editor_month');
     gridEditor.setAttribute('type','month');
-    cell._grid._vg._status.editOldValue = getDateWithInputMonthFormat(cell._value);
+    cell._grid._vg._status.editOldValue = getDateWithInputMonthFormat(cell.value);
     gridEditor.value = cell._grid._vg._status.editOldValue;
     addBagicEventListenerToGridEditor(gridEditor, cell._grid);
     return gridEditor;
@@ -138,7 +138,7 @@ export const createGridEditorMask = (cell: Cell) => {
     setBagicAttributesToGridEditor(gridEditor, cell);
     gridEditor.classList.add((gridEditor as any).gId + '_editor_mask');
     gridEditor.setAttribute('type','text');
-    const value = cell._grid._gridInfo.nullValue === cell._value? null : cell._value;
+    const value = cell._grid._gridInfo.nullValue === cell.value? null : cell.value;
     cell._grid._vg._status.editOldValue = value;
     gridEditor.value = cell._grid._vg._status.editOldValue; 
     gridEditor.addEventListener('keyup', function (e: any) {
@@ -152,19 +152,19 @@ export const createGridEditorCode = (cell: Cell) => {
     setBagicAttributesToGridEditor(gridEditor, cell);
     gridEditor.classList.add((gridEditor as any).gId + '_editor_code');
     gridEditor.setAttribute('type','text');
-    const value = cell._value;
+    const value = cell.value;
     cell._grid._vg._status.editOldValue = value;
     gridEditor.value = cell._grid._vg._status.editOldValue;
     addBagicEventListenerToGridEditor(gridEditor, cell._grid);
     return gridEditor;
 };
 export const createGridEditor = (cell: Cell, isEnterKey = false) => {
-    if (cell._colInfo.locked || cell._colInfo.untarget) return;
-    if (['select','checkbox','button','link'].indexOf(cell._colInfo.dataType!) >= 0) return;
+    if (cell.locked || cell.untarget) return;
+    if (['select','checkbox','button','link'].indexOf(cell.dataType!) >= 0) return;
     
     removeGridEditor(cell._grid._vg._status.activeGridEditor);
     let gridEditor: any;
-    switch (cell._colInfo.dataType) {
+    switch (cell.dataType) {
         case 'text':
             gridEditor = createGridEditorTextarea(cell);
             break;
@@ -185,7 +185,7 @@ export const createGridEditor = (cell: Cell, isEnterKey = false) => {
             break;
         default:
             Object.keys(cell._grid._vg.dataType).forEach((key) => {
-                if(cell._colInfo.dataType === key) {
+                if(cell.dataType === key) {
                     if(cell._grid._vg.dataType[key].getEditor) {
                         if(typeof cell._grid._vg.dataType[key].getEditor !== 'function') throw new Error('getEditor must be a function.');
                         const call_endEdit = () => {
@@ -203,7 +203,7 @@ export const createGridEditor = (cell: Cell, isEnterKey = false) => {
                             (gridEditor as any).targetCell = cell;
                             gridEditor.classList.add((gridEditor as any).gId + '_editor_' + key);
                             gridEditor.classList.add((gridEditor as any).gId + '_editor');
-                            cell._grid._vg._status.editOldValue = cell._value;
+                            cell._grid._vg._status.editOldValue = cell.value;
                         }
                     }
                 }
@@ -222,22 +222,22 @@ export const createGridEditor = (cell: Cell, isEnterKey = false) => {
 export const getValidValue = (cell: Cell, value: any) => {
     const nullValue = nvl(cell._grid._gridInfo.nullValue, null);
     if (!cell) return null;
-    if (cell._colInfo.dataType !== 'code') {
+    if (cell.dataType !== 'code') {
         if (value === undefined || value === null || value === '') return nullValue;
         if (value === nullValue) return nullValue;
     }
 
-    switch (cell._colInfo.dataType) {
+    switch (cell.dataType) {
         case 'text':
-            if (cell._colInfo.maxLength) {
-                value = value.substring(0, cell._colInfo.maxLength);
+            if (cell.maxLength) {
+                value = value.substring(0, cell.maxLength);
             }
-            if (cell._colInfo.maxByte) {
-                value = getCutByteLength(value, cell._colInfo.maxByte, cell._grid._vg.checkByte);
+            if (cell.maxByte) {
+                value = getCutByteLength(value, cell.maxByte, cell._grid._vg.checkByte);
             }
             return value;
         case 'mask':
-            return nvl(getMaskValue(cell._colInfo.format!, value), nullValue);
+            return nvl(getMaskValue(cell.format!, value), nullValue);
         case 'date':
             return nvl(getDateWithValueDateFormat(value), nullValue);
         case 'month':
@@ -246,9 +246,9 @@ export const getValidValue = (cell: Cell, value: any) => {
             value = getOnlyNumberWithNaNToNull(value);
             if(value === null) return nullValue
 
-            const max = cell._colInfo.maxNumber;
-            const min = cell._colInfo.minNumber;
-            const dp = cell._colInfo.roundNumber;
+            const max = cell.maxNumber;
+            const min = cell.minNumber;
+            const dp = cell.roundNumber;
 
             if (max !== null && max !== undefined && typeof max === 'number' && value > max) {
                 value = max;
@@ -279,11 +279,11 @@ export const getValidValue = (cell: Cell, value: any) => {
         case 'link':
             return value;
         case 'code':
-            return getCodeValue(cell._colInfo.codes!, cell._colInfo.defaultCode, value);
+            return getCodeValue(cell.codes!, cell.defaultCode, value);
         default:
             if(cell._grid._vg.dataType) {
                 Object.keys(cell._grid._vg.dataType).forEach((key) => {
-                    if(cell._colInfo.dataType === key) {
+                    if(cell.dataType === key) {
                         if(cell._grid._vg.dataType[key].getValue) {
                             if(typeof cell._grid._vg.dataType[key].getValue !== 'function') throw new Error('getValue must be a function.');
                             value = cell._grid._vg.dataType[key].getValue(value);
@@ -297,8 +297,8 @@ export const getValidValue = (cell: Cell, value: any) => {
 export const getCellText =  (cell: Cell) => {
     if (!cell) return '';
     let cellText: any = '';
-    let value = nvl(cell._value, cell._grid._gridInfo.nullValue);
-    switch (cell._colInfo.dataType) {
+    let value = nvl(cell.value, cell._grid._gridInfo.nullValue);
+    switch (cell.dataType) {
         case 'number':
             if(value === cell._grid._gridInfo.nullValue) cellText = value;
             else cellText = nvl(getFormatNumberFromCell(cell), cell._grid._gridInfo.nullValue);
@@ -312,22 +312,22 @@ export const getCellText =  (cell: Cell) => {
             else cellText = nvl(getDateWithGridMonthFormat(cell), cell._grid._gridInfo.nullValue);
             break;
         case 'select':
-            if (Array.isArray(cell._value) && cell._value.length > 0) {
-                cellText = cell._value[0].text;
-                for(const option of cell._value) {
+            if (Array.isArray(cell.value) && cell.value.length > 0) {
+                cellText = cell.value[0].text;
+                for(const option of cell.value) {
                     if (option.selected) cellText = option.text;
                 }
                 if(cellText === null || cellText === undefined) cellText = cell._grid._gridInfo.nullValue;
             }
             break;
         case 'link':
-            cellText = cell._value && cell._value.text ? cell._value.text : value;
+            cellText = cell.value && cell.value.text ? cell.value.text : value;
             break;
         default:
             cellText = value;
             if(cell._grid._vg.dataType) {
                 Object.keys(cell._grid._vg.dataType).forEach((key) => {
-                    if(cell._colInfo.dataType === key) {
+                    if(cell.dataType === key) {
                         if(cell._grid._vg.dataType[key].getText) {
                             if(typeof cell._grid._vg.dataType[key].getText !== 'function') throw new Error('getText must be a function.');
                             cellText = cell._grid._vg.dataType[key].getText(cellText);
@@ -417,9 +417,9 @@ export const getFormatNumber = (format: string, value: any) => {
     return prefix + result + suffix;
 };
 export const getFormatNumberFromCell = (cell: Cell) => {
-    if(!cell._colInfo.format) return cell._value;
-    if(cell._value === null || cell._value === undefined) return null;
-    return getFormatNumber(cell._colInfo.format, cell._value);
+    if(!cell.format) return cell.value;
+    if(cell.value === null || cell.value === undefined) return null;
+    return getFormatNumber(cell.format, cell.value);
 };
 export const getDateWithValueDateFormat = (dateStr: string) => {
     if(!dateStr || typeof dateStr !== 'string') return null;
@@ -501,7 +501,7 @@ export const getDateWithInputMonthFormat = (dateStr: string) => {
 };
 export const getDateWithGridDateFormat = (cell: Cell) => {
     const pattern = /^(\d{4})[-/.]?(\d{2})[-/.]?(\d{2})$/;
-    const match = pattern.exec(cell._value);
+    const match = pattern.exec(cell.value);
     
     if (!match) {
         return null;
@@ -547,7 +547,7 @@ export const getDateWithGridDateFormat = (cell: Cell) => {
 };
 export const getDateWithGridMonthFormat = (cell: Cell) => {
     const pattern = /^(\d{4})[-/.]?(\d{2})$/;
-    const match = pattern.exec(cell._value);
+    const match = pattern.exec(cell.value);
         if (!match) {
         return null;
     }
@@ -580,20 +580,20 @@ export const getDateWithGridMonthFormat = (cell: Cell) => {
     }
 };
 export const getCheckboxCellTrueOrFalse = (cell: Cell) => {
-    const value = cell._value;
+    const value = cell.value;
     const checkedValue = cell._grid._gridInfo.checkedValue;
     const uncheckedValue = cell._grid._gridInfo.uncheckedValue;
     if (typeof value === 'boolean') {
         if (value) {
-            cell._value = checkedValue;
+            cell.value = checkedValue;
         }
         else {
-            cell._value = uncheckedValue;
+            cell.value = uncheckedValue;
         }
         return value;
     }
     if (value !== checkedValue) {
-        cell._value = uncheckedValue;
+        cell.value = uncheckedValue;
         return false;
     }
     return true;
