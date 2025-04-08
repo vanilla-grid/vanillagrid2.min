@@ -1,4 +1,4 @@
-import type { GridInfo } from "./gridInfo";
+import type { GridCssInfo, GridInfo } from "./gridInfo";
 import type { ColInfo } from "./colInfo";
 import type { CellData } from "./cell";
 import { Align, ColorSet, SelectionPolicy, VerticalAlign } from "./enum";
@@ -238,7 +238,7 @@ export interface GridMethods {
      * 
      * @returns An object containing the grid's information.
      */
-    getGridInfo(): GridInfo;
+    getGridInfo(): GridInfo & { id: string; cssInfo: GridCssInfo };
     /**
      * Loads data into the grid.
      * 
@@ -2690,7 +2690,7 @@ export interface GridMethods {
      * @param cellDatas - Array of cell data objects (`CellData[]`).
      * @returns `true` if row data is set successfully.
      */
-    setRowDatas(row: number, cellDatas: CellData): boolean;
+    setRowDatas(row: number, cellDatas: CellData[]): boolean;
     /**
      * Retrieves data objects for all cells in the specified row.
      *
@@ -2703,7 +2703,7 @@ export interface GridMethods {
      * @param row - Row index.
      * @returns Array of cell data objects.
      */
-    getRowDatas(row: number): Record<string, any>[];
+    getRowDatas(row: number): CellData[];
     /**
      * Sets multiple cell values at once for the specified row.
      *
@@ -2967,7 +2967,7 @@ export interface GridMethods {
      * @param func (rowDatas: Record<string, any>[]) => boolean - Find only rows that return true.
      * @returns The sequence array of rows that return true with func.
      */
-    searchRowsWithFunction(func: (rowDatas: Record<string, any>[]) => boolean): number[];
+    searchRowsWithFunction(func: (rowDatas: CellData[]) => boolean): number[];
     /**
      * Returns rows for which the return value is true through the matchFunction inserted by the user.
      * The result value of getRowDatas(row) is passed as a parameter to matchFunction. Returns the rows as Datas [[{},{}..],[{},{}..]...].
@@ -2980,7 +2980,7 @@ export interface GridMethods {
      * @param func (rowDatas: Record<string, any>[]) => boolean - Find only rows that return true.
      * @returns The row array of rows that return true with func.
      */
-    searchRowDatasWithFunction(func: Function): Record<string, any>[][];
+    searchRowDatasWithFunction(func: (rowDatas: CellData[]) => boolean): Record<string, any>[][];
     /**
      * Returns rows for which the return value is true through the matchFunction inserted by the user.
      * The result value of getRowDatas(row) is passed as a parameter to matchFunction. Returns the rows as keyValues [{},{}... ].
@@ -2993,7 +2993,7 @@ export interface GridMethods {
      * @param func (rowDatas: Record<string, any>[]) => boolean - Find only rows that return true.
      * @returns The values array of rows that return true with func.
      */
-    searchRowValuesWithFunction(func: Function): Record<string, any>[];
+    searchRowValuesWithFunction(func: (rowDatas: CellData[]) => boolean): Record<string, any>[];
     /**
      * Changes the information of the cell in the colId or colIndex column in the row-th row.
      * cellData is an object in the form {id:'colId', value:'value'...}. Returns true if it operates normally.
