@@ -8,8 +8,8 @@ import { deepCopy, extractNumberAndUnit, nvl, removeAllChild } from "./utils";
 
 export const modifyColSize = (grid: Grid, targetCell: Cell, modifySize: number) => {
     if (!targetCell) return;
-    if (!targetCell._colInfo.resizable) return;
-    if (targetCell._colInfo.id === 'v-g-rownum' || targetCell._colInfo.id === 'v-g-status') return;
+    if (!targetCell.resizable) return;
+    if (targetCell.colId === 'v-g-rownum' || targetCell.colId === 'v-g-status') return;
 
     const styleGridTemplateColumnsArr = grid.gridHeader.style.gridTemplateColumns.split(' ');
     const oldColWidth = styleGridTemplateColumnsArr[targetCell._col - 1];
@@ -38,15 +38,15 @@ export const changeColSize = (grid: Grid, targetCol: number, changeSize: number)
     const isVisible = changeSize !== 0;
     for(let row = 1; row <= grid.getHeaderRowCount(); row++) {
         const tempHeaderCell = _getHeaderCell(grid, row, targetCol);
-        tempHeaderCell._colInfo.colVisible = isVisible;
+        tempHeaderCell.colVisible = isVisible;
         reConnectedCallbackElement(tempHeaderCell);
     }
     for(let row = 1; row <= grid.getRowCount(); row++) {
-        _getCell(grid, row, targetCol)!._colInfo.colVisible = isVisible;
+        _getCell(grid, row, targetCol)!.colVisible = isVisible;
     }
     for(let row = 1; row <= grid.getFooterRowCount(); row++) {
         const tempFooterCell = _getFooterCell(grid, row, targetCol);
-        tempFooterCell._colInfo.colVisible = isVisible;
+        tempFooterCell.colVisible = isVisible;
         reConnectedCallbackElement(tempFooterCell);
     }
     
@@ -66,12 +66,12 @@ export const changeColSize = (grid: Grid, targetCol: number, changeSize: number)
 export const modifyCellValue = (cell: Cell, value: any, records: CellRecord[], isMethodCalled = false) => {
     if (!isMethodCalled) {
         if (!isCellVisible(cell)) return;
-        if (cell._colInfo.untarget || cell._colInfo.locked) return;
+        if (cell.untarget || cell.locked) return;
     }
     value = getValidValue(cell, value);
-    if (cell._value === value) return;
+    if (cell.value === value) return;
 
-    const oldValue = cell._value;
+    const oldValue = cell.value;
     const newValue = value;
     
     if (records && Array.isArray(records)) {
@@ -83,17 +83,17 @@ export const modifyCellValue = (cell: Cell, value: any, records: CellRecord[], i
     }
     
     if(!cell._grid.getRowStatus(cell._row)) cell._grid.setRowStatus(cell._row, 'U');
-    cell._value  = value;
+    cell.value  = value;
     reConnectedCallbackElement(cell);
-    reloadGridWithModifyCell(cell._grid, cell._colInfo.index!);
+    reloadGridWithModifyCell(cell._grid, cell.index!);
 };
 export const modifyCell = (vg: Vanillagrid) => {
     if (!vg._status.activeGridEditor) return;
     let cell = vg._status.activeGridEditor.parentNode as Cell;
-    if (cell._colInfo.untarget || cell._colInfo.locked) return;
+    if (cell.untarget || cell.locked) return;
     vg._status.editNewValue = (vg._status.activeGridEditor as any).value;
     Object.keys(vg.dataType).forEach((key) => {
-        if(cell._colInfo.dataType === key) {
+        if(cell.dataType === key) {
             if(vg.dataType[key].getEditedValue) {
                 if(typeof vg.dataType[key].getEditedValue !== 'function') throw new Error('getEditedValue must be a function.');
                 vg._status.editNewValue = vg.dataType[key].getEditedValue(vg._status.activeGridEditor!, __getData(cell));
@@ -113,12 +113,12 @@ export const sort = (grid: Grid, arr: CellData[][], id: string, isAsc = true, is
     const copiedArr = deepCopy(arr);
     
     copiedArr.sort((a: CellData[], b: CellData[]) => {
-        const aItem = a.find((item: CellData) => item._colInfo.id === id);
-        const bItem = b.find((item: CellData) => item._colInfo.id === id);
-        let aValue = aItem ? aItem._value : null
-        const aDataType = aItem ? aItem._colInfo.dataType : null
-        let bValue = bItem ? bItem._value : null
-        const bDataType = bItem ? bItem._colInfo.dataType : null
+        const aItem = a.find((item: CellData) => item.colId === id);
+        const bItem = b.find((item: CellData) => item.colId === id);
+        let aValue = aItem ? aItem.value : null
+        const aDataType = aItem ? aItem.dataType : null
+        let bValue = bItem ? bItem.value : null
+        const bDataType = bItem ? bItem.dataType : null
         
         let _isNumSort = isNumSort;
         if (typeof aValue === 'number' || typeof bValue === 'number') _isNumSort = true;
@@ -170,7 +170,7 @@ export const sort = (grid: Grid, arr: CellData[][], id: string, isAsc = true, is
                         aValue = grid._vg.dataType[key].getSortValue(aValue);
                     }
                     else {
-                        aValue = aItem!._text
+                        aValue = aItem!.text
                     }
                 }
                 if(bDataType === key) {
@@ -179,7 +179,7 @@ export const sort = (grid: Grid, arr: CellData[][], id: string, isAsc = true, is
                         bValue = grid._vg.dataType[key].getSortValue(bValue);
                     }
                     else {
-                        bValue = bItem!._text
+                        bValue = bItem!.text
                     }
                 }
             });
@@ -237,14 +237,14 @@ export const reloadFilterValue = (grid: Grid, colId: number | string) => {
     for(let r = 1; r <= grid.getRowCount(); r++) {
         let filterValue;
         let tempCell = _getCell(grid, r, colInfo!.index!);
-        if (!tempCell || !tempCell._colInfo.rowVisible || !tempCell._colInfo.colVisible) continue;
+        if (!tempCell || !tempCell.rowVisible || !tempCell.colVisible) continue;
         filterValue = getCellText(tempCell);
 
         Object.keys(grid._vg.dataType).forEach((key) => {
-            if(tempCell._colInfo.dataType === key) {
+            if(tempCell.dataType === key) {
                 if(grid._vg.dataType[key].getFilterValue) {
                     if(typeof grid._vg.dataType[key].getFilterValue !== 'function') throw new Error('getFilterValue must be a function.');
-                    filterValue = grid._vg.dataType[key].getFilterValue(tempCell._value);
+                    filterValue = grid._vg.dataType[key].getFilterValue(tempCell.value);
                 }
             }
         });
@@ -304,10 +304,10 @@ export const reloadColForMerge = (grid: Grid, colIndex: number) => {
         
         for(r = 1; r <= grid.getRowCount(); r++) {
             nowCell = _getCell(grid, r, c!);
-            delete nowCell!._rowSpan;
-            delete nowCell!._isRowMerge;
-            delete nowCell!._colSpan;
-            delete nowCell!._isColMerge;
+            delete nowCell!.rowSpan;
+            delete nowCell!.isRowMerge;
+            delete nowCell!.colSpan;
+            delete nowCell!.isColMerge;
         }
         
         for(r = 2; r <= grid.getRowCount(); r++) {
@@ -315,17 +315,17 @@ export const reloadColForMerge = (grid: Grid, colIndex: number) => {
             nowCell = _getCell(grid, r, c!);
             if (preCell
                 && isCellVisible(preCell)
-                && preCell._colInfo.dataType === nowCell!._colInfo.dataType
+                && preCell.dataType === nowCell!.dataType
                 && getCellText(preCell) === getCellText(nowCell!)
             ) {
                 for(let rSpan = preCell._row - 1; rSpan > 0; rSpan--) {
                     preCell = _getCell(grid, rSpan, c!);
-                    if (preCell!._isRowMerge !== true) {
-                        preCell!._rowSpan = nvl(preCell!._rowSpan, 1) + 1;
+                    if (preCell!.isRowMerge !== true) {
+                        preCell!.rowSpan = nvl(preCell!.rowSpan, 1) + 1;
                         break;
                     }
                 }
-                nowCell!._isRowMerge = true;
+                nowCell!.isRowMerge = true;
             }
         }
         
@@ -340,10 +340,10 @@ export const reloadColForMerge = (grid: Grid, colIndex: number) => {
         for(r = 1; r <= grid.getRowCount(); r++) {
             for(c = colInfo.index! - 1; c <= colInfo.index!; c++) {
                 nowCell = _getCell(grid, r, c!);
-                delete nowCell!._rowSpan;
-                delete nowCell!._isRowMerge;
-                delete nowCell!._colSpan;
-                delete nowCell!._isColMerge;
+                delete nowCell!.rowSpan;
+                delete nowCell!.isRowMerge;
+                delete nowCell!.colSpan;
+                delete nowCell!.isColMerge;
             }
         }
         
@@ -353,17 +353,17 @@ export const reloadColForMerge = (grid: Grid, colIndex: number) => {
             nowCell = cells[r - 1][c - 1]
             if (preCell
                 && isCellVisible(preCell)
-                && preCell._colInfo.dataType === nowCell._colInfo.dataType
+                && preCell.dataType === nowCell.dataType
                 && getCellText(preCell) === getCellText(nowCell)
             ) {
                 for(let cSpan = preCell._col - 1; cSpan > 2; cSpan--) {
                     preCell = cells[r - 1][cSpan];
-                    if (preCell._isColMerge !== true) {
-                        preCell._colSpan = nvl(preCell._colSpan, 1) + 1;
+                    if (preCell.isColMerge !== true) {
+                        preCell.colSpan = nvl(preCell.colSpan, 1) + 1;
                         break;
                     }
                 }
-                nowCell._isColMerge = true;
+                nowCell.isColMerge = true;
             }
         }
         
@@ -395,7 +395,7 @@ export const reloadFooterValue = (grid: Grid) => {
     const footerCells = _getFooterCells(grid);
     for(const footers of footerCells) {
         for(const footerCell of footers) {
-            if (footerCell._colInfo.footer !== null && footerCell._colInfo.footer !== undefined) {
+            if (footerCell.footer !== null && footerCell.footer !== undefined) {
                 reConnectedCallbackElement(footerCell);
             }
         }
@@ -406,7 +406,7 @@ export const reloadFooterValue = (grid: Grid) => {
 export const setGridDataRowCol = (el: Cell, row: number, col: number) => {
     el._row = row;
     el._col = col;
-    el._colInfo.index = col;
+    el.index = col;
     setGridDataPosition(el);
 };
 export const setGridDataPosition = (el: Cell) => {
@@ -419,16 +419,16 @@ export const setGridDataPosition = (el: Cell) => {
 };
 //수정필요 cell data 형태
 export const getGridCell = (gId: string, colInfo: ColInfo, valueOrData: any, rowCount: number, colCount: number) => {
-    let data, dataKey, tempData;
+    let data, dataKey;
 
     if (valueOrData && valueOrData.constructor === Object) {
         data = {
-            value : valueOrData[colInfo.id]
+            value : valueOrData[colInfo.colId]
         };
     }
     else if (valueOrData && Array.isArray(valueOrData)) {
-        for(tempData of valueOrData) {
-            if (tempData.id === colInfo.id) {
+        for(const tempData of valueOrData) {
+            if (tempData.colId === colInfo.colId) {
                 data = tempData;
                 break;
             }
@@ -448,21 +448,21 @@ export const getGridCell = (gId: string, colInfo: ColInfo, valueOrData: any, row
     Object.keys(colInfo).forEach(key => {
         if (['header', 'footer', 'rowMerge', 'colMerge', 'filterValue','index'].indexOf(key) < 0) {
             dataKey = key.charAt(1).toLowerCase() + key.slice(2);
-            (tempGridData as any)._colInfo[key] = dataKey in data ? data[dataKey] : colInfo[key as keyof ColInfo];
+            (tempGridData as any)[key] = dataKey in data ? data[dataKey] : colInfo[key as keyof ColInfo];
         }
     });
-    switch (tempGridData._colInfo.id) {
+    switch (tempGridData.colId) {
         case 'v-g-rownum':
-            tempGridData._value = rowCount;
+            tempGridData.value = rowCount;
             break;
         case 'v-g-status':
-            tempGridData._value = getCodeValue(['C','U','D'], null, data.value);
+            tempGridData.value = getCodeValue(['C','U','D'], null, data.value);
             break;
         default:
-            tempGridData._value = getValidValue(tempGridData, data.value);
+            tempGridData.value = getValidValue(tempGridData, data.value);
             break;
     }
-    if (colInfo.filterable && tempGridData._colInfo.colVisible) colInfo.filterValues!.add(tempGridData.textContent!);
+    if (colInfo.filterable && tempGridData.colVisible) colInfo.filterValues!.add(tempGridData.textContent!);
     setGridDataRowCol(tempGridData, rowCount, colCount);
     return tempGridData as Cell;
 };
