@@ -9,16 +9,6 @@ export interface Cell extends CellData, HTMLElement{
      * The ID of the grid to which the cell belongs.
      */
     _grid: Grid;
-    _frozenCol?: boolean;
-    _frozenRow?: boolean;
-    _isLastCell?: boolean;
-}
-
-
-/**
- * The data that a cell contains.
- */
-export interface CellData {
     /**
      * The ID of the grid to which the cell belongs.
      */
@@ -28,10 +18,6 @@ export interface CellData {
      */
     _type: string;
     /**
-     * The value that the cell has
-     */
-    _value: any;
-    /**
      * Row position of a cell in a grid
      */
     _row: number;
@@ -39,27 +25,39 @@ export interface CellData {
      * Column position of a cell in a grid
      */
     _col: number;
+    _frozenCol?: boolean;
+    _frozenRow?: boolean;
+    _isLastCell?: boolean;
+}
+
+
+/**
+ * The data that a cell contains.
+ */
+export interface CellData extends Omit<ColInfo, 'header' | 'footer'> {
+    /**
+     * The value that the cell has
+     */
+    value: any;
+    text?: string;
     /**
      * How many rows span a cell in a grid
      */
-    _rowSpan?: number;
+    rowSpan?: number;
     /**
      * How many cols span a cell in a grid
      */
-    _colSpan?: number;
+    colSpan?: number;
     /**
      * Whether the cell uses the row Merge feature.
      */
-    _isRowMerge?: boolean;
+    isRowMerge?: boolean;
     /**
      * Whether the cell uses the col Merge feature.
      */
-    _isColMerge?: boolean;
-    _text?: string;
-    /**
-     * colInfo which cell has
-     */
-    _colInfo: ColInfo & { header: string | null;  footer: string | null }
+    isColMerge?: boolean;
+    header: string | null;
+    footer: Function | string | null;
 }
 
 /**
