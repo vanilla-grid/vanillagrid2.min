@@ -1,10 +1,9 @@
-import { Grid, Vanillagrid, VanillagridConfig } from "../types/vanillagrid";
-import { DefaultGridCssInfo, DefaultGridInfo, GridInfo } from "../types/gridInfo";
+import { Vanillagrid, VanillagridConfig } from "../types/vanillagrid";
+import { DefaultGridCssInfo, DefaultGridInfo } from "../types/gridInfo";
 import { DefaultColInfo } from "../types/colInfo";
 import { SelectionPolicy, VerticalAlign } from "../types/enum";
-import { deepFreeze } from "../utils/utils";
-import { Cell, CellData } from "../types/cell";
-import { modifyCell, sort } from "../utils/handleElement";
+import { Cell } from "../types/cell";
+import { modifyCell } from "../utils/handleElement";
 import { copyGrid, getMoveColCell, getMoveRowCell, getTabCell, pasteGrid, redoundo, selectAndCheckboxOnChange, selectCell, selectCells, stopScrolling, unselectCells } from "../utils/handleActive";
 import { ___getDatasWithoutExceptedProperty, __getData, _getCell } from "../utils/handleGrid";
 import { createGridEditor } from "../utils/handleCell";
@@ -285,7 +284,7 @@ export const initVanillagrid = () => {
             const endCell = vg._status.activeGrid._variables._activeCells[vg._status.activeGrid._variables._activeCells.length - 1];
             let newTargetCell: Cell;
             Object.keys(vg.dataType).forEach((key) => {
-                if(vg._status.activeGrid!._variables._targetCell!._colInfo.dataType === key) {
+                if(vg._status.activeGrid!._variables._targetCell!.dataType === key) {
                     if(vg.dataType[key].onSelectedAndKeyDown) {
                         if(typeof vg.dataType[key].onSelectedAndKeyDown !== 'function') throw new Error('onSelectedAndKeyDown must be a function.');
                         if(vg.dataType[key].onSelectedAndKeyDown(e, __getData(vg._status.activeGrid!._variables._targetCell!)) === false) {
@@ -305,12 +304,12 @@ export const initVanillagrid = () => {
                     e.preventDefault();
                     break;
                 case 'Enter':
-                    if (vg._status.activeGrid._variables._targetCell!._colInfo.dataType === 'select') {
+                    if (vg._status.activeGrid._variables._targetCell!.dataType === 'select') {
                         vg._status.editOldValue = (vg._status.activeGrid._variables._targetCell as any).firstChild.value;
                         (vg._status.activeGrid._variables._targetCell as any).firstChild.focus();
                     }
-                    else if (vg._status.activeGrid._variables._targetCell!._colInfo.dataType === 'checkbox') {
-                        vg._status.editOldValue = vg._status.activeGrid._variables._targetCell!._value;
+                    else if (vg._status.activeGrid._variables._targetCell!.dataType === 'checkbox') {
+                        vg._status.editOldValue = vg._status.activeGrid._variables._targetCell!.value;
                         (vg._status.activeGrid._variables._targetCell as any).firstChild.checked = !(vg._status.activeGrid._variables._targetCell as any).firstChild.checked;
                         selectAndCheckboxOnChange(vg._status.activeGrid._variables._targetCell!.firstChild);
                         
@@ -318,34 +317,34 @@ export const initVanillagrid = () => {
                         selectCell(newTargetCell);
                         e.preventDefault();
                     }
-                    else if (['text','number','date','month','mask','code'].indexOf(vg._status.activeGrid._variables._targetCell!._colInfo.dataType!) >= 0) {
+                    else if (['text','number','date','month','mask','code'].indexOf(vg._status.activeGrid._variables._targetCell!.dataType!) >= 0) {
                         createGridEditor(vg._status.activeGrid._variables._targetCell!, true);
                         e.preventDefault();
                     }
                     break;
                 case ' ':
-                    if (vg._status.activeGrid._variables._targetCell!._colInfo.dataType === 'select') {
-                        if (vg._status.activeGrid._variables._targetCell!._colInfo.untarget || vg._status.activeGrid._variables._targetCell!._colInfo.locked) {
+                    if (vg._status.activeGrid._variables._targetCell!.dataType === 'select') {
+                        if (vg._status.activeGrid._variables._targetCell!.untarget || vg._status.activeGrid._variables._targetCell!.locked) {
                             e.preventDefault();
                             return;
                         }
                         vg._status.editOldValue = (vg._status.activeGrid._variables._targetCell as any).firstChild.value;
                         (vg._status.activeGrid._variables._targetCell as any).firstChild.focus();
                     }
-                    else if (vg._status.activeGrid._variables._targetCell!._colInfo.dataType === 'button') {
+                    else if (vg._status.activeGrid._variables._targetCell!.dataType === 'button') {
                         (vg._status.activeGrid._variables._targetCell as any).firstChild.focus();
                     }
-                    else if (vg._status.activeGrid._variables._targetCell!._colInfo.dataType === 'checkbox') {
-                        if (vg._status.activeGrid._variables._targetCell!._colInfo.untarget || vg._status.activeGrid._variables._targetCell!._colInfo.locked) {
+                    else if (vg._status.activeGrid._variables._targetCell!.dataType === 'checkbox') {
+                        if (vg._status.activeGrid._variables._targetCell!.untarget || vg._status.activeGrid._variables._targetCell!.locked) {
                             e.preventDefault();
                             return;
                         }
-                        vg._status.editOldValue = vg._status.activeGrid._variables._targetCell!._value;
+                        vg._status.editOldValue = vg._status.activeGrid._variables._targetCell!.value;
                         (vg._status.activeGrid._variables._targetCell as any).firstChild.checked = !(vg._status.activeGrid._variables._targetCell as any).firstChild.checked;
                         selectAndCheckboxOnChange(vg._status.activeGrid._variables._targetCell!.firstChild);
                         e.preventDefault();
                     }
-                    else if (['text','number','date','month','mask','code'].indexOf(vg._status.activeGrid._variables._targetCell!._colInfo.dataType!) >= 0) {
+                    else if (['text','number','date','month','mask','code'].indexOf(vg._status.activeGrid._variables._targetCell!.dataType!) >= 0) {
                         createGridEditor(vg._status.activeGrid._variables._targetCell!);
                         e.preventDefault();
                     }
