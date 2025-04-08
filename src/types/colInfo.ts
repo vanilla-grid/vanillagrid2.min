@@ -7,7 +7,7 @@ export interface ColInfo {
     /**
      * Required value. It is the id of the column.
      */
-    id: string;
+    colId: string;
     /**
      * The column's sequence number. For maintenance purposes, it is recommended to use an ID rather than a default value.
      */
@@ -210,7 +210,7 @@ export interface ColInfo {
  * Simplifies column setup and ensures consistency.
  */
 export interface DefaultColInfo extends Omit<ColInfo,
-'id' |
+'colId' |
 'index' |
 'name' |
 'header' |
