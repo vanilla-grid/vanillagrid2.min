@@ -1,6 +1,6 @@
-import { Cell, CellData, CellRecord } from "../types/cell";
-import { ColInfo } from "../types/colInfo";
-import { Grid, Vanillagrid } from "../types/vanillagrid";
+import type { Grid, Vanillagrid } from "../types/vanillagrid";
+import type { ColInfo } from "../types/colInfo";
+import type { Cell, CellData, CellRecord } from "../types/cell";
 import { getRecordsWithModifyValue, reConnectedCallbackElement, recordGridModify } from "./handleActive";
 import { getCellText, getCodeValue, getValidValue, isCellVisible, removeGridEditor } from "./handleCell";
 import { __getColInfo, __getData, __getHeaderFilter, _getCell, _getCells, _getFooterCell, _getFooterCells, _getHeaderCell } from "./handleGrid";

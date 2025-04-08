@@ -1,7 +1,6 @@
-import { Cell } from "../types/cell";
-import { footerUnit } from "../types/enum";
-import { GridInfo } from "../types/gridInfo";
 import type { Grid, Vanillagrid } from "../types/vanillagrid";
+import type { Cell } from "../types/cell";
+import { footerUnit } from "../types/enum";
 import { getFirstCellValidNumber, getFormatNumber, isCellVisible } from "./handleCell";
 import { _doFilter, _getCell, _getCellChildNode, _getDataTypeStyle, _getFilterSpan, _getFooterCell, _getFooterCells, _getFooterFormula, _getHeaderCell } from "./handleGrid";
 import { extractNumberAndUnit, getCssTextFromObject, getOnlyNumberWithNaNToNull, getOnlyNumberWithNaNToZero, removeAllChild } from "./utils";
@@ -785,15 +784,15 @@ export const injectCustomElement = (vg: Vanillagrid) => {
                                 break;
                         }
                     }
-                    if (_cell.cOverflowWrap) _cell.style.overflowWrap = _cell.cOverflowWrap;
-                    if (_cell.cWordBreak) _cell.style.wordBreak = _cell.cWordBreak;
-                    if (_cell.cWhiteSpace) _cell.style.whiteSpace = _cell.cWhiteSpace;
-                    if (_cell.cBackColor) _cell.style.backgroundColor = _cell.cBackColor;
-                    if (_cell.cFontColor) _cell.firstChild.style._color = _cell.cFontColor;
-                    if (_cell.cFontBold) _cell.firstChild.style.fontWeight = 'bold';
-                    if (_cell.cFontItalic) _cell.firstChild.style.fontStyle = 'italic';
-                    if (_cell.cFontThruline) _cell.firstChild.style.textDecoration = 'line-through';
-                    if (_cell.cFontUnderline) _cell.firstChild.style.textDecoration = 'underline';
+                    if (_cell.overflowWrap) _cell.style.overflowWrap = _cell.overflowWrap;
+                    if (_cell.wordBreak) _cell.style.wordBreak = _cell.wordBreak;
+                    if (_cell.whiteSpace) _cell.style.whiteSpace = _cell.whiteSpace;
+                    if (_cell.backColor) _cell.style.backgroundColor = _cell.backColor;
+                    if (_cell.fontColor) (_cell.firstChild as any).style._color = _cell.fontColor;
+                    if (_cell.fontBold) (_cell.firstChild as any).fontWeight = 'bold';
+                    if (_cell.fontItalic) (_cell.firstChild as any).fontStyle = 'italic';
+                    if (_cell.fontThruline) (_cell.firstChild as any).textDecoration = 'line-through';
+                    if (_cell.fontUnderline) (_cell.firstChild as any).textDecoration = 'underline';
                     if (!_cell.colVisible || !_cell.rowVisible) {
                         _cell.style.display = 'none';
                     }
@@ -809,30 +808,30 @@ export const injectCustomElement = (vg: Vanillagrid) => {
                         _cell.classList.add(_cell._gridId + '_b-v-g-d');
                         _cell.classList.remove(_cell._gridId + '_b-v-g-d-alter');
                     }
-                    if (_cell.cLocked && _cell.cLockedColor) {
+                    if (_cell.locked && _cell.lockedColor) {
                         _cell.classList.add(_cell._gridId + '_b-v-g-d-locked');
                     }
                     else {
                         _cell.classList.remove(_cell._gridId + '_b-v-g-d-locked');
                     }
-                    if(_cell.cLocked) {
-                        if (_cell.dataType === 'select' && _cell.firstChild && _cell.firstChild.nType == 'select') {
-                            _cell.firstChild.disabled = true;
-                            _cell.firstChild.style.pointerEvents = 'none';
+                    if(_cell.locked) {
+                        if (_cell.dataType === 'select' && _cell.firstChild && (_cell.firstChild as any).nType == 'select') {
+                            (_cell.firstChild as any).disabled = true;
+                            (_cell.firstChild as any).style.pointerEvents = 'none';
                         }
-                        else if (_cell.dataType === 'checkbox' && _cell.firstChild && _cell.firstChild.nType == 'checkbox') {
-                            _cell.firstChild.disabled = true;
-                            _cell.firstChild.style.pointerEvents = 'none';
+                        else if (_cell.dataType === 'checkbox' && _cell.firstChild && (_cell.firstChild as any).nType == 'checkbox') {
+                            (_cell.firstChild as any).disabled = true;
+                            (_cell.firstChild as any).style.pointerEvents = 'none';
                         }
                     }
-                    if (_cell.cUntarget) {
-                        if (_cell.dataType === 'button' && _cell.firstChild && _cell.firstChild.nType == 'button') {
-                            _cell.firstChild.disabled = true;
-                            _cell.firstChild.style.pointerEvents = 'none';
+                    if (_cell.untarget) {
+                        if (_cell.dataType === 'button' && _cell.firstChild && (_cell.firstChild as any).nType == 'button') {
+                            (_cell.firstChild as any).disabled = true;
+                            (_cell.firstChild as any).style.pointerEvents = 'none';
                         }
-                        else if (_cell.dataType === 'link' && _cell.firstChild && _cell.firstChild.nType == 'link') {
-                            _cell.firstChild.style.opacity = '0.8';
-                            _cell.firstChild.style.pointerEvents = 'none';
+                        else if (_cell.dataType === 'link' && _cell.firstChild && (_cell.firstChild as any).nType == 'link') {
+                            (_cell.firstChild as any).style.opacity = '0.8';
+                            (_cell.firstChild as any).style.pointerEvents = 'none';
                         }
                     }
                     break;
@@ -842,7 +841,7 @@ export const injectCustomElement = (vg: Vanillagrid) => {
             _cell.classList.add(_cell._gridId + '_v-g-d');
     
             _cell.addEventListener('mouseover', function (e) {
-                if (!_cell.cUntarget && _cell._type === 'gbd') {
+                if (!_cell.untarget && _cell._type === 'gbd') {
                     _cell.classList.add(_cell._gridId + '_mouseover-cell');
                     if (_cell.dataType === 'link') {
                         const childList = _cell.querySelectorAll('*');
@@ -854,7 +853,7 @@ export const injectCustomElement = (vg: Vanillagrid) => {
             });
     
             _cell.addEventListener('mouseout', function (e) {
-                if (!_cell.cUntarget && _cell._type === 'gbd') {
+                if (!_cell.untarget && _cell._type === 'gbd') {
                     _cell.classList.remove(_cell._gridId + '_mouseover-cell');
                     if (_cell.dataType === 'link') {
                         const childList = _cell.querySelectorAll('*');
@@ -866,5 +865,5 @@ export const injectCustomElement = (vg: Vanillagrid) => {
             });
         }
     }
-    if (!customElements.get('v-g-d')) customElements.define('v-g-d', vg._GridData); 
+    if (!customElements.get('v-g-d')) customElements.define('v-g-d', vg._GridData);
 }

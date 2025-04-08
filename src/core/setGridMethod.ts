@@ -1,15 +1,15 @@
 import type { Grid, Vanillagrid } from "../types/vanillagrid";
 import type { ColInfo } from "../types/colInfo";
+import type { CellData } from "../types/cell";
+import { Align, alignUnit, enumWidthUnit, SelectionPolicy, selectionPolicyUnit, statusUnit, VerticalAlign, verticalAlignUnit } from "../types/enum";
 import { ___getDatasWithoutExceptedProperty, __checkColIndex, __checkColRownumOrStatus, __checkRowIndex, __clear, __getColIndex, __getColInfo, __getData, __getDefaultColInfo, __getHeaderFilter, __gridBodyCellsReConnected, __gridCellReConnectedWithControlSpan, __loadFooter, __loadHeader, __mountGridBodyCell, __setCellData, _doFilter, _getCell, _getFooterCell, _getHeaderCell } from "../utils/handleGrid";
 import { changeColSize, getGridCell, reloadFilterValue, reloadFooterValue, reloadGridForMerge, reloadGridWithModifyCell, sort } from "../utils/handleElement";
 import { checkIsValueOrData, deepCopy, extractNumberAndUnit, getArrayElementWithBoundCheck, getColorFromColorSet, getHexColorFromColorName, getOnlyNumberWithNaNToNull, getVerticalAlign, isIncludeEnum, removeAllChild, setColorSet, setInvertColor, validateIntegerAndZero, validateNumber, validatePositiveIntegerAndZero } from "../utils/utils";
 import { focusCell, getRecordsWithModifyValue, reConnectedCallbackElement, recordGridModify, redoundo, selectCell, selectCells, unselectCells } from "../utils/handleActive";
-import { CellData } from "../types/cell";
-import { setGridCssStyle } from "../utils/createElement";
-import { Align, alignUnit, enumWidthUnit, SelectionPolicy, selectionPolicyUnit, statusUnit, VerticalAlign, verticalAlignUnit } from "../types/enum";
 import { createGridEditor, getCellText, getValidValue, isCellVisible } from "../utils/handleCell";
+import { setGridCssStyle } from "../utils/createElement";
 
-const setGridMethod = (vg: Vanillagrid, grid: Grid) => {
+export const setGridMethod = (vg: Vanillagrid, grid: Grid) => {
     grid.getHeaderRowCount = () => {
         let count = 0;
         for(const colInfo of grid._colInfos) {

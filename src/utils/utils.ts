@@ -1,7 +1,6 @@
+import type { CheckByte } from "../types/vanillagrid";
 import type { GridCssInfo } from "../types/gridInfo";
-import type { Cell } from "../types/cell";
 import { ColorSet, VerticalAlign } from "../types/enum";
-import { CheckByte } from "../types/vanillagrid";
 
 export const validateNumber = (param: string | number) => {
     const number = Number(param);

@@ -1,12 +1,15 @@
-import { Vanillagrid, VanillagridConfig } from "../types/vanillagrid";
-import { DefaultGridCssInfo, DefaultGridInfo } from "../types/gridInfo";
-import { DefaultColInfo } from "../types/colInfo";
+import type { Grid, Vanillagrid, VanillagridConfig } from "../types/vanillagrid";
+import type { DefaultGridCssInfo, DefaultGridInfo } from "../types/gridInfo";
+import type { DefaultColInfo } from "../types/colInfo";
+import type { Cell } from "../types/cell";
 import { SelectionPolicy, VerticalAlign } from "../types/enum";
-import { Cell } from "../types/cell";
 import { modifyCell } from "../utils/handleElement";
 import { copyGrid, getMoveColCell, getMoveRowCell, getTabCell, pasteGrid, redoundo, selectAndCheckboxOnChange, selectCell, selectCells, stopScrolling, unselectCells } from "../utils/handleActive";
 import { ___getDatasWithoutExceptedProperty, __getData, _getCell } from "../utils/handleGrid";
 import { createGridEditor } from "../utils/handleCell";
+import { injectCustomElement } from "../utils/createElement";
+import { mountVanillagrid } from "./mountVanillagrid";
+import { unmountVanillagrid } from "./unmountVanillagrid";
 
 let singletonVanillagrid: Vanillagrid | null = null;
 
@@ -53,10 +56,10 @@ export const getVanillagrid = (config?: VanillagridConfig): Vanillagrid => {
             mouseoverCell: null,
             scrollInterval: null,
         },
-        init() {},
-        mount(element?: HTMLElement) {},
-        destroy() {},
-        unmount(element?: HTMLElement) {},
+        init() { initVanillagrid(); },
+        mount(element?: HTMLElement) { mountVanillagrid(singletonVanillagrid!, element) },
+        destroy() { destroyVanillagrid() },
+        unmount(element?: HTMLElement) { unmountVanillagrid(singletonVanillagrid!, element) },
     }
 
     return vanillagrid as Vanillagrid;
@@ -203,7 +206,7 @@ export const getVanillagridConfig = (): VanillagridConfig => {
     return vanillagridConfig;
 }
 
-export const initVanillagrid = () => {
+const initVanillagrid = () => {
     /*
     const dataTypeUnit = {
         TEXT: 'text',
@@ -450,4 +453,26 @@ export const initVanillagrid = () => {
     };
     document.removeEventListener('paste', vg.documentEvent.paste);
     document.addEventListener('paste', vg.documentEvent.paste);
+
+    injectCustomElement(vg);
+    vg._initialized = true;
+}
+
+const destroyVanillagrid = () => {
+    if(!singletonVanillagrid) return;
+    Object.values(singletonVanillagrid.grids).forEach((grid: Grid | null) => {
+        const vanillagrid = document.getElementById(grid!._id);
+        const stylesSheet = document.getElementById(grid!._id + '_styles-sheet');
+        if (vanillagrid) (vanillagrid as any).parentNode.removeChild(vanillagrid);
+        if (stylesSheet) (stylesSheet as any).parentNode.removeChild(stylesSheet);
+        delete singletonVanillagrid!.grids[grid!._id];
+        grid = null;
+    });
+    document.removeEventListener('mousedown', singletonVanillagrid.documentEvent.mousedown!);
+    document.removeEventListener('mouseup', singletonVanillagrid.documentEvent.mouseup!);
+    document.removeEventListener('keydown', singletonVanillagrid.documentEvent.keydown!);
+    document.removeEventListener('copy', singletonVanillagrid.documentEvent.copy!);
+    document.removeEventListener('paste', singletonVanillagrid.documentEvent.paste!);
+
+    singletonVanillagrid = null;
 }

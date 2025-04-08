@@ -1,6 +1,6 @@
-import { Cell, CellData } from "../types/cell";
-import { ColInfo } from "../types/colInfo";
-import { Grid } from "../types/vanillagrid";
+import type { Grid } from "../types/vanillagrid";
+import type { ColInfo } from "../types/colInfo";
+import type { Cell, CellData } from "../types/cell";
 import { reConnectedCallbackElement, selectAndCheckboxOnChange } from "./handleActive";
 import { getCellText, getCheckboxCellTrueOrFalse, getDateWithGridDateFormat, getDateWithGridMonthFormat, getFormatNumberFromCell, setSelectOptions } from "./handleCell";
 import { modifyColSize, reloadGridForMerge, reloadGridWithModifyCell, setGridDataRowCol } from "./handleElement";

@@ -1,5 +1,5 @@
+import type { Grid } from "./vanillagrid";
 import type { ColInfo } from "./colInfo";
-import { Grid } from "./vanillagrid";
 
 /**
  * A special html element that data-cell inside the grid.

@@ -3,7 +3,7 @@ import type { ColInfo, DefaultColInfo } from "./colInfo";
 import type { DataType } from "./dataType";
 import type { GridMethods } from "./gridMethods";
 import type { documentEvent } from "./event";
-import { Cell, CellRecord } from "./cell";
+import type { Cell, CellRecord } from "./cell";
 
 /**
  * The main interface representing the Vanillagrid instance.
@@ -79,7 +79,7 @@ export interface Vanillagrid extends VanillagridConfig{
         filterOldValue: any | null,
         filterNewValue: any | null,
         mouseoverCell: HTMLElement | null,
-        scrollInterval: number | null,
+        scrollInterval: number | NodeJS.Timeout |  null,
     }
     _initialized: boolean;
 

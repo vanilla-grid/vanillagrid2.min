@@ -1,5 +1,5 @@
-import { Cell, CellRecord } from "../types/cell";
-import { Grid, Vanillagrid } from "../types/vanillagrid";
+import type { Grid, Vanillagrid } from "../types/vanillagrid";
+import type { Cell, CellRecord } from "../types/cell";
 import { getCellText, getSelectOptions, isCellVisible } from "./handleCell";
 import { modifyCellValue, reloadGridWithModifyCell, setGridDataPosition } from "./handleElement";
 import { __getData, _getCell, _getHeaderCell, _getRow } from "./handleGrid";

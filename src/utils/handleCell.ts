@@ -1,5 +1,5 @@
-import { Cell } from "../types/cell";
-import { Grid } from "../types/vanillagrid";
+import type { Grid } from "../types/vanillagrid";
+import type { Cell } from "../types/cell";
 import { getMoveRowCell, getTabCell, selectCell } from "./handleActive";
 import { modifyCell } from "./handleElement";
 import { __getData, _getCell } from "./handleGrid";

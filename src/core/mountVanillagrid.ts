@@ -1,15 +1,19 @@
-import { Cell } from "../types/cell";
-import { ColInfo } from "../types/colInfo";
-import { alignUnit, enumWidthUnit, selectionPolicyUnit, verticalAlignUnit } from "../types/enum";
 import type { Grid, GridBody, GridFooter, GridHeader, Vanillagrid } from "../types/vanillagrid";
+import type { ColInfo } from "../types/colInfo";
+import type { Cell } from "../types/cell";
+import { alignUnit, enumWidthUnit, selectionPolicyUnit, verticalAlignUnit } from "../types/enum";
 import { setGridCssStyle } from "../utils/createElement";
 import { selectCell, selectCells, startScrolling, stopScrolling, unselectCells } from "../utils/handleActive";
 import { createGridEditor, getCheckboxCellTrueOrFalse } from "../utils/handleCell";
 import { __getColInfo, __getData, _getCell } from "../utils/handleGrid";
 import { extractNumberAndUnit, getAttributeOnlyBoolean, getAttributeOnlyNumber, getAttributeOnlyNumberInteger, getAttributeOnlyNumberIntegerOrZero, getAttributeWithCheckRequired, getColorFromColorSet, isIncludeEnum, nvl, setColorSet, setInvertColor, toLowerCase } from "../utils/utils";
+import { setGridMethod } from "./setGridMethod";
 
-export const createVanillagrid = (vg: Vanillagrid) => {
-    const vanillagrids: NodeListOf<HTMLElement> = document.querySelectorAll('vanilla-grid');
+export const mountVanillagrid = (vg: Vanillagrid, targetElement?: HTMLElement) => {
+    if(!vg._initialized) throw new Error('Please initialize vanillagrid');
+    const targetEl = targetElement ? targetElement : document;
+
+    const vanillagrids: NodeListOf<HTMLElement> = targetEl.querySelectorAll('vanilla-grid');
     for(const vanillagrid of vanillagrids) {
         const gId = getAttributeWithCheckRequired('id', vanillagrid)!;
         if(vg.grids[gId]) throw new Error('There is a duplicate grid ID.');
@@ -342,6 +346,8 @@ export const createVanillagrid = (vg: Vanillagrid) => {
         grid.append(gridHeader);
         grid.append(gridBody);
         grid.append(gridFooter);
+
+        setGridMethod(vg, grid);
         vanillagrid.append(grid);
     }
 }
