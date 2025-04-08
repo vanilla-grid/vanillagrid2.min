@@ -3,7 +3,7 @@ import { footerUnit } from "../types/enum";
 import { GridInfo } from "../types/gridInfo";
 import type { Grid, Vanillagrid } from "../types/vanillagrid";
 import { getFirstCellValidNumber, getFormatNumber, isCellVisible } from "./handleCell";
-import { _doFilter, _getCell, _getDataTypeStyle, _getFilterSpan, _getFooterCell, _getFooterCells, _getFooterFormula, _getHeaderCell } from "./handleGrid";
+import { _doFilter, _getCell, _getCellChildNode, _getDataTypeStyle, _getFilterSpan, _getFooterCell, _getFooterCells, _getFooterFormula, _getHeaderCell } from "./handleGrid";
 import { extractNumberAndUnit, getCssTextFromObject, getOnlyNumberWithNaNToNull, getOnlyNumberWithNaNToZero, removeAllChild } from "./utils";
 
 export const getGridCssStyle = (grid: Grid) => {
@@ -305,34 +305,36 @@ export const injectCustomElement = (vg: Vanillagrid) => {
             super();
         }
         connectedCallback() {
-            const _grid = vg.grids[(this as any)._gridId];
-            const _gridInfo: GridInfo = _grid.getGridInfo();
+            const _cell: Cell = this as any;
+
+            const _grid = _cell._grid;
+            const _gridInfo = _grid.getGridInfo();
             
-            this.style.removeProperty('display');
-            this.style.removeProperty('align-items');
-            this.style.removeProperty('justify-content');
-            this.style.removeProperty('text-align');
-            this.style.removeProperty('z-index');
+            _cell.style.removeProperty('display');
+            _cell.style.removeProperty('align-items');
+            _cell.style.removeProperty('justify-content');
+            _cell.style.removeProperty('text-align');
+            _cell.style.removeProperty('z-index');
     
-            switch ((this as any)._type) {
+            switch (_cell._type) {
                 case 'ghd': 
-                    this.innerText = (this as any)._value;
+                    _cell.innerText = _cell.value;
                     
-                    if (_gridInfo.frozenRowCount! <= 0 && (this as any)._col <= _gridInfo.frozenColCount!) {
+                    if (_gridInfo.frozenRowCount! <= 0 && _cell._col <= _gridInfo.frozenColCount!) {
                         let leftElement;
                         let leftElementOffsetWidth = 0
     
-                        for(let c = (this as any)._col - 1; c > 0; c--) {
-                            leftElement = _getHeaderCell(_grid, (this as any)._row, c);
+                        for(let c = _cell._col - 1; c > 0; c--) {
+                            leftElement = _getHeaderCell(_grid, _cell._row, c);
                             if (!leftElement) {
                                 leftElementOffsetWidth = leftElementOffsetWidth + 0;
                             }
-                            else if (leftElement._isRowMerge) {
-                                let r = (this as any)._row - 1;
+                            else if (leftElement.isRowMerge) {
+                                let r = _cell._row - 1;
                                 let spanNode = _getHeaderCell(_grid, r, c);
                                 while(spanNode) {
                                     if (r < 0) break;
-                                    if (!spanNode._isRowMerge) {
+                                    if (!spanNode.isRowMerge) {
                                         break;
                                     }
                                     r--;
@@ -341,69 +343,69 @@ export const injectCustomElement = (vg: Vanillagrid) => {
                                 leftElementOffsetWidth = leftElementOffsetWidth + spanNode.offsetWidth;
                             }
                             else {
-                                leftElementOffsetWidth = leftElementOffsetWidth + _getHeaderCell(_grid, (this as any)._row, c).offsetWidth;
+                                leftElementOffsetWidth = leftElementOffsetWidth + _getHeaderCell(_grid, _cell._row, c).offsetWidth;
                             }
                         }
-                        this.style.position = 'sticky',
-                        this.style.zIndex = String(300 + _grid.getColCount() - (this as any)._col),
-                        this.style.left = leftElementOffsetWidth + 'px';
-                        (this as any)._frozenCol = true;
+                        _cell.style.position = 'sticky',
+                        _cell.style.zIndex = String(300 + _grid.getColCount() - _cell._col),
+                        _cell.style.left = leftElementOffsetWidth + 'px';
+                        _cell._frozenCol = true;
                     }
                     
-                    if ((this as any)._isRowMerge) {
-                        let r = (this as any)._row - 1;
-                        let spanNode = _getHeaderCell(_grid, r, (this as any)._col);
+                    if (_cell.isRowMerge) {
+                        let r = _cell._row - 1;
+                        let spanNode = _getHeaderCell(_grid, r, _cell._col);
                         while(spanNode) {
                             if (r < 0) break;
-                            if (!spanNode._isRowMerge) {
+                            if (!spanNode.isRowMerge) {
                                 
-                                spanNode.style.gridRowEnd = this.style.gridRowEnd;
-                                spanNode._rowSpan = spanNode._rowSpan ? spanNode._rowSpan + 1 : 1;
+                                spanNode.style.gridRowEnd = _cell.style.gridRowEnd;
+                                spanNode.rowSpan = spanNode.rowSpan ? spanNode.rowSpan + 1 : 1;
                                 spanNode.style.zIndex = spanNode.style.zIndex ? spanNode.style.zIndex : '250';
                                 break;
                             }
                             r--;
-                            spanNode = _getHeaderCell(_grid, r, (this as any)._col);
+                            spanNode = _getHeaderCell(_grid, r, _cell._col);
                         }
-                        this.style.display = 'none';
+                        _cell.style.display = 'none';
                     }
                     
-                    if ((this as any)._isColMerge) {
-                        let c = (this as any)._col - 1;
-                        let spanNode = _getHeaderCell(_grid, (this as any)._row, c);
+                    if (_cell.isColMerge) {
+                        let c = _cell._col - 1;
+                        let spanNode = _getHeaderCell(_grid, _cell._row, c);
                         while(spanNode) {
                             if (c < 0) break;
-                            if (!spanNode._isColMerge) {
-                                if (spanNode._colInfo.id === 'v-g-rownum' || spanNode._colInfo.id === 'v-g-status') break;
-                                spanNode.style.gridColumnEnd = this.style.gridColumnEnd;
-                                spanNode.style.width = extractNumberAndUnit(spanNode.style.width)!.number + this.offsetWidth + 'px';
-                                spanNode._colSpan = spanNode._colSpan ? spanNode._colSpan + 1 : 1;
+                            if (!spanNode.isColMerge) {
+                                if (spanNode.colId === 'v-g-rownum' || spanNode.colId === 'v-g-status') break;
+                                spanNode.style.gridColumnEnd = _cell.style.gridColumnEnd;
+                                spanNode.style.width = extractNumberAndUnit(spanNode.style.width)!.number + _cell.offsetWidth + 'px';
+                                spanNode.colSpan = spanNode.colSpan ? spanNode.colSpan + 1 : 1;
                                 spanNode.style.zIndex = spanNode.style.zIndex ? spanNode.style.zIndex : '250';
                                 break;
                             }
                             c--;
-                            spanNode = _getHeaderCell(_grid, (this as any)._row, c);
+                            spanNode = _getHeaderCell(_grid, _cell._row, c);
                         }
-                        this.style.display = 'none';
+                        _cell.style.display = 'none';
                     }
                     
-                    if (!(this as any)._colInfo.colVisible || !(this as any)._colInfo.rowVisible) {
-                        this.style.display = 'none';
+                    if (!_cell.colVisible || !_cell.rowVisible) {
+                        _cell.style.display = 'none';
                     }
                     
-                    if (_grid.getHeaderRowCount() === (this as any)._row) {
+                    if (_grid.getHeaderRowCount() === _cell._row) {
                         let targetCell: any = this;
-                        if ((this as any)._isRowMerge) {
-                            for(let r = (this as any)._row - 1; r > 0; r--) {
-                                targetCell = _getHeaderCell(_grid, r, (this as any)._col);
-                                if (targetCell._rowSpan) break;
+                        if (_cell.isRowMerge) {
+                            for(let r = _cell._row - 1; r > 0; r--) {
+                                targetCell = _getHeaderCell(_grid, r, _cell._col);
+                                if (targetCell.rowSpan) break;
                             }
                         }
                         if (targetCell) targetCell._isLastCell = true;
                     }
                     
-                    if (_gridInfo.filterable === true && _grid.getColInfo((this as any)._colInfo.id).filterable &&
-                        _grid.getHeaderRowCount() === (this as any)._row && (this as any)._colInfo.id !== 'v-g-rownum' && (this as any)._colInfo.id !== 'v-g-status') {
+                    if (_gridInfo.filterable === true && _grid.getColInfo(_cell.colId).filterable &&
+                        _grid.getHeaderRowCount() === _cell._row && _cell.colId !== 'v-g-rownum' && _cell.colId !== 'v-g-status') {
                         let filterSpan: any;
                         const vgFilterSpan = _getFilterSpan(_grid);
                         if(vgFilterSpan && vgFilterSpan instanceof HTMLElement && vgFilterSpan.nodeType === 1) {
@@ -413,29 +415,29 @@ export const injectCustomElement = (vg: Vanillagrid) => {
                             filterSpan = document.createElement('span');
                             filterSpan.innerText = 'σ';
                         }
-                        filterSpan._gridId = (this as any)._gridId;
+                        filterSpan._gridId = _cell._gridId;
                         filterSpan.isChild = true;
                         filterSpan._type = 'filter';
-                        filterSpan.classList.add((this as any)._gridId + '_filterSpan'); 
+                        filterSpan.classList.add(_cell._gridId + '_filterSpan'); 
     
                         const filterSelect: any = document.createElement('select');
-                        filterSelect.classList.add((this as any)._gridId + '_filterSelect'); 
+                        filterSelect.classList.add(_cell._gridId + '_filterSelect'); 
                         filterSelect.style.display = 'none';
-                        filterSelect._gridId = (this as any)._gridId;
-                        filterSelect._colInfo.id = (this as any)._colInfo.id;
-    
+                        filterSelect._grid = _cell._grid;
+                        filterSelect.colId = _cell.colId;
+
                         filterSelect.addEventListener('mousedown', function (e: any) {
                             this.filterOldValue = e.target.value;
                         })
-    
+
                         filterSelect.addEventListener('change', function (e: any) {
                             const filterNewValue = e.target.value;
-                            if ((window as any)[e.target.parentNode.parentNode._gridId + '_onChooseFilter'](e.target.parentNode.parentNode._row, e.target.parentNode.parentNode._colInfo.id, this.filterOldValue, filterNewValue) === false) {
+                            if ((window as any)[e.target.parentNode.parentNode.gId + '_onChooseFilter'](e.target.parentNode.parentNode.row, e.target.parentNode.parentNode.cId, this.filterOldValue, filterNewValue) === false) {
                                 e.stopPropagation();
                                 e.preventDefault();
                                 return;
                             }
-                            _doFilter(_grid);
+                            this._grid._doFilter();
                             if (filterNewValue === '$$ALL') {
                                 this.style.display = 'none';
                             }
@@ -444,34 +446,34 @@ export const injectCustomElement = (vg: Vanillagrid) => {
                         filterSpan.append(filterSelect);
     
                         let targetCell: any = this;
-                        if ((this as any)._isRowMerge) {
-                            for(let r = (this as any)._row - 1; r > 0; r--) {
-                                targetCell = _getHeaderCell(_grid, r, (this as any)._col);
-                                if (targetCell._rowSpan) break;
+                        if (_cell.isRowMerge) {
+                            for(let r = _cell._row - 1; r > 0; r--) {
+                                targetCell = _getHeaderCell(_grid, r, _cell._col);
+                                if (targetCell.rowSpan) break;
                             }
                         }
                         if (targetCell) targetCell.insertBefore(filterSpan, targetCell.firstChild);  
                     }
     
-                    this.classList.add((this as any)._gridId + '_h-v-g-d');
+                    _cell.classList.add(_cell._gridId + '_h-v-g-d');
                     break;
                 case 'gfd': 
                     
-                    if (_gridInfo.frozenRowCount! <= 0 && (this as any)._col <= _gridInfo.frozenColCount!) {
+                    if (_gridInfo.frozenRowCount! <= 0 && _cell._col <= _gridInfo.frozenColCount!) {
                         let leftElement;
                         let leftElementOffsetWidth = 0
     
-                        for(let c = (this as any)._col - 1; c > 0; c--) {
-                            leftElement = _getFooterCell(_grid, (this as any)._row, c);
+                        for(let c = _cell._col - 1; c > 0; c--) {
+                            leftElement = _getFooterCell(_grid, _cell._row, c);
                             if (!leftElement) {
                                 leftElementOffsetWidth = leftElementOffsetWidth + 0;
                             }
-                            else if (leftElement._isRowMerge) {
-                                let r = (this as any)._row - 1;
+                            else if (leftElement.isRowMerge) {
+                                let r = _cell._row - 1;
                                 let spanNode = _getFooterCell(_grid, r, c);
                                 while(spanNode) {
                                     if (r < 0) break;
-                                    if (!spanNode._isRowMerge) {
+                                    if (!spanNode.isRowMerge) {
                                         break;
                                     }
                                     r--;
@@ -480,41 +482,41 @@ export const injectCustomElement = (vg: Vanillagrid) => {
                                 leftElementOffsetWidth = leftElementOffsetWidth + spanNode.offsetWidth;
                             }
                             else {
-                                leftElementOffsetWidth = leftElementOffsetWidth + _getFooterCell(_grid, (this as any)._row, c).offsetWidth;
+                                leftElementOffsetWidth = leftElementOffsetWidth + _getFooterCell(_grid, _cell._row, c).offsetWidth;
                             }
                         }
-                        this.style.position = '-webkit-sticky',
-                        this.style.zIndex = '300',
-                        this.style.left = leftElementOffsetWidth + 'px';
-                        (this as any)._frozenCol = true;
+                        _cell.style.position = '-webkit-sticky',
+                        _cell.style.zIndex = '300',
+                        _cell.style.left = leftElementOffsetWidth + 'px';
+                        _cell._frozenCol = true;
                     }
                     
-                    if ((this as any)._colInfo.footer) {
-                        this.classList.add((this as any)._gridId + '_f-v-g-d-value');
+                    if (_cell.footer) {
+                        _cell.classList.add(_cell._gridId + '_f-v-g-d-value');
                         let preSibling;
                         try {
-                            preSibling = _getFooterCell(_grid, (this as any)._row, (this as any)._col - 1);
+                            preSibling = _getFooterCell(_grid, _cell._row, _cell._col - 1);
                         } catch (error) {
                             preSibling = null;
                         }
                         if (preSibling) {
-                            preSibling.classList.add((this as any)._gridId + '_f-v-g-d-value');
+                            preSibling.classList.add(_cell._gridId + '_f-v-g-d-value');
                         }
-                        if (Object.values(footerUnit).includes((this as any)._colInfo.footer)) {
+                        if (Object.values(footerUnit).includes((_cell as any).footer)) {
                             let footerNumber;
                             let tempNumber;
                             let tempCell;
-                            switch ((this as any)._colInfo.footer) {
+                            switch (_cell.footer) {
                                 case '$$MAX':
-                                    this.style.justifyContent = 'right';
-                                    this.style.textAlign = 'right';
+                                    _cell.style.justifyContent = 'right';
+                                    _cell.style.textAlign = 'right';
                                     if (_grid.getRowCount() > 0) {
                                         tempNumber = getFirstCellValidNumber((this as any));
                                         footerNumber = tempNumber;
                                         for(let r = 2; r <= _grid.getRowCount(); r++ ) {
-                                            tempCell = _getCell(_grid, r, (this as any)._col);
+                                            tempCell = _getCell(_grid, r, _cell._col);
                                             if (!isCellVisible(tempCell!)) continue;
-                                            tempNumber = getOnlyNumberWithNaNToNull(tempCell!._value);
+                                            tempNumber = getOnlyNumberWithNaNToNull(tempCell!.value);
                                             if (tempNumber !== null && tempNumber > footerNumber!) {
                                                 footerNumber = tempNumber;
                                             }
@@ -522,15 +524,15 @@ export const injectCustomElement = (vg: Vanillagrid) => {
                                     }
                                     break;
                                 case '$$MIN':
-                                    this.style.justifyContent = 'right';
-                                    this.style.textAlign = 'right';
+                                    _cell.style.justifyContent = 'right';
+                                    _cell.style.textAlign = 'right';
                                     if (_grid.getRowCount() > 0) {
                                         tempNumber = getFirstCellValidNumber((this as any));
                                         footerNumber = tempNumber;
                                         for(let r = 2; r <= _grid.getRowCount(); r++ ) {
-                                            tempCell = _getCell(_grid, r, (this as any)._col);
+                                            tempCell = _getCell(_grid, r, _cell._col);
                                             if (!isCellVisible(tempCell!)) continue;
-                                            tempNumber = getOnlyNumberWithNaNToNull(tempCell!._value);
+                                            tempNumber = getOnlyNumberWithNaNToNull(tempCell!.value);
                                             if (tempNumber !== null && tempNumber < footerNumber!) {
                                                 footerNumber = tempNumber;
                                             }
@@ -538,29 +540,29 @@ export const injectCustomElement = (vg: Vanillagrid) => {
                                     }
                                     break;
                                 case '$$SUM':
-                                    this.style.justifyContent = 'right';
-                                    this.style.textAlign = 'right';
+                                    _cell.style.justifyContent = 'right';
+                                    _cell.style.textAlign = 'right';
                                     if (_grid.getRowCount() > 0) {
                                         footerNumber = 0;
                                         for(let r = 1; r <= _grid.getRowCount(); r++ ) {
-                                            tempCell = _getCell(_grid, r, (this as any)._col);
+                                            tempCell = _getCell(_grid, r, _cell._col);
                                             if (!isCellVisible(tempCell!)) continue;
-                                            footerNumber = Math.round((footerNumber + getOnlyNumberWithNaNToZero(tempCell!._value)) * 100000) / 100000;
+                                            footerNumber = Math.round((footerNumber + getOnlyNumberWithNaNToZero(tempCell!.value)) * 100000) / 100000;
                                         }
                                     }
                                     break;
                                 case '$$AVG':
-                                    this.style.justifyContent = 'right';
-                                    this.style.textAlign = 'right';
+                                    _cell.style.justifyContent = 'right';
+                                    _cell.style.textAlign = 'right';
                                     if (_grid.getRowCount() > 0) {
                                         footerNumber = 0;
                                         tempNumber = 0;
                                         let count = 0;
                                         for(let r = 1; r <= _grid.getRowCount(); r++ ) {
-                                            tempCell = _getCell(_grid, r, (this as any)._col);
+                                            tempCell = _getCell(_grid, r, _cell._col);
                                             if (!isCellVisible(tempCell!)) continue;
-                                            footerNumber = Math.round((footerNumber + getOnlyNumberWithNaNToZero(tempCell!._value)) * 100000) / 100000;
-                                            if (tempCell!._value !== null && tempCell!._value !== undefined && !isNaN(tempCell!._value)) {
+                                            footerNumber = Math.round((footerNumber + getOnlyNumberWithNaNToZero(tempCell!.value)) * 100000) / 100000;
+                                            if (tempCell!.value !== null && tempCell!.value !== undefined && !isNaN(tempCell!.value)) {
                                                 count++;
                                             }
                                         }
@@ -579,55 +581,55 @@ export const injectCustomElement = (vg: Vanillagrid) => {
                                 footerNumber = '-'
                             }
                             else {
-                                footerNumber = getFormatNumber(_grid.getColFormat((this as any)._col)!, footerNumber)
+                                footerNumber = getFormatNumber(_grid.getColFormat(_cell._col)!, footerNumber)
                             }
-                            (this as any).innerText = footerNumber;
-                            (this as any)._value = footerNumber;
+                            _cell.innerText = footerNumber;
+                            _cell.value = footerNumber;
                         }
-                        else if (typeof (this as any)._colInfo.footer === 'function') {
-                            const functionResult = (this as any)._colInfo.footer(_grid.getValues());
-                            this.innerText = functionResult;
-                            (this as any)._value = functionResult;
+                        else if (typeof _cell.footer === 'function') {
+                            const functionResult = _cell.footer(_grid.getValues());
+                            _cell.innerText = functionResult;
+                            _cell.value = functionResult;
                         }
                         else {
-                            this.innerText = (this as any)._colInfo.footer;
-                            (this as any)._value = (this as any)._colInfo.footer;
+                            _cell.innerText = _cell.footer;
+                            _cell.value = _cell.footer;
     
                             const vgFooterFormula = _getFooterFormula(_grid);
                             if(vgFooterFormula.constructor === Object) {
                                 Object.keys(vgFooterFormula).forEach(key => {
-                                    if((this as any)._colInfo.footer === key) {
-                                        const result = vgFooterFormula[key](_grid.getColValues((this as any)._colInfo.index));
-                                        this.innerText = result;
-                                        (this as any)._value = result;
+                                    if(_cell.footer === key) {
+                                        const result = vgFooterFormula[key](_grid.getColValues(_cell.index!));
+                                        _cell.innerText = result;
+                                        _cell.value = result;
                                     }
                                 });
                             }
                         }
                     }
-                    if ((this as any).cAlign) {
-                        this.style.justifyContent = (this as any).cAlign;
-                        this.style.textAlign = (this as any).cAlign;
+                    if (_cell.align) {
+                        _cell.style.justifyContent = _cell.align;
+                        _cell.style.textAlign = _cell.align;
                     }
-                    if ((this as any)._col === _grid.getColCount()) {
-                        this.classList.add((this as any)._gridId + '_f-v-g-d-value');
+                    if (_cell._col === _grid.getColCount()) {
+                        _cell.classList.add(_cell._gridId + '_f-v-g-d-value');
                     }
-                    if (!(this as any)._colInfo.colVisible || !(this as any)._colInfo.rowVisible) {
-                        this.style.display = 'none';
+                    if (!_cell.colVisible || !_cell.rowVisible) {
+                        _cell.style.display = 'none';
                     }
-                    this.classList.add((this as any)._gridId + '_f-v-g-d');
+                    _cell.classList.add(_cell._gridId + '_f-v-g-d');
                     break;
                 case 'gbd': 
                     
-                    switch ((this as any)._colInfo.dataType) {
+                    switch (_cell.dataType) {
                         case 'text':
                         case 'mask':
-                            this.style.justifyContent = 'left';
-                            this.style.textAlign = 'left';
+                            _cell.style.justifyContent = 'left';
+                            _cell.style.textAlign = 'left';
                             break;
                         case 'number':
-                            this.style.justifyContent = 'right';
-                            this.style.textAlign = 'right';
+                            _cell.style.justifyContent = 'right';
+                            _cell.style.textAlign = 'right';
                             break;
                         case 'date':
                         case 'month':
@@ -636,228 +638,228 @@ export const injectCustomElement = (vg: Vanillagrid) => {
                         case 'checkbox':
                         case 'button':
                         case 'link':
-                            this.style.justifyContent = 'center';
-                            this.style.textAlign = 'center';
+                            _cell.style.justifyContent = 'center';
+                            _cell.style.textAlign = 'center';
                             break;
                         default:
-                            this.style.justifyContent = 'center';
-                            this.style.textAlign = 'center';
+                            _cell.style.justifyContent = 'center';
+                            _cell.style.textAlign = 'center';
     
                             const dataTypeStyle = _getDataTypeStyle(_grid);
                             Object.keys(dataTypeStyle).forEach((key) => {
-                                if((this as any)._colInfo.dataType === key) {
+                                if(_cell.dataType === key) {
                                     if(dataTypeStyle[key].constructor !== Object) throw new Error('Cellstyle can only be inserted in object type.');
                                     Object.keys(dataTypeStyle[key]).forEach((styleKey) => {
-                                        (this as any).style[styleKey] = dataTypeStyle[key][styleKey];
+                                        (_cell as any).style[styleKey] = dataTypeStyle[key][styleKey];
                                     });
                                 }
                             });
                             break;
                     }
-                    while (this.firstChild) {
-                        this.removeChild(this.firstChild);
+                    while (_cell.firstChild) {
+                        _cell.removeChild(_cell.firstChild);
                     }
-                    this.append(_grid._getCellChildNode(this));
+                    _cell.append(_getCellChildNode(_cell)!);
                     
-                    if ((this as any)._row <= _gridInfo.frozenRowCount) {
-                        let headerOffsetHeight = _grid._getHeader().offsetHeight;
+                    if (_cell._row <= _gridInfo.frozenRowCount!) {
+                        let headerOffsetHeight = _grid.gridHeader.offsetHeight;
                         let topElement;
                         let topElementOffsetHeight = 0;
-                        for(let r = (this as any)._row - 1; r > 0; r--) {
-                            topElement = _grid._getCell(r, (this as any)._col);
+                        for(let r = _cell._row - 1; r > 0; r--) {
+                            topElement = _getCell(_grid, r, _cell._col);
                             if (!topElement) {
                                 topElementOffsetHeight = topElementOffsetHeight + 0;
                             }
-                            else if (topElement._isColMerge) {
-                                let c = (this as any)._col - 1;
-                                let spanNode = _grid._getCell(r, c);
+                            else if (topElement.isColMerge) {
+                                let c = _cell._col - 1;
+                                let spanNode = _getCell(_grid, r, c)!;
                                 while(spanNode) {
                                     if (c < 0) break;
-                                    if (!spanNode._isColMerge) {
+                                    if (!spanNode.isColMerge) {
                                         break;
                                     }
                                     c--;
-                                    spanNode = _grid._getCell(r, c);
+                                    spanNode = _getCell(_grid, r, c)!;
                                 }
                                 topElementOffsetHeight = topElementOffsetHeight + spanNode.offsetHeight;
                             }
                             else {
-                                topElementOffsetHeight = topElementOffsetHeight + _grid._getCell(r, (this as any)._col).offsetHeight;
+                                topElementOffsetHeight = topElementOffsetHeight + _getCell(_grid, r, _cell._col)!.offsetHeight;
                             }
                         }
-                        this.style.position = 'sticky';
-                        this.style.zIndex = '200';
-                        this.style.top = headerOffsetHeight + topElementOffsetHeight + 'px';
-                        if ((this as any)._row === _gridInfo.frozenRowCount) this.style.borderBottom = _gridInfo.cssInfo.verticalBorderSize + 'px solid ' + _gridInfo.cssInfo.headerCellBorderColor;
-                        (this as any)._frozenCol = true;
+                        _cell.style.position = 'sticky';
+                        _cell.style.zIndex = '200';
+                        _cell.style.top = headerOffsetHeight + topElementOffsetHeight + 'px';
+                        if (_cell._row === _gridInfo.frozenRowCount) _cell.style.borderBottom = _gridInfo.cssInfo.verticalBorderSize + 'px solid ' + _gridInfo.cssInfo.headerCellBorderColor;
+                        _cell._frozenCol = true;
                     }
                     
-                    if (_gridInfo.frozenRowCount! <= 0 && (this as any)._col <= _gridInfo.frozenColCount!) {
+                    if (_gridInfo.frozenRowCount! <= 0 && _cell._col <= _gridInfo.frozenColCount!) {
                         let leftElement;
                         let leftElementOffsetWidth = 0
     
-                        for(let c = (this as any)._col - 1; c > 0; c--) {
-                            leftElement = _grid._getCell((this as any)._row, c);
+                        for(let c = _cell._col - 1; c > 0; c--) {
+                            leftElement = _getCell(_grid, _cell._row, c);
                             if (!leftElement) {
                                 leftElementOffsetWidth = leftElementOffsetWidth + 0;
                             }
-                            else if (leftElement._isRowMerge) {
-                                let r = (this as any)._row - 1;
-                                let spanNode = _grid._getCell(r, c);
+                            else if (leftElement.isRowMerge) {
+                                let r = _cell._row - 1;
+                                let spanNode = _getCell(_grid, r, c);
                                 while(spanNode) {
                                     if (r < 0) break;
-                                    if (!spanNode._isRowMerge) {
+                                    if (!spanNode.isRowMerge) {
                                         break;
                                     }
                                     r--;
-                                    spanNode = _grid._getCell(r, c);
+                                    spanNode = _getCell(_grid, r, c);
                                 }
-                                leftElementOffsetWidth = leftElementOffsetWidth + spanNode.offsetWidth;
+                                leftElementOffsetWidth = leftElementOffsetWidth + spanNode!.offsetWidth;
                             }
                             else {
-                                leftElementOffsetWidth = leftElementOffsetWidth + _grid._getCell((this as any)._row, c).offsetWidth;
+                                leftElementOffsetWidth = leftElementOffsetWidth + _getCell(_grid, _cell._row, c)!.offsetWidth;
                             }
                         }
-                        this.style.position = 'sticky';
-                        this.style.zIndex = '200';
-                        if ((this as any)._col === _gridInfo.frozenColCount) this.style.borderRight = _gridInfo.cssInfo.verticalBorderSize + 'px solid ' + _gridInfo.cssInfo.headerCellBorderColor;
-                        this.style.left = leftElementOffsetWidth + 'px';
-                        (this as any)._frozenRow = true;
+                        _cell.style.position = 'sticky';
+                        _cell.style.zIndex = '200';
+                        if (_cell._col === _gridInfo.frozenColCount) _cell.style.borderRight = _gridInfo.cssInfo.verticalBorderSize + 'px solid ' + _gridInfo.cssInfo.headerCellBorderColor;
+                        _cell.style.left = leftElementOffsetWidth + 'px';
+                        _cell._frozenRow = true;
                     }
                     
-                    if ((this as any)._isRowMerge) {
-                        let r = (this as any)._row - 1;
-                        let spanNode = _grid._getCell(r, (this as any)._col);
+                    if (_cell.isRowMerge) {
+                        let r = _cell._row - 1;
+                        let spanNode = _getCell(_grid, r, _cell._col);
                         while(spanNode) {
                             if (r < 0) break;
-                            if (!spanNode._isRowMerge) {
-                                spanNode.style.gridRowEnd = this.style.gridRowEnd;
-                                if (!spanNode.cVerticalAlign) spanNode.style.alignItems = 'center';
+                            if (!spanNode.isRowMerge) {
+                                spanNode.style.gridRowEnd = _cell.style.gridRowEnd;
+                                if (!spanNode.verticalAlign) spanNode.style.alignItems = 'center';
                                 spanNode.style.zIndex = spanNode.style.zIndex ? spanNode.style.zIndex : '50';
                                 break;
                             }
                             r--;
-                            spanNode = _grid._getCell(r, (this as any)._col);
+                            spanNode = _getCell(_grid, r, _cell._col);
                         }
                         
-                        if (isCellVisible(spanNode)) {
-                            this.style.display = 'none';
+                        if (isCellVisible(spanNode!)) {
+                            _cell.style.display = 'none';
                         }
                     }
                     
-                    if ((this as any)._isColMerge) {
-                        let c = (this as any)._col - 1;
-                        let spanNode = _grid._getCell((this as any)._row, c);
+                    if (_cell.isColMerge) {
+                        let c = _cell._col - 1;
+                        let spanNode = _getCell(_grid, _cell._row, c);
                         while(spanNode) {
                             if (c < 0) break;
-                            if (!spanNode._isColMerge) {
-                                spanNode.style.gridColumnEnd = this.style.gridColumnEnd;
+                            if (!spanNode.isColMerge) {
+                                spanNode.style.gridColumnEnd = _cell.style.gridColumnEnd;
                                 
-                                if (!spanNode.cAlign) spanNode.style.justifyContent = 'center';
-                                if (!spanNode.cAlign) spanNode.style.textAlign = 'center';
-                                if (!spanNode.cVerticalAlign) spanNode.style.alignItems = 'center';
+                                if (!spanNode.align) spanNode.style.justifyContent = 'center';
+                                if (!spanNode.align) spanNode.style.textAlign = 'center';
+                                if (!spanNode.verticalAlign) spanNode.style.alignItems = 'center';
                                 spanNode.style.zIndex = spanNode.style.zIndex ? spanNode.style.zIndex : '50';
                                 break;
                             }
                             c--;
-                            spanNode = _grid._getCell((this as any)._row, c);
+                            spanNode = _getCell(_grid, _cell._row, c);
                         }
-                        this.style.display = 'none';
+                        _cell.style.display = 'none';
                     }
                     
-                    if ((this as any).cAlign) {
-                        this.style.justifyContent = (this as any).cAlign;
-                        this.style.textAlign = (this as any).cAlign;
+                    if (_cell.align) {
+                        _cell.style.justifyContent = _cell.align;
+                        _cell.style.textAlign = _cell.align;
                     }
     
-                    if ((this as any).cVerticalAlign) {
-                        switch ((this as any).cVerticalAlign.toLowerCase()) {
+                    if (_cell.verticalAlign) {
+                        switch (_cell.verticalAlign.toLowerCase()) {
                             case 'top':
-                                this.style.alignItems = 'flex-start';
+                                _cell.style.alignItems = 'flex-start';
                                 break;
                             case 'bottom':
-                                this.style.alignItems = 'flex-end';
+                                _cell.style.alignItems = 'flex-end';
                                 break;
                             default:
-                                this.style.alignItems = 'center';
+                                _cell.style.alignItems = 'center';
                                 break;
                         }
                     }
-                    if ((this as any).cOverflowWrap) this.style.overflowWrap = (this as any).cOverflowWrap;
-                    if ((this as any).cWordBreak) this.style.wordBreak = (this as any).cWordBreak;
-                    if ((this as any).cWhiteSpace) this.style.whiteSpace = (this as any).cWhiteSpace;
-                    if ((this as any).cBackColor) this.style.backgroundColor = (this as any).cBackColor;
-                    if ((this as any).cFontColor) (this as any).firstChild.style._color = (this as any).cFontColor;
-                    if ((this as any).cFontBold) (this as any).firstChild.style.fontWeight = 'bold';
-                    if ((this as any).cFontItalic) (this as any).firstChild.style.fontStyle = 'italic';
-                    if ((this as any).cFontThruline) (this as any).firstChild.style.textDecoration = 'line-through';
-                    if ((this as any).cFontUnderline) (this as any).firstChild.style.textDecoration = 'underline';
-                    if (!(this as any)._colInfo.colVisible || !(this as any)._colInfo.rowVisible) {
-                        this.style.display = 'none';
+                    if (_cell.cOverflowWrap) _cell.style.overflowWrap = _cell.cOverflowWrap;
+                    if (_cell.cWordBreak) _cell.style.wordBreak = _cell.cWordBreak;
+                    if (_cell.cWhiteSpace) _cell.style.whiteSpace = _cell.cWhiteSpace;
+                    if (_cell.cBackColor) _cell.style.backgroundColor = _cell.cBackColor;
+                    if (_cell.cFontColor) _cell.firstChild.style._color = _cell.cFontColor;
+                    if (_cell.cFontBold) _cell.firstChild.style.fontWeight = 'bold';
+                    if (_cell.cFontItalic) _cell.firstChild.style.fontStyle = 'italic';
+                    if (_cell.cFontThruline) _cell.firstChild.style.textDecoration = 'line-through';
+                    if (_cell.cFontUnderline) _cell.firstChild.style.textDecoration = 'underline';
+                    if (!_cell.colVisible || !_cell.rowVisible) {
+                        _cell.style.display = 'none';
                     }
-                    if ((this as any)._colInfo.filter) {
-                        this.style.display = 'none';
+                    if (_cell.filter) {
+                        _cell.style.display = 'none';
                     }
                     
-                    if (_gridInfo.alterRow && (this as any)._row % 2 === 0) {
-                        this.classList.add((this as any)._gridId + '_b-v-g-d-alter');
-                        this.classList.remove((this as any)._gridId + '_b-v-g-d');
+                    if (_gridInfo.alterRow && _cell._row % 2 === 0) {
+                        _cell.classList.add(_cell._gridId + '_b-v-g-d-alter');
+                        _cell.classList.remove(_cell._gridId + '_b-v-g-d');
                     }
                     else {
-                        this.classList.add((this as any)._gridId + '_b-v-g-d');
-                        this.classList.remove((this as any)._gridId + '_b-v-g-d-alter');
+                        _cell.classList.add(_cell._gridId + '_b-v-g-d');
+                        _cell.classList.remove(_cell._gridId + '_b-v-g-d-alter');
                     }
-                    if ((this as any).cLocked && (this as any).cLockedColor) {
-                        this.classList.add((this as any)._gridId + '_b-v-g-d-locked');
+                    if (_cell.cLocked && _cell.cLockedColor) {
+                        _cell.classList.add(_cell._gridId + '_b-v-g-d-locked');
                     }
                     else {
-                        this.classList.remove((this as any)._gridId + '_b-v-g-d-locked');
+                        _cell.classList.remove(_cell._gridId + '_b-v-g-d-locked');
                     }
-                    if((this as any).cLocked) {
-                        if ((this as any)._colInfo.dataType === 'select' && this.firstChild && (this as any).firstChild.nType == 'select') {
-                            (this as any).firstChild.disabled = true;
-                            (this as any).firstChild.style.pointerEvents = 'none';
+                    if(_cell.cLocked) {
+                        if (_cell.dataType === 'select' && _cell.firstChild && _cell.firstChild.nType == 'select') {
+                            _cell.firstChild.disabled = true;
+                            _cell.firstChild.style.pointerEvents = 'none';
                         }
-                        else if ((this as any)._colInfo.dataType === 'checkbox' && this.firstChild && (this as any).firstChild.nType == 'checkbox') {
-                            (this as any).firstChild.disabled = true;
-                            (this as any).firstChild.style.pointerEvents = 'none';
+                        else if (_cell.dataType === 'checkbox' && _cell.firstChild && _cell.firstChild.nType == 'checkbox') {
+                            _cell.firstChild.disabled = true;
+                            _cell.firstChild.style.pointerEvents = 'none';
                         }
                     }
-                    if ((this as any).cUntarget) {
-                        if ((this as any)._colInfo.dataType === 'button' && this.firstChild && (this as any).firstChild.nType == 'button') {
-                            (this as any).firstChild.disabled = true;
-                            (this as any).firstChild.style.pointerEvents = 'none';
+                    if (_cell.cUntarget) {
+                        if (_cell.dataType === 'button' && _cell.firstChild && _cell.firstChild.nType == 'button') {
+                            _cell.firstChild.disabled = true;
+                            _cell.firstChild.style.pointerEvents = 'none';
                         }
-                        else if ((this as any)._colInfo.dataType === 'link' && this.firstChild && (this as any).firstChild.nType == 'link') {
-                            (this as any).firstChild.style.opacity = '0.8';
-                            (this as any).firstChild.style.pointerEvents = 'none';
+                        else if (_cell.dataType === 'link' && _cell.firstChild && _cell.firstChild.nType == 'link') {
+                            _cell.firstChild.style.opacity = '0.8';
+                            _cell.firstChild.style.pointerEvents = 'none';
                         }
                     }
                     break;
                 default:
                     break;
             }
-            this.classList.add((this as any)._gridId + '_v-g-d');
+            _cell.classList.add(_cell._gridId + '_v-g-d');
     
-            this.addEventListener('mouseover', function (e) {
-                if (!(this as any).cUntarget && (this as any)._type === 'gbd') {
-                    this.classList.add((this as any)._gridId + '_mouseover-cell');
-                    if ((this as any)._colInfo.dataType === 'link') {
-                        const childList = this.querySelectorAll('*');
+            _cell.addEventListener('mouseover', function (e) {
+                if (!_cell.cUntarget && _cell._type === 'gbd') {
+                    _cell.classList.add(_cell._gridId + '_mouseover-cell');
+                    if (_cell.dataType === 'link') {
+                        const childList = _cell.querySelectorAll('*');
                         childList.forEach(child => {
-                            child.classList.add((this as any)._gridId + '_mouseover-cell');
+                            child.classList.add(_cell._gridId + '_mouseover-cell');
                         });
                     }
                 }
             });
     
-            this.addEventListener('mouseout', function (e) {
-                if (!(this as any).cUntarget && (this as any)._type === 'gbd') {
-                    this.classList.remove((this as any)._gridId + '_mouseover-cell');
-                    if ((this as any)._colInfo.dataType === 'link') {
-                        const childList = this.querySelectorAll('*');
+            _cell.addEventListener('mouseout', function (e) {
+                if (!_cell.cUntarget && _cell._type === 'gbd') {
+                    _cell.classList.remove(_cell._gridId + '_mouseover-cell');
+                    if (_cell.dataType === 'link') {
+                        const childList = _cell.querySelectorAll('*');
                         childList.forEach(child => {
-                            child.classList.remove((this as any)._gridId + '_mouseover-cell');
+                            child.classList.remove(_cell._gridId + '_mouseover-cell');
                         });
                     }
                 }
