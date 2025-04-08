@@ -54,7 +54,7 @@ export const unselectCells = (grid: Grid) => {
     const selectedCells: NodeListOf<Cell> = grid.querySelectorAll('.' + grid._id + '_selected-cell');
     for(const cell of selectedCells) {
         cell.classList.remove(grid._id + '_selected-cell');
-        if (cell._colInfo.dataType === 'link' || cell._colInfo.dataType === 'select') {
+        if (cell.dataType === 'link' || cell.dataType === 'select') {
             const childList = cell.querySelectorAll('*');
             childList.forEach((child: Element) => {
                 child.classList.remove(grid._id + '_selected-cell');
@@ -62,7 +62,7 @@ export const unselectCells = (grid: Grid) => {
         }
         if(grid._vg.dataType) {
             Object.keys(grid._vg.dataType).forEach((key) => {
-                if(cell._colInfo.dataType === key) {
+                if(cell.dataType === key) {
                     if(grid._vg.dataType[key].onUnselected) {
                         if(typeof grid._vg.dataType[key].onUnselected !== 'function') throw new Error('onSelected must be a function.');
                         grid._vg.dataType[key].onUnselected(cell, __getData(cell));
@@ -98,10 +98,10 @@ export const selectCells = (startCell: Cell, endCell: Cell, _focusCell?: Cell) =
         for(let c = startCol; c <= endCol; c++) {
             if (r === startRow) startCell._grid._variables._activeCols.push(c);
             tempCell = _getCell(startCell._grid, r, c)!;
-            if (!tempCell._colInfo.untarget && isCellVisible(tempCell)) {
+            if (!tempCell.untarget && isCellVisible(tempCell)) {
                 startCell._grid._variables._activeCells.push(tempCell);
                 tempCell.classList.add(startCell._grid._id + '_selected-cell');
-                if (tempCell._colInfo.dataType === 'link' || tempCell._colInfo.dataType === 'select') {
+                if (tempCell.dataType === 'link' || tempCell.dataType === 'select') {
                     const childList = tempCell.querySelectorAll('*');
                     childList.forEach(child => {
                         child.classList.add(startCell._grid._id + '_selected-cell');
@@ -109,7 +109,7 @@ export const selectCells = (startCell: Cell, endCell: Cell, _focusCell?: Cell) =
                 }
                 if(startCell._grid._vg.dataType) {
                     Object.keys(startCell._grid._vg.dataType).forEach((key) => {
-                        if(tempCell._colInfo.dataType === key) {
+                        if(tempCell.dataType === key) {
                             if(startCell._grid._vg.dataType[key].onSelected) {
                                 if(typeof startCell._grid._vg.dataType[key].onSelected !== 'function') throw new Error('onSelected must be a function.');
                                 startCell._grid._vg.dataType[key].onSelected(tempCell, __getData(tempCell));
@@ -194,10 +194,10 @@ export const getCopyText = (copyCells: Cell[]) => {
         let cellRow = cell._row;
         let cellText = String(getCellText(cell));
         Object.keys(vg.dataType).forEach((key) => {
-            if(cell._colInfo.dataType === key) {
+            if(cell.dataType === key) {
                 if(vg.dataType[key].getCopyValue) {
                     if(typeof vg.dataType[key].getCopyValue !== 'function') throw new Error('getCopyValue must be a function.');
-                    cellText = vg.dataType[key].getCopyValue(cell._value);
+                    cellText = vg.dataType[key].getCopyValue(cell.value);
                 }
             }
         });
@@ -261,12 +261,12 @@ export const pasteGrid = (e: ClipboardEvent, grid: Grid) => {
         if (currentRowIndex > maxRow) return;
         const currentRow = _getRow(grid, currentRowIndex);
         
-        if (!currentRow[0]._colInfo.rowVisible || currentRow[0]._colInfo.filter) {
+        if (!currentRow[0].rowVisible || currentRow[0].filter) {
             unvisibleRowCount++;
             let nextRow = 1;
             let nextRowCell = _getCell(grid, currentRow[0]._row + nextRow, 1);
             while(nextRowCell) {
-                if (!nextRowCell._colInfo.rowVisible || nextRowCell._colInfo.filter) {
+                if (!nextRowCell.rowVisible || nextRowCell.filter) {
                     unvisibleRowCount++;
                 }
                 else {
@@ -287,12 +287,12 @@ export const pasteGrid = (e: ClipboardEvent, grid: Grid) => {
             if (currentColIndex >= maxCol) break;
             const cell = currentRow[currentColIndex];
             
-            if (!cell._colInfo.colVisible) {
+            if (!cell.colVisible) {
                 unvisibleColCount++;
                 let nextCol = 1;
                 let nextColCell = currentRow[currentColIndex + nextCol];
                 while(nextColCell) {
-                    if (!nextColCell._colInfo.colVisible) {
+                    if (!nextColCell.colVisible) {
                         unvisibleColCount++;
                     }
                     else {
@@ -305,13 +305,13 @@ export const pasteGrid = (e: ClipboardEvent, grid: Grid) => {
             }
 
             let colText = pasteCols[colIndex];
-            if (['select','checkbox','button','link'].indexOf(cell._colInfo.dataType!) < 0
-                && !cell._colInfo.untarget && !cell._colInfo.locked) {
+            if (['select','checkbox','button','link'].indexOf(cell.dataType!) < 0
+                && !cell.untarget && !cell.locked) {
                 colText = colText.replaceAll('"', '');
                 
                 let doPaste = true;
                 Object.keys(grid._vg.dataType).forEach((key) => {
-                    if(cell._colInfo.dataType === key) {
+                    if(cell.dataType === key) {
                         if(grid._vg.dataType[key].getPasteValue) {
                             if(typeof grid._vg.dataType[key].getPasteValue !== 'function') throw new Error('getPasteValue must be a function.');
                             colText = grid._vg.dataType[key].getPasteValue(__getData(cell), colText);
@@ -351,10 +351,10 @@ export const getTabCell = (targetCell: Cell, isNegative: boolean) => {
             newTargetCell = _getCell(targetCell._grid, row, col);
             if (!newTargetCell) {
             }
-            else if (newTargetCell._isRowMerge || newTargetCell._isColMerge) {
+            else if (newTargetCell.isRowMerge || newTargetCell.isColMerge) {
                 newTargetCell = null;
             }
-            else if (newTargetCell._colInfo.untarget) {
+            else if (newTargetCell.untarget) {
                 newTargetCell = null;
             }
             else if (!isCellVisible(newTargetCell)) {
@@ -380,10 +380,10 @@ export const getMoveRowCell = (targetCell: Cell, mRow: number) => {
         newTargetCell = _getCell(targetCell._grid, row, col);
         if (!newTargetCell) {
         }
-        else if (newTargetCell._isRowMerge || newTargetCell._isColMerge) {
+        else if (newTargetCell.isRowMerge || newTargetCell.isColMerge) {
             newTargetCell = null;
         }
-        else if (newTargetCell._colInfo.untarget) {
+        else if (newTargetCell.untarget) {
             newTargetCell = null;
         }
         else if (!isCellVisible(newTargetCell)) {
@@ -406,10 +406,10 @@ export const getMoveColCell = (targetCell: Cell, mCol: number) => {
         newTargetCell = _getCell(targetCell._grid, row, col);
         if (!newTargetCell) {
         }
-        else if (newTargetCell._isRowMerge || newTargetCell._isColMerge) {
+        else if (newTargetCell.isRowMerge || newTargetCell.isColMerge) {
             newTargetCell = null;
         }
-        else if (newTargetCell._colInfo.untarget) {
+        else if (newTargetCell.untarget) {
             newTargetCell = null;
         }
         else if (!isCellVisible(newTargetCell)) {
@@ -444,9 +444,9 @@ export const redoundo = (grid: Grid, isRedo?: boolean) => {
     if (!redoCellDatas || !Array.isArray(redoCellDatas)) return false;
     selectCell(redoCellDatas[0].cell);
     for(const redoCellData of redoCellDatas) {
-        redoCellData.cell._value = _isRedo ? redoCellData.oldValue : redoCellData.newValue;
+        redoCellData.cell.value = _isRedo ? redoCellData.oldValue : redoCellData.newValue;
         reConnectedCallbackElement(redoCellData.cell);
-        reloadGridWithModifyCell(grid, redoCellData.cell._colInfo.index!);
+        reloadGridWithModifyCell(grid, redoCellData.cell.index!);
     }
     return true;
 };
@@ -455,7 +455,7 @@ export const selectAndCheckboxOnChange = (target: any) => {
     const cell: Cell = target.parentNode;
     if (target.nType === 'select') cell._grid._vg._status.editNewValue = target.value;
     else if (target.nType === 'checkbox') cell._grid._vg._status.editNewValue = target.checked ? cell._grid._gridInfo.checkedValue : cell._grid._gridInfo.uncheckedValue;
-    if (cell._colInfo.untarget || cell._colInfo.locked) {
+    if (cell.untarget || cell.locked) {
         switch (target.nType) {
             case 'select':
                 target.value = cell._grid._vg._status.editOldValue;
