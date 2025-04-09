@@ -5,7 +5,7 @@ import { alignUnit, enumWidthUnit, selectionPolicyUnit, verticalAlignUnit } from
 import { setGridCssStyle } from "../utils/createElement";
 import { selectCell, selectCells, startScrolling, stopScrolling, unselectCells } from "../utils/handleActive";
 import { createGridEditor, getCheckboxCellTrueOrFalse } from "../utils/handleCell";
-import { __getColInfo, __getData, _getCell } from "../utils/handleGrid";
+import { __getColInfo, __getData, __loadFooter, __loadHeader, _getCell } from "../utils/handleGrid";
 import { extractNumberAndUnit, getAttributeOnlyBoolean, getAttributeOnlyNumber, getAttributeOnlyNumberInteger, getAttributeOnlyNumberIntegerOrZero, getAttributeWithCheckRequired, getColorFromColorSet, isIncludeEnum, nvl, setColorSet, setInvertColor, toLowerCase } from "../utils/utils";
 import { setGridMethod } from "./setGridMethod";
 
@@ -17,15 +17,28 @@ export const mountVanillagrid = (vg: Vanillagrid, targetElement?: HTMLElement) =
     for(const vanillagrid of vanillagrids) {
         const gId = getAttributeWithCheckRequired('id', vanillagrid)!;
         if(vg.grids[gId]) throw new Error('There is a duplicate grid ID.');
-
+        
         vanillagrid.classList.add(gId + '_vanillagrid');
         const grid = document.createElement('v-g') as Grid;
-        const colInfos: ColInfo[] = [];
+        vg.grids[gId] = grid;
+        grid._vg = vg;
+        grid._variables = {
+            _activeRows : [],
+            _activeCols : [],
+            _activeCells : [],
+            _targetCell : null,
+            _records : [],
+            _recordseq : 0,
+            _sortToggle : {},
+            _filters : [],
+            _isDrawable : true,
+        };
 
         setGridInfo(gId, vg, vanillagrid, grid);
-        setColInfo(vg, vanillagrid, grid, colInfos);
+        setColInfo(vg, vanillagrid, grid);
         setEvent(grid);
         setGridCssStyle(grid);
+        setGridMethod(vg, grid);
 
         grid.classList.add(gId + '_v-g');
         const gridHeader = document.createElement('v-g-h') as GridHeader;
@@ -59,13 +72,11 @@ export const mountVanillagrid = (vg: Vanillagrid, targetElement?: HTMLElement) =
             else {
                 return;
             }
-            /*
-            if (doEventWithCheckChanged(headerCell.gId, '_onBeforeDblClickHeader', headerCell.row, headerCell.colId) === false) {
+            if(headerCell._grid._events.onBeforeDblClickHeader(headerCell._row, headerCell.colId) === false) {
                 e.stopPropagation();
                 e.preventDefault();
                 return;
             }
-            */
             if (e.target.dataType === 'checkbox' && grid._gridInfo.allCheckable && headerCell._isLastCell) {
                 grid.setColSameValue(e.target.cIndex, !getCheckboxCellTrueOrFalse(_getCell(grid, 1, e.target.index)!), true);
                 return;
@@ -111,31 +122,27 @@ export const mountVanillagrid = (vg: Vanillagrid, targetElement?: HTMLElement) =
             sortSpan.classList.add(grid._variables._sortToggle[headerCell.colId] ? headerCell._gridId + '_ascSpan' : headerCell._gridId + '_descSpan');
             headerCell.append(sortSpan);
 
-            //doEventWithCheckChanged(headerCell._gridId, '_onAfterDblClickHeader', headerCell.row, headerCell.colId);
+            headerCell._grid._events.onAfterDblClickHeader(headerCell._row, headerCell.colId);
         });
         gridHeader.addEventListener('click', function (e: any) {
-            let headerCell;
+            let headerCell: Cell;
             if (e.target._type === 'ghd') {
                 headerCell = e.target;
-                /*
-                if (doEventWithCheckChanged(headerCell._gridId, '_onBeforeClickHeader', headerCell.row, headerCell.colId) === false) {
+                if(headerCell._grid._events.onBeforeClickHeader(headerCell._row, headerCell.colId) === false) {
                     e.stopPropagation();
                     e.preventDefault();
                     return;
                 }
-                */
-                //doEventWithCheckChanged(headerCell._gridId, '_onAfterClickHeader', headerCell.row, headerCell.colId)
+                headerCell._grid._events.onAfterClickHeader(headerCell._row, headerCell.colId);
             }
             else if (e.target._type === 'filter'){
                 headerCell = e.target.parentNode;
-                /*
-                if (doEventWithCheckChanged(headerCell._gridId, '_onClickFilter', headerCell.row, headerCell.colId, e.target) === false) {
+                if(headerCell._grid._events.onClickFilter(headerCell._row, headerCell.colId, e.target) === false) {
                     e.stopPropagation();
                     e.preventDefault();
                     return;
                 }
-                */
-                const removeSpans = headerCell.parentNode.querySelectorAll('.' + headerCell._gridId + '_filterSelect');
+                const removeSpans = headerCell.parentNode!.querySelectorAll('.' + headerCell._gridId + '_filterSelect');
                 const filterSelect = e.target.querySelectorAll('.' + headerCell._gridId + '_filterSelect')[0];
                 removeSpans.forEach((el: any) => {
                     if (filterSelect !== el && el.value === 'ALL') el.style.display = 'none';
@@ -180,7 +187,7 @@ export const mountVanillagrid = (vg: Vanillagrid, targetElement?: HTMLElement) =
             }
         });
         gridBody.addEventListener('dblclick', function (e: any) {
-            let cell;
+            let cell: Cell;
             if (e.target._type === 'gbdv') {
                 cell = e.target.parentNode;
             }
@@ -188,14 +195,14 @@ export const mountVanillagrid = (vg: Vanillagrid, targetElement?: HTMLElement) =
                 cell = e.target;
             }
             if (cell._type !== 'gbd') return;
-            //if (doEventWithCheckChanged(cell._gridId, '_onBeforeDblClickCell', cell.row, cell.colId) === false) return;
-            if (['select','checkbox','button','link'].indexOf(cell.dataType) >= 0) return;
+            if(cell._grid._events.onBeforeDblClickCell(cell._row, cell.colId) === false) return;
+            if (['select','checkbox','button','link'].indexOf(cell.dataType!) >= 0) return;
             createGridEditor(cell);
-            //doEventWithCheckChanged(cell._gridId, '_onAfterDblClickCell', cell.row, cell.colId)
+            cell._grid._events.onAfterDblClickCell(cell._row, cell.colId);
         });
         grid.addEventListener('click', function (e: any) {
             if (!e.target._type) return;
-            let cell
+            let cell: Cell
             if (e.target._type === 'gbdv') {
                 cell = e.target.parentNode;
             }
@@ -206,44 +213,36 @@ export const mountVanillagrid = (vg: Vanillagrid, targetElement?: HTMLElement) =
             if (cell.untarget || cell._type !== 'gbd') {
                 return;
             }
-            if(cell.firstChild && cell.firstChild.nType !== 'select') {
-                /*
-                if (doEventWithCheckChanged(cell._gridId, '_onBeforeClickCell', cell.row, cell.colId) === false) {
+            if(cell.firstChild && (cell.firstChild as any).nType !== 'select') {
+                if(cell._grid._events.onBeforeClickCell(cell._row, cell.colId) === false) {
                     e.stopPropagation();
                     e.preventDefault();
                     return;
                 }
-                */
             }
             if (e.target.nType) {
                 switch (e.target.nType) {
                     case 'checkbox':
-                        /*
-                        if (doEventWithCheckChanged(cell._gridId, '_onClickCheckbox', cell.row, cell.colId, e.target) === false) {
+                        if(cell._grid._events.onClickCheckbox(cell._row, cell.colId, e.target) === false) {
                             e.stopPropagation();
                             e.preventDefault();
                             return;
                         }
-                        */
                         vg._status.editOldValue = e.target.parentNode.cValue;
                         break;
                     case 'button':
-                        /*
-                        if (doEventWithCheckChanged(cell._gridId, '_onClickButton', cell.row, cell.colId, e.target) === false) {
+                        if(cell._grid._events.onClickButton(cell._row, cell.colId, e.target) === false) {
                             e.stopPropagation();
                             e.preventDefault();
                             return;
                         }
-                        */
                         break;
                     case 'link':
-                        /*
-                        if (doEventWithCheckChanged(cell._gridId, '_onClickLink', cell.row, cell.colId, e.target) === false) {
+                        if(cell._grid._events.onClickLink(cell._row, cell.colId, e.target) === false) {
                             e.stopPropagation();
                             e.preventDefault();
                             return;
                         }
-                        */
                         break;
                     default:
                         break;
@@ -259,7 +258,7 @@ export const mountVanillagrid = (vg: Vanillagrid, targetElement?: HTMLElement) =
                     }
                 }
             });
-            //doEventWithCheckChanged(cell._gridId, '_onAfterClickCell', cell.row, cell.colId);
+            cell._grid._events.onAfterClickCell(cell._row, cell.colId);
         })
         grid.addEventListener('mousedown', function (e: any) {
             if (!e.target._type) return;
@@ -276,18 +275,16 @@ export const mountVanillagrid = (vg: Vanillagrid, targetElement?: HTMLElement) =
             if (e.target.nType) {
                 switch (e.target.nType) {
                     case 'select':
-                        /*
-                        if (doEventWithCheckChanged(cell._gridId, '_onBeforeClickCell', cell.row, cell.colId) === false) {
+                        if(cell._grid._events.onBeforeClickCell(cell._row, cell.colId) === false) {
                             e.stopPropagation();
                             e.preventDefault();
                             return;
                         }
-                        if (doEventWithCheckChanged(cell._gridId, '_onClickSelect', cell.row, cell.colId, e.target) === false) {
+                        if(cell._grid._events.onClickSelect(cell._row, cell.colId, e.target) === false) {
                             e.stopPropagation();
                             e.preventDefault();
                             return;
                         }
-                        */
                         vg._status.editOldValue = e.target.value;
                         break;
                     default:
@@ -347,8 +344,10 @@ export const mountVanillagrid = (vg: Vanillagrid, targetElement?: HTMLElement) =
         grid.append(gridBody);
         grid.append(gridFooter);
 
-        setGridMethod(vg, grid);
         vanillagrid.append(grid);
+               
+        __loadHeader(grid);
+        __loadFooter(grid);
     }
 }
 
@@ -457,7 +456,8 @@ const setGridInfo = (gId: string, vg: Vanillagrid, vanillagrid: HTMLElement, gri
     }
 };
 
-const setColInfo = (vg: Vanillagrid, vanillagrid: HTMLElement, grid: Grid, colInfos: ColInfo[]) => {
+const setColInfo = (vg: Vanillagrid, vanillagrid: HTMLElement, grid: Grid) => {
+    const colInfos: ColInfo[] = [];
     let colCount = 0;
     let headerRowCount = 1;
     let styleWidth;
@@ -691,6 +691,8 @@ const setColInfo = (vg: Vanillagrid, vanillagrid: HTMLElement, grid: Grid, colIn
         colInfos.push(colInfo);
         vanillagrid.removeChild(col);
     });
+    grid._colInfos = colInfos;
+    grid._defaultColInfo = vg.attributes.defaultColInfo;
 };
 
 const setEvent = (grid: Grid) => {
@@ -702,20 +704,21 @@ const setEvent = (grid: Grid) => {
         onActiveCol(colId: string) {return true},
         onActiveCols(startColId: string, endColId: string) {return true},
         onBeforeChange(row: number, colId: string, oldValue: any, newValue: any) {return true},
-        onAfterChange(row: number, colId: string, oldValue: any, newValue: any) {return true},
+        onAfterChange(row: number, colId: string, oldValue: any, newValue: any) {},
         onBeforeClickCell(row: number, colId: string) {return true},
-        onAfterClickCell(row: number, colId: string) {return true},
+        onAfterClickCell(row: number, colId: string) {},
         onClickSelect(row: number, colId: string, selectNode: HTMLElement) {return true},
         onClickCheckbox(row: number, colId: string, checkboxNode: HTMLElement) {return true},
         onClickButton(row: number, colId: string, buttonNude: HTMLElement) {return true},
         onClickLink(row: number, colId: string, linkNode: HTMLElement) {return true},
         onBeforeDblClickCell(row: number, colId: string) {return true},
-        onAfterDblClickCell(row: number, colId: string) {return true},
+        onAfterDblClickCell(row: number, colId: string) {},
         onBeforeClickHeader(row: number, colId: string) {return true},
-        onAfterClickHeader(row: number, colId: string) {return true},
+        onAfterClickHeader(row: number, colId: string) {},
         onBeforeDblClickHeader(row: number, colId: string) {return true},
-        onAfterDblClickHeader(row: number, colId: string) {return true},
-        onEditEnter(row: number, colId: string, editorNode: HTMLElement) {return true},
+        onAfterDblClickHeader(row: number, colId: string) {},
+        onBeforeEditEnter(row: number, colId: string, editorNode: HTMLElement) {return true},
+        onAfterEditEnter(row: number, colId: string, editorNode: HTMLElement) {},
         onEditEnding(row: number, colId: string, oldValue: any, newValue: any) {return true},
         onClickFilter(row: number, colId: string, filterNode: HTMLElement) {return true},
         onChooseFilter(row: number, colId: string, oldValue: any, newValue: any) {return true},
