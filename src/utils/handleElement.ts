@@ -10,6 +10,7 @@ export const modifyColSize = (grid: Grid, targetCell: Cell, modifySize: number) 
     if (!targetCell) return;
     if (!targetCell.resizable) return;
     if (targetCell.colId === 'v-g-rownum' || targetCell.colId === 'v-g-status') return;
+    if(targetCell._grid._events.onResize(targetCell.colId) === false) return;
 
     const styleGridTemplateColumnsArr = grid.gridHeader.style.gridTemplateColumns.split(' ');
     const oldColWidth = styleGridTemplateColumnsArr[targetCell._col - 1];
@@ -104,9 +105,11 @@ export const modifyCell = (vg: Vanillagrid) => {
         }
     });
     removeGridEditor(vg._status.activeGridEditor);
+    if(cell._grid._events.onBeforeChange(cell._row, cell.colId, vg._status.editOldValue, vg._status.editNewValue) === false) return;
     const value = vg._status.editNewValue;
     const records = getRecordsWithModifyValue(cell, value);
     recordGridModify(cell._grid, records);
+    cell._grid._events.onAfterChange(cell._row, cell.colId, vg._status.editOldValue, vg._status.editNewValue);
     return;
 };
 export const sort = (grid: Grid, arr: CellData[][], id: string, isAsc = true, isNumSort = false) => {
@@ -418,8 +421,8 @@ export const setGridDataPosition = (el: Cell) => {
     el.style.gridColumnEnd = String(col + 1);
 };
 //수정필요 cell data 형태
-export const getGridCell = (gId: string, colInfo: ColInfo, valueOrData: any, rowCount: number, colCount: number) => {
-    let data, dataKey;
+export const getGridCell = (grid: Grid, colInfo: ColInfo, valueOrData: any, rowCount: number, colCount: number) => {
+    let data;
 
     if (valueOrData && valueOrData.constructor === Object) {
         data = {
@@ -437,18 +440,18 @@ export const getGridCell = (gId: string, colInfo: ColInfo, valueOrData: any, row
 
     if (!data) {
         data = {
-            _value : null
+            value : null
         };
     }
 
     const tempGridData = document.createElement('v-g-d') as Cell;
-    tempGridData._gridId = gId;
+    tempGridData._gridId = grid._id;
+    tempGridData._grid = grid;
     tempGridData._type = 'gbd';
 
     Object.keys(colInfo).forEach(key => {
         if (['header', 'footer', 'rowMerge', 'colMerge', 'filterValue','index'].indexOf(key) < 0) {
-            dataKey = key.charAt(1).toLowerCase() + key.slice(2);
-            (tempGridData as any)[key] = dataKey in data ? data[dataKey] : colInfo[key as keyof ColInfo];
+            (tempGridData as any)[key] = key in data ? data[key] : colInfo[key as keyof ColInfo];
         }
     });
     switch (tempGridData.colId) {
