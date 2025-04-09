@@ -113,7 +113,7 @@ export const setGridMethod = (vg: Vanillagrid, grid: Grid) => {
                 const tempRows = [];
                 const keyValue = keyValues[rowCount - 1];
                 for(let colCount = 1; colCount <= grid._colInfos.length; colCount++) {
-                    const tempGridData = getGridCell(grid._id, grid._colInfos[colCount - 1], keyValue, rowCount, colCount);
+                    const tempGridData = getGridCell(grid, grid._colInfos[colCount - 1], keyValue, rowCount, colCount);
                     tempRows.push(tempGridData);
                 }
                 grid.gridBody._gridBodyCells.push(tempRows);
@@ -125,7 +125,7 @@ export const setGridMethod = (vg: Vanillagrid, grid: Grid) => {
                 const tempRows = [];
                 const colDatas = datas[rowCount - 1];
                 for(let colCount = 1; colCount <= grid._colInfos.length; colCount++) {
-                    const tempGridData = getGridCell(grid._id, grid._colInfos[colCount - 1], colDatas, rowCount, colCount);
+                    const tempGridData = getGridCell(grid, grid._colInfos[colCount - 1], colDatas, rowCount, colCount);
                     tempRows.push(tempGridData);
                 }
             grid.gridBody._gridBodyCells.push(tempRows);
@@ -589,7 +589,7 @@ export const setGridMethod = (vg: Vanillagrid, grid: Grid) => {
 
         const newColInfo = grid._colInfos[colIndex - 1];
         Object.keys(newColInfo).forEach((key)=>{
-            if(['cId', 'cIndex'].indexOf(key) === -1) {
+            if(['colId', 'index'].indexOf(key) === -1) {
                 const newColInfoKey = key.charAt(1).toLowerCase() + key.slice(2);
                 Object.keys(colInfo).forEach((colInfoKey) => {
                     if(newColInfoKey === colInfoKey) {
