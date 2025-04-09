@@ -11,5 +11,3 @@ export const unmountVanillagrid = (vg: Vanillagrid, targetElement?: HTMLElement)
         grid = null;
     });
 }
-
-
