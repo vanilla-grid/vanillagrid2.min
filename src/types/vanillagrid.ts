@@ -42,7 +42,7 @@ export interface Vanillagrid extends VanillagridConfig{
      * @param gridId - Unique identifier of the grid instance.
      * @returns Methods available for managing the specified grid instance.
      */
-    getGrid(gridId: string): GridMethods;
+    getGrid(gridId: string): Grid;
 
     init(): void,
     /**
@@ -56,14 +56,14 @@ export interface Vanillagrid extends VanillagridConfig{
      * vg.create();
      * ```
      */
-    mount(element?: HTMLElement): void;
+    mountGrid(element?: HTMLElement): void;
     /**
      * Destroys the Vanillagrid instance, cleaning up all associated resources and events.
      *
      * - Completely removes grid instance and cleans up event listeners and internal data.
      */
     destroy(): void;
-    unmount(element?: HTMLElement): void;
+    unmountGrid(element?: HTMLElement): void;
     
     documentEvent: documentEvent;
     _status: {
@@ -79,7 +79,7 @@ export interface Vanillagrid extends VanillagridConfig{
         filterOldValue: any | null,
         filterNewValue: any | null,
         mouseoverCell: HTMLElement | null,
-        scrollInterval: number | NodeJS.Timeout |  null,
+        scrollInterval: NodeJS.Timeout |  null,
     }
     _initialized: boolean;
 
@@ -171,25 +171,26 @@ export interface Grid extends GridMethods, HTMLElement{
         onActiveCol(colId: string): boolean;
         onActiveCols(startColId: string, endColId: string): boolean;
         onBeforeChange(row: number, colId: string, oldValue: any, newValue: any): boolean;
-        onAfterChange(row: number, colId: string, oldValue: any, newValue: any): boolean;
+        onAfterChange(row: number, colId: string, oldValue: any, newValue: any): void;
         onBeforeClickCell(row: number, colId: string): boolean;
-        onAfterClickCell(row: number, colId: string): boolean;
+        onAfterClickCell(row: number, colId: string): void;
         onClickSelect(row: number, colId: string, selectNode: HTMLElement): boolean;
         onClickCheckbox(row: number, colId: string, checkboxNode: HTMLElement): boolean;
         onClickButton(row: number, colId: string, buttonNude: HTMLElement): boolean;
         onClickLink(row: number, colId: string, linkNode: HTMLElement): boolean;
         onBeforeDblClickCell(row: number, colId: string): boolean;
-        onAfterDblClickCell(row: number, colId: string): boolean;
+        onAfterDblClickCell(row: number, colId: string): void;
         onBeforeClickHeader(row: number, colId: string): boolean;
-        onAfterClickHeader(row: number, colId: string): boolean;
+        onAfterClickHeader(row: number, colId: string): void;
         onBeforeDblClickHeader(row: number, colId: string): boolean;
-        onAfterDblClickHeader(row: number, colId: string): boolean;
-        onEditEnter(row: number, colId: string, editorNode: HTMLElement): boolean;
+        onAfterDblClickHeader(row: number, colId: string): void;
+        onBeforeEditEnter(row: number, colId: string, editorNode: HTMLElement): boolean;
+        onAfterEditEnter(row: number, colId: string, editorNode: HTMLElement): void;
         onEditEnding(row: number, colId: string, oldValue: any, newValue: any): boolean;
         onClickFilter(row: number, colId: string, filterNode: HTMLElement): boolean;
         onChooseFilter(row: number, colId: string, oldValue: any, newValue: any): boolean;
         onPaste(startRow: number, startColId: string, clipboardText: string): boolean;
-        onCopy(startRow: number, startColId: string, endRow: number, endColId: string): boolean;
+        onCopy(startRow: number, startColId: string, endRow: number, endColId: string, copyText: string): boolean;
         onResize(colId: string): boolean;
         onKeydownEditor(event: KeyboardEvent): boolean;
         onInputEditor(event: InputEvent): boolean;
