@@ -1,10 +1,10 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import Home from '../pages/Home.vue';
-import EditorTest from '../pages/EditorTest.vue';
+import GridTest from '../pages/GridTest.vue';
 
 const routes = [
   { path: '/', name: 'Home', component: Home },
-  { path: '/editor-test', name: 'EditorTest', component: EditorTest },
+  { path: '/grid-test', name: 'GridTest', component: GridTest },
 ];
 
 const router = createRouter({
