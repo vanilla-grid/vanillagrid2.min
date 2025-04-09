@@ -402,7 +402,6 @@ export const injectCustomElement = (vg: Vanillagrid) => {
                         }
                         if (targetCell) targetCell._isLastCell = true;
                     }
-                    
                     if (_gridInfo.filterable === true && _grid.getColInfo(_cell.colId).filterable &&
                         _grid.getHeaderRowCount() === _cell._row && _cell.colId !== 'v-g-rownum' && _cell.colId !== 'v-g-status') {
                         let filterSpan: any;
@@ -431,7 +430,7 @@ export const injectCustomElement = (vg: Vanillagrid) => {
 
                         filterSelect.addEventListener('change', function (e: any) {
                             const filterNewValue = e.target.value;
-                            if ((window as any)[e.target.parentNode.parentNode.gId + '_onChooseFilter'](e.target.parentNode.parentNode.row, e.target.parentNode.parentNode.cId, this.filterOldValue, filterNewValue) === false) {
+                            if ((window as any)[e.target.parentNode.parentNode.gId + '_onChooseFilter'](e.target.parentNode.parentNode.row, e.target.parentNode.parentNode.colId, this.filterOldValue, filterNewValue) === false) {
                                 e.stopPropagation();
                                 e.preventDefault();
                                 return;
@@ -619,7 +618,6 @@ export const injectCustomElement = (vg: Vanillagrid) => {
                     _cell.classList.add(_cell._gridId + '_f-v-g-d');
                     break;
                 case 'gbd': 
-                    
                     switch (_cell.dataType) {
                         case 'text':
                         case 'mask':
@@ -799,7 +797,6 @@ export const injectCustomElement = (vg: Vanillagrid) => {
                     if (_cell.filter) {
                         _cell.style.display = 'none';
                     }
-                    
                     if (_gridInfo.alterRow && _cell._row % 2 === 0) {
                         _cell.classList.add(_cell._gridId + '_b-v-g-d-alter');
                         _cell.classList.remove(_cell._gridId + '_b-v-g-d');
