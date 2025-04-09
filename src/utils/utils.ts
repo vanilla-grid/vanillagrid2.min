@@ -33,15 +33,15 @@ export const validatePositiveIntegerAndZero = (param: string | number) => {
     return number;
 };
 export const extractNumberAndUnit = (val: string | null) => {
-    if (val === null || val === undefined) return null;
+    if (val === null || val === undefined) return { number: 0, unit: '' };
     val = '' + val.trim();
     const regex = /^(\d+)(\D*)$/;
     const match = val.match(regex);
     if (match) {
-        const unit = match[2] === '' ? null : match[2];
+        const unit = match[2] === '' ? '' : match[2];
         return { number: parseInt(match[1], 10), unit: unit };
     } else {
-        return null;
+        return { number: 0, unit: '' };
     }
 }
 export const toLowerCase = (val: string | null) => {
