@@ -1574,7 +1574,7 @@ export interface GridMethods {
     /**
      * Returns the column ID for a specific column.
      * 
-     * - Retrieves the `cId` property of the column, which represents its unique ID.
+     * - Retrieves the `colId` property of the column, which represents its unique ID.
      * 
      * ### Example usage:
      * ```typescript
@@ -1583,7 +1583,7 @@ export interface GridMethods {
      * ```
      * 
      * @param colIndexOrColId The column index or column ID.
-     * @returns The column ID (`cId`) of the specified column.
+     * @returns The column ID (`colId`) of the specified column.
      */
     getColId(colIndexOrColId: number | string): string;
     /**
