@@ -80,12 +80,12 @@ export const __getDefaultColInfo = (grid: Grid, newColInfo: ColInfo, isAdd = fal
 export const __getColInfo = (grid: Grid, colIndexOrColId: string | number, useError = false): ColInfo | null => {
     let returncolInfo;
     if (typeof colIndexOrColId === 'number') {
-        returncolInfo = grid._colInfos[colIndexOrColId - 1];
+        returncolInfo = deepCopy(grid._colInfos[colIndexOrColId - 1]);
     }
     else {
         for(const colInfo of grid._colInfos) {
             if (colInfo.colId === colIndexOrColId) {
-                returncolInfo = colInfo;
+                returncolInfo = deepCopy(colInfo);
             }
         }
     }
@@ -272,14 +272,13 @@ export const __loadHeader = (grid: Grid) => {
         const tempRows = [];
         let colCount = 1;
         for(const colInfo of grid._colInfos) {
-            const tempGridData = document.createElement('v-g-d') as any;
+            const tempGridData = document.createElement('v-g-d') as Cell;
             tempGridData._gridId = grid._id;
-            tempGridData._type = 'ghd';
             tempGridData._grid = grid;
-            tempGridData._colInfo = {};
+            tempGridData._type = 'ghd';
             Object.keys(colInfo).forEach(key => {
                 if (['header', 'footer', 'rowMerge', 'colMerge', 'filterValue','index'].indexOf(key) < 0) {
-                    tempGridData._colInfo[key] = (colInfo as any)[key];
+                    (tempGridData as any)[key] = colInfo[key as keyof ColInfo];
                 }
             });
             if (Array.isArray(colInfo.header)) {
@@ -416,12 +415,13 @@ export const __loadFooter = (grid: Grid) => {
         const tempRows = [];
         let colCount = 1;
         for(const colInfo of grid._colInfos) {
-            const tempGridData = document.createElement('v-g-d') as any ;
+            const tempGridData = document.createElement('v-g-d') as Cell ;
             tempGridData._gridId = grid._id;
+            tempGridData._grid = grid;
             tempGridData._type = 'gfd';
             Object.keys(colInfo).forEach(key => {
                 if (['header', 'footer', 'rowMerge', 'colMerge', 'filterValue','index'].indexOf(key) < 0) {
-                    tempGridData._colInfo[key] = (colInfo as any)[key];
+                    (tempGridData as any)[key] = (colInfo as any)[key];
                 }
             });
             if (colInfo.footer && colInfo.footer[rowCount - 1]) {
@@ -450,7 +450,7 @@ export const _getFooterCell = (grid: Grid, rowIndex: number, colIndexOrColId: nu
     }
     else {
         for(const cell of _getFooterRow(grid, rowIndex)) {
-            if (cell.cId === colIndexOrColId) return cell;
+            if (cell.colId === colIndexOrColId) return cell;
         }
     }
     throw new Error('There is no ' + (typeof colIndexOrColId === 'number' ? colIndexOrColId + 'th' : colIndexOrColId) + ' colunm.');
@@ -569,7 +569,7 @@ export const _doFilter = (grid: Grid) => {
             let _isFilter = false;
             cells.forEach(function (cell: any) {
                 grid._variables._filters.forEach(function (filter: any) {
-                    if (cell.cId === filter.colId) {
+                    if (cell.colId === filter.colId) {
                         let cellValue: any = getCellText(cell);
 
                         Object.keys(grid._vg.dataType).forEach((key) => {
@@ -749,17 +749,3 @@ export const _getFilterSpan = (grid: Grid) => {
 export const _getFooterFormula = (grid: Grid) => {
     return deepCopy(grid._vg.footerFormula);
 };
-/*
-export const _getHeader = (grid: Grid) => {
-    return grid.gridHeader;
-};
-export const _getBody = (grid: Grid) => {
-    return grid.gridBody;
-};
-export const _getFooter = (grid: Grid) => {
-    return grid.gridFooter;
-};
-*/
-
-//grid.__loadHeader();
-//grid.__loadFooter();
