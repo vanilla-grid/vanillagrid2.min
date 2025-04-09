@@ -11,14 +11,15 @@ import { injectCustomElement } from "../utils/createElement";
 import { mountVanillagrid } from "./mountVanillagrid";
 import { unmountVanillagrid } from "./unmountVanillagrid";
 
-let singletonVanillagrid: Vanillagrid | null = null;
+export let singletonVanillagrid: Vanillagrid | null = null;
 
 export const getVanillagrid = (config?: VanillagridConfig): Vanillagrid => {
     if(singletonVanillagrid) return singletonVanillagrid;
 
     if(!config) config = getVanillagridConfig();
 
-    const vanillagrid = {
+    singletonVanillagrid = {
+        grids: {},
         elements : {
             sortAscSpan: config.elements.sortAscSpan,
             sortDescSpan: config.elements.sortDescSpan,
@@ -32,7 +33,6 @@ export const getVanillagrid = (config?: VanillagridConfig): Vanillagrid => {
             defaultColInfo: config.attributes.defaultColInfo,
         },
         checkByte: config.checkByte,
-        grids: {},
         getGrid: (gridId: string) => {},
         documentEvent: {
             mousedown: null,
@@ -57,12 +57,15 @@ export const getVanillagrid = (config?: VanillagridConfig): Vanillagrid => {
             scrollInterval: null,
         },
         init() { initVanillagrid(); },
-        mount(element?: HTMLElement) { mountVanillagrid(singletonVanillagrid!, element) },
+        mountGrid(element?: HTMLElement) { mountVanillagrid(singletonVanillagrid!, element) },
         destroy() { destroyVanillagrid() },
-        unmount(element?: HTMLElement) { unmountVanillagrid(singletonVanillagrid!, element) },
-    }
+        unmountGrid(element?: HTMLElement) { unmountVanillagrid(singletonVanillagrid!, element) },
+    } as Vanillagrid;
 
-    return vanillagrid as Vanillagrid;
+    singletonVanillagrid.getGrid = (gridId) => {
+        return singletonVanillagrid!.grids[gridId];
+    }
+    return singletonVanillagrid;
 }
 
 export const getVanillagridConfig = (): VanillagridConfig => {
@@ -258,7 +261,12 @@ const initVanillagrid = () => {
     
     vg.documentEvent.keydown = function (e: any) {
         if (vg._status.activeGrid && !vg._status.activeGridEditor) {
-            const gId = vg._status.activeGrid._id;
+            
+            if(vg._status.activeGrid._events.onKeydownGrid(e) === false) {
+                e.stopPropagation();
+                e.preventDefault();
+                return;
+            }
             
             if (e.ctrlKey || e.metaKey) {
                 switch (e.key) {
