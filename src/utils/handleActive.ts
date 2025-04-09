@@ -14,6 +14,9 @@ export const reConnectedCallbackElement = (cell: Cell) => {
     }
 };
 export const selectCell = (targetCell: Cell) => {
+    if(targetCell._grid._events.onActiveCell(targetCell._row, targetCell.colId) === false) return false;
+    if(targetCell._grid._events.onActiveRow(targetCell._row) === false) return false;
+    if(targetCell._grid._events.onActiveCol(targetCell.colId) === false) return false;
     if (targetCell._grid._gridInfo.selectionPolicy === 'none') return false;
     resetSelection(targetCell._grid);
     targetCell._grid._variables._targetCell = targetCell;
@@ -81,6 +84,10 @@ export const unselectCells = (grid: Grid) => {
     }
 };
 export const selectCells = (startCell: Cell, endCell: Cell, _focusCell?: Cell) => {
+    if(startCell._grid._events.onActiveCells(startCell._row, startCell.colId, endCell._row, endCell.colId) === false) return false;
+    if(startCell._grid._events.onActiveRows(startCell._row, endCell._row) === false) return false;
+    if(startCell._grid._events.onActiveCols(startCell.colId, endCell.colId) === false) return false;
+
     if (startCell._grid._gridInfo.selectionPolicy !== 'range' && startCell !== endCell) {
         return false;
     }
@@ -181,6 +188,7 @@ export const stopScrolling = (vg: Vanillagrid) => {
 };
 export const copyGrid = (copyCells: Cell[]) => {
     const copyText = getCopyText(copyCells);
+    if(copyCells[0]._grid._events.onCopy(copyCells[0]._row, copyCells[0].colId, copyCells[copyCells.length - 1]._row, copyCells[copyCells.length - 1].colId, copyText) === false) return;
     navigator.clipboard.writeText(copyText).then(() => {
     }, () => {
     });
@@ -219,6 +227,12 @@ export const pasteGrid = (e: ClipboardEvent, grid: Grid) => {
     if(grid._variables._activeCells.length <= 0) return;
     const startCell = grid._variables._activeCells[0];
     const text = clipboardData.getData('text');
+
+    if(grid._events.onPaste(startCell._row, startCell.colId, text) === false) {
+        e.stopPropagation();
+        e.preventDefault();
+        return;
+    }
 
     const pasteRows = [];
     const records = [];
@@ -453,9 +467,13 @@ export const redoundo = (grid: Grid, isRedo?: boolean) => {
 export const selectAndCheckboxOnChange = (target: any) => {
     if (!target.nType) return;
     const cell: Cell = target.parentNode;
+    let beforeEventResult = true;
     if (target.nType === 'select') cell._grid._vg._status.editNewValue = target.value;
     else if (target.nType === 'checkbox') cell._grid._vg._status.editNewValue = target.checked ? cell._grid._gridInfo.checkedValue : cell._grid._gridInfo.uncheckedValue;
-    if (cell.untarget || cell.locked) {
+    if(cell._grid._events.onBeforeChange(cell._row, cell.colId, cell._grid._vg._status.editOldValue, cell._grid._vg._status.editNewValue) === false) {
+        beforeEventResult = false;
+    }
+    if (!beforeEventResult || cell.untarget || cell.locked) {
         switch (target.nType) {
             case 'select':
                 target.value = cell._grid._vg._status.editOldValue;
@@ -481,4 +499,5 @@ export const selectAndCheckboxOnChange = (target: any) => {
         default:
             break;
     }
+    cell._grid._events.onAfterChange(cell._row, cell.colId, cell._grid._vg._status.editOldValue, cell._grid._vg._status.editNewValue);
 };
