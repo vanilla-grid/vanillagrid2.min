@@ -1,6 +1,6 @@
 <template>
     <div>
-      <h1>Editor Test Page</h1>
+      <h1>Grid Test Page</h1>
       <VanillagridTest />
     </div>
 </template>
