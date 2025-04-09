@@ -22,7 +22,8 @@ export const getFirstCellValidNumber = (footerCell: Cell) => {
 };
 export const removeGridEditor = (activeGridEditor: any) => {
     if (!activeGridEditor) return false;
-    const cell = activeGridEditor.targetCell;
+    const cell: Cell = activeGridEditor.targetCell;
+    cell._grid._events.onEditEnding(cell._row, cell.colId, cell._grid._vg._status.editOldValue, cell._grid._vg._status.editNewValue);
     cell.style.padding = '';
     cell.style.fontSize = '';
     activeGridEditor.parentNode.removeChild(activeGridEditor);
@@ -31,7 +32,12 @@ export const removeGridEditor = (activeGridEditor: any) => {
 };
 export const addBagicEventListenerToGridEditor = (gridEditor: HTMLElement, activeGrid: Grid) => {
     gridEditor.addEventListener('keydown', function (e) {
-        const cell = activeGrid._variables._targetCell;
+        const cell = activeGrid._variables._targetCell!;
+        if(activeGrid._events.onKeydownEditor(e) === false) {
+            e.stopPropagation();
+            e.preventDefault();
+            return;
+        }
         let newTargetCell;
         switch (e.key) {
             case 'Enter':
@@ -65,6 +71,9 @@ export const addBagicEventListenerToGridEditor = (gridEditor: HTMLElement, activ
                 break;
         }
     });
+    gridEditor.addEventListener('input', function(e) {
+        activeGrid._events.onInputEditor(e as InputEvent);
+    })
 };
 export const setBagicAttributesToGridEditor = (gridEditor: any, cell: Cell) => {
     gridEditor.eId = cell._gridId + '_Editor';
@@ -85,7 +94,6 @@ export const createGridEditorTextarea = (cell: Cell) => {
     
     gridEditor.addEventListener('input', function (e: any) {
         e.target.style.height = e.target.scrollHeight + gridEditor.offsetHeight - gridEditor.clientHeight + 'px';
-
     }, false);
 
     gridEditor.addEventListener('keyup', function (e: any) {
@@ -210,6 +218,7 @@ export const createGridEditor = (cell: Cell, isEnterKey = false) => {
             });
             break;
     }
+    if(cell._grid._events.onBeforeEditEnter(cell._row, cell.colId, gridEditor) === false) return;
     if (!gridEditor) return;
     cell.style.padding = '0';
     cell.style.fontSize = '0px'; 
@@ -218,6 +227,7 @@ export const createGridEditor = (cell: Cell, isEnterKey = false) => {
     gridEditor.focus();
     if (isEnterKey) gridEditor.select();
     cell._grid._vg._status.activeGridEditor = gridEditor;
+    cell._grid._events.onAfterEditEnter(cell._row, cell.colId, gridEditor);
 };
 export const getValidValue = (cell: Cell, value: any) => {
     const nullValue = nvl(cell._grid._gridInfo.nullValue, null);
