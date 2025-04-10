@@ -116,7 +116,7 @@ export interface GridInfo {
  * Default grid configuration values controlling functional behaviors of grids.
  * Reduces repetitive configuration in `<vanilla-grid>` elements.
  */
-export interface DefaultGridInfo extends Omit<GridInfo, 'id' |'name'>{
+export interface DefaultGridInfo extends Omit<GridInfo, 'name'>{
 }
 
 /**
