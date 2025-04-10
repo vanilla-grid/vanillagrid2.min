@@ -1,468 +1,130 @@
-import type { Grid, GridBody, GridFooter, GridHeader, Vanillagrid } from "../types/vanillagrid";
+import type { Vanillagrid } from "../types/vanillagrid";
+import type { Grid, GridBody, GridElements, GridFooter, GridHeader } from "../types/grid";
 import type { ColInfo } from "../types/colInfo";
 import type { Cell } from "../types/cell";
+import type { Handler } from "../types/handler";
 import { alignUnit, enumWidthUnit, selectionPolicyUnit, verticalAlignUnit } from "../types/enum";
 import { setGridCssStyle } from "../utils/createElement";
-import { selectCell, selectCells, startScrolling, stopScrolling, unselectCells } from "../utils/handleActive";
-import { createGridEditor, getCheckboxCellTrueOrFalse } from "../utils/handleCell";
-import { __getColInfo, __getData, __loadFooter, __loadHeader, _getCell } from "../utils/handleGrid";
 import { extractNumberAndUnit, getAttributeOnlyBoolean, getAttributeOnlyNumber, getAttributeOnlyNumberInteger, getAttributeOnlyNumberIntegerOrZero, getAttributeWithCheckRequired, getColorFromColorSet, isIncludeEnum, nvl, setColorSet, setInvertColor, toLowerCase } from "../utils/utils";
 import { setGridMethod } from "./setGridMethod";
+import { GridCssInfo, GridInfo } from "../types/gridInfo";
+import { GridMethods } from "../types/gridMethods";
 
-export const mountVanillagrid = (vg: Vanillagrid, targetElement?: HTMLElement) => {
-    if(!vg._initialized) throw new Error('Please initialize vanillagrid');
-    const targetEl = targetElement ? targetElement : document;
-
-    const vanillagrids: NodeListOf<HTMLElement> = targetEl.querySelectorAll('vanilla-grid');
-    for(const vanillagrid of vanillagrids) {
-        const gId = getAttributeWithCheckRequired('id', vanillagrid)!;
-        if(vg.grids[gId]) throw new Error('There is a duplicate grid ID.');
-        
-        vanillagrid.classList.add(gId + '_vanillagrid');
-        const grid = document.createElement('v-g') as Grid;
-        vg.grids[gId] = grid;
-        grid._vg = vg;
-        grid._variables = {
-            _activeRows : [],
-            _activeCols : [],
-            _activeCells : [],
-            _targetCell : null,
-            _records : [],
-            _recordseq : 0,
-            _sortToggle : {},
-            _filters : [],
-            _isDrawable : true,
-        };
-
-        setGridInfo(gId, vg, vanillagrid, grid);
-        setColInfo(vg, vanillagrid, grid);
-        setEvent(grid);
-        setGridCssStyle(grid);
-        setGridMethod(vg, grid);
-
-        grid.classList.add(gId + '_v-g');
-        const gridHeader = document.createElement('v-g-h') as GridHeader;
-        gridHeader._gridId = gId;
-        gridHeader._type = 'gh';
-        gridHeader.classList.add(gId + '_v-g-h');
-        grid.gridHeader = gridHeader;
-        grid.gridHeader._gridHeaderCells = [];
-        const gridBody = document.createElement('v-g-b') as GridBody;
-        gridBody._gridId = gId;
-        gridBody._type = 'gb';
-        gridBody.classList.add(gId + '_v-g-b');
-        grid.gridBody = gridBody;
-        grid.gridBody._gridBodyCells = [];
-        const gridFooter = document.createElement('v-g-f') as GridFooter;
-        gridFooter._gridId = gId;
-        gridFooter._type = 'gf';
-        gridFooter.classList.add(gId + '_v-g-f');
-        grid.gridFooter = gridFooter;
-        grid.gridFooter._gridFooterCells = [];
-        
-        gridHeader.addEventListener('dblclick', function (e: any) {
-            if (vg._status.onHeaderDragging) return;
-            let headerCell: Cell;
-            if (e.target._type === 'ghd') {
-                headerCell = e.target;
-            }
-            else if (e.target._type === 'sort'){
-                headerCell = e.target.parentNode;
-            }
-            else {
-                return;
-            }
-            if(headerCell._grid._events.onBeforeDblClickHeader(headerCell._row, headerCell.colId) === false) {
-                e.stopPropagation();
-                e.preventDefault();
-                return;
-            }
-            if (e.target.dataType === 'checkbox' && grid._gridInfo.allCheckable && headerCell._isLastCell) {
-                grid.setColSameValue(e.target.cIndex, !getCheckboxCellTrueOrFalse(_getCell(grid, 1, e.target.index)!), true);
-                return;
-            }
-
-            if (!grid._gridInfo.sortable) return;
-            if (!__getColInfo(grid, headerCell.colId)!.sortable) return;
-            if (!headerCell._isLastCell) return;
-            
-            grid.sort(headerCell.colId, !grid._variables._sortToggle[headerCell.colId]);
-            
-            const removeSpans = headerCell.parentNode!.querySelectorAll('.' + headerCell._gridId + '_sortSpan');
-            removeSpans.forEach((el: any) => {
-                el.parentNode.removeChild(el);
-            });
-            let sortSpan: any;
-            if(grid._variables._sortToggle[headerCell.colId]) {
-                if(vg.elements.sortAscSpan && vg.elements.sortAscSpan instanceof HTMLElement && vg.elements.sortAscSpan.nodeType === 1) {
-                    sortSpan = vg.elements.sortAscSpan.cloneNode(true);
-                }
-                else {
-                    sortSpan = document.createElement('span');
-                    sortSpan.style.fontSize = '0.5em';
-                    sortSpan.style.paddingLeft = '5px';
-                    sortSpan.innerText = '▲';
-                }
-            }
-            else {
-                if(vg.elements.sortDescSpan && vg.elements.sortDescSpan instanceof HTMLElement && vg.elements.sortDescSpan.nodeType === 1) {
-                    sortSpan = vg.elements.sortDescSpan.cloneNode(true);
-                }
-                else {
-                    sortSpan = document.createElement('span');
-                    sortSpan.style.fontSize = '0.5em';
-                    sortSpan.style.paddingLeft = '5px';
-                    sortSpan.innerText = '▼';
-                }
-            }
-            sortSpan._gridId = headerCell._gridId;
-            sortSpan.isChild = true;
-            sortSpan._type = 'sort';
-            sortSpan.classList.add(headerCell._gridId + '_sortSpan');
-            sortSpan.classList.add(grid._variables._sortToggle[headerCell.colId] ? headerCell._gridId + '_ascSpan' : headerCell._gridId + '_descSpan');
-            headerCell.append(sortSpan);
-
-            headerCell._grid._events.onAfterDblClickHeader(headerCell._row, headerCell.colId);
-        });
-        gridHeader.addEventListener('click', function (e: any) {
-            let headerCell: Cell;
-            if (e.target._type === 'ghd') {
-                headerCell = e.target;
-                if(headerCell._grid._events.onBeforeClickHeader(headerCell._row, headerCell.colId) === false) {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    return;
-                }
-                headerCell._grid._events.onAfterClickHeader(headerCell._row, headerCell.colId);
-            }
-            else if (e.target._type === 'filter'){
-                headerCell = e.target.parentNode;
-                if(headerCell._grid._events.onClickFilter(headerCell._row, headerCell.colId, e.target) === false) {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    return;
-                }
-                const removeSpans = headerCell.parentNode!.querySelectorAll('.' + headerCell._gridId + '_filterSelect');
-                const filterSelect = e.target.querySelectorAll('.' + headerCell._gridId + '_filterSelect')[0];
-                removeSpans.forEach((el: any) => {
-                    if (filterSelect !== el && el.value === 'ALL') el.style.display = 'none';
-                });
-                if (filterSelect.style.display === 'none') {
-                    filterSelect.style.display = 'block';
-                }
-                else {
-                    filterSelect.style.display = 'none';
-                }
-            }
-        });
-        gridBody.addEventListener('mousemove', function (e) {
-            if (vg._status.isDragging) {
-                vg._status.mouseX = e.clientX;
-                vg._status.mouseY = e.clientY;
-            }
-        });
-        gridBody.addEventListener('mouseleave',function (e: any) {
-            if (vg._status.isDragging) {
-                const mouseX = e.clientX;
-                const mouseY = e.clientY;
-                
-                const deltaX = mouseX - mouseX;
-                const deltaY = mouseY - mouseY;
-                
-                let direction = '';
-
-                if (Math.abs(deltaX) > Math.abs(deltaY)) {
-                    
-                    direction = deltaX > 0 ? 'right' : 'left';
-                } else {
-                    
-                    direction = deltaY > 0 ? 'down' : 'up';
-                }
-                startScrolling(grid, direction);
-            }
-        });
-        gridBody.addEventListener('mouseenter', function (e) {
-            if (vg._status.scrollInterval) {
-                stopScrolling(vg);
-            }
-        });
-        gridBody.addEventListener('dblclick', function (e: any) {
-            let cell: Cell;
-            if (e.target._type === 'gbdv') {
-                cell = e.target.parentNode;
-            }
-            else {
-                cell = e.target;
-            }
-            if (cell._type !== 'gbd') return;
-            if(cell._grid._events.onBeforeDblClickCell(cell._row, cell.colId) === false) return;
-            if (['select','checkbox','button','link'].indexOf(cell.dataType!) >= 0) return;
-            createGridEditor(cell);
-            cell._grid._events.onAfterDblClickCell(cell._row, cell.colId);
-        });
-        grid.addEventListener('click', function (e: any) {
-            if (!e.target._type) return;
-            let cell: Cell
-            if (e.target._type === 'gbdv') {
-                cell = e.target.parentNode;
-            }
-            else {
-                cell = e.target;
-            }
-            if (!cell) return;
-            if (cell.untarget || cell._type !== 'gbd') {
-                return;
-            }
-            if(cell.firstChild && (cell.firstChild as any).nType !== 'select') {
-                if(cell._grid._events.onBeforeClickCell(cell._row, cell.colId) === false) {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    return;
-                }
-            }
-            if (e.target.nType) {
-                switch (e.target.nType) {
-                    case 'checkbox':
-                        if(cell._grid._events.onClickCheckbox(cell._row, cell.colId, e.target) === false) {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            return;
-                        }
-                        vg._status.editOldValue = e.target.parentNode.cValue;
-                        break;
-                    case 'button':
-                        if(cell._grid._events.onClickButton(cell._row, cell.colId, e.target) === false) {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            return;
-                        }
-                        break;
-                    case 'link':
-                        if(cell._grid._events.onClickLink(cell._row, cell.colId, e.target) === false) {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            return;
-                        }
-                        break;
-                    default:
-                        break;
-                }
-            }
-            Object.keys(vg.dataType).forEach((key) => {
-                if(cell.dataType === key) {
-                    if(vg.dataType[key].onClick) {
-                        if(typeof vg.dataType[key].onClick !== 'function') throw new Error('onClick must be a function.');
-                        if((vg.dataType as any)[key].onClick(e, __getData(cell)) === false) {
-                            return;
-                        }
-                    }
-                }
-            });
-            cell._grid._events.onAfterClickCell(cell._row, cell.colId);
-        })
-        grid.addEventListener('mousedown', function (e: any) {
-            if (!e.target._type) return;
-            let cell: Cell;
-            if (e.target._type === 'gbdv') {
-                cell = e.target.parentNode;
-            }
-            else {
-                cell = e.target;
-            }
-            if (cell.untarget || cell._type !== 'gbd') {
-                return;
-            }
-            if (e.target.nType) {
-                switch (e.target.nType) {
-                    case 'select':
-                        if(cell._grid._events.onBeforeClickCell(cell._row, cell.colId) === false) {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            return;
-                        }
-                        if(cell._grid._events.onClickSelect(cell._row, cell.colId, e.target) === false) {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            return;
-                        }
-                        vg._status.editOldValue = e.target.value;
-                        break;
-                    default:
-                        break;
-                }
-            }
-            Object.keys(vg.dataType).forEach((key) => {
-                if(cell.dataType === key) {
-                    if(vg.dataType[key].onMousedown) {
-                        if(typeof vg.dataType[key].onMousedown !== 'function') throw new Error('onMousedown must be a function.');
-                        if((vg.dataType as any)[key].onMousedown(e, __getData(cell)) === false) {
-                            return;
-                        }
-                    }
-                }
-            });
-            vg._status.activeGrid = cell._grid;
-            vg._status.isDragging = true;
-            if (cell._grid._gridInfo.selectionPolicy === 'range' && e.shiftKey && cell._grid._variables._targetCell) {
-                unselectCells(cell._grid);
-                selectCells(cell._grid._variables._targetCell, cell);
-            }
-            else {
-                selectCell(cell);
-            }
-        });
-        grid.addEventListener('mousemove', function (e: any) {
-            let cell;
-            if (e.target._type === 'gbdv') {
-                cell = e.target.parentNode;
-            }
-            else if (e.target._type === 'gbd'){
-                cell = e.target;
-            }
-            if (!cell) return;
-
-            if (cell._grid._gridInfo.selectionPolicy !== 'range') return;
-            if (vg._status.mouseoverCell === cell) return;
-            vg._status.mouseoverCell = cell;
-            
-            if (vg._status.isDragging && cell._grid._variables._targetCell) {
-                
-                unselectCells(cell._grid);
-                selectCells(cell._grid._variables._targetCell, cell);
-            }
-        });
-        grid.addEventListener('mouseleave', function (e: any) {
-            if (grid._gridInfo.selectionPolicy !== 'range') return;
-            vg._status.mouseoverCell = null;
-
-            if (vg._status.isDragging) {
-                vg._status.isDragging = false;
-            }
-        });
-
-        grid.append(gridHeader);
-        grid.append(gridBody);
-        grid.append(gridFooter);
-
-        vanillagrid.append(grid);
-               
-        __loadHeader(grid);
-        __loadFooter(grid);
-    }
-}
-
-const setGridInfo = (gId: string, vg: Vanillagrid, vanillagrid: HTMLElement, grid: Grid) => {
-    grid._id = gId;
-    grid._gridInfo = {
-        name : nvl(vanillagrid.getAttribute('name'), gId) as string,
-        locked : nvl(getAttributeOnlyBoolean('locked', vanillagrid), vg.attributes.defaultGridInfo.locked),
-        lockedColor : nvl(getAttributeOnlyBoolean('locked-color', vanillagrid), vg.attributes.defaultGridInfo.lockedColor),
-        resizable : nvl(getAttributeOnlyBoolean('resizable', vanillagrid), vg.attributes.defaultGridInfo.resizable),
-        redoable : nvl(getAttributeOnlyBoolean('redoable', vanillagrid), vg.attributes.defaultGridInfo.redoable),
-        redoCount : nvl(getAttributeOnlyNumberIntegerOrZero('redo-count', vanillagrid), vg.attributes.defaultGridInfo.redoCount),
-        visible : nvl(getAttributeOnlyBoolean('visible', vanillagrid), vg.attributes.defaultGridInfo.visible),
-        headerVisible : nvl(getAttributeOnlyBoolean('header-visible', vanillagrid), vg.attributes.defaultGridInfo.headerVisible),
-        rownumVisible : nvl(getAttributeOnlyBoolean('rownum-visible', vanillagrid), vg.attributes.defaultGridInfo.rownumVisible),
-        rownumSize : nvl(vanillagrid.getAttribute('rownum-size'), vg.attributes.defaultGridInfo.rownumSize),
-        statusVisible : nvl(getAttributeOnlyBoolean('status-visible', vanillagrid), vg.attributes.defaultGridInfo.statusVisible),
-        selectionPolicy : nvl((isIncludeEnum(selectionPolicyUnit, toLowerCase(vanillagrid.getAttribute('selection-policy'))) ? toLowerCase(vanillagrid.getAttribute('selectionPolicy')) : ''), vg.attributes.defaultGridInfo.selectionPolicy),
-        nullValue : nvl(vanillagrid.getAttribute('null-value'), vg.attributes.defaultGridInfo.nullValue),
-        dateFormat : nvl(vanillagrid.getAttribute('date-format'), vg.attributes.defaultGridInfo.dateFormat),
-        monthFormat : nvl(vanillagrid.getAttribute('month-format'), vg.attributes.defaultGridInfo.monthFormat),
-        alterRow : nvl(getAttributeOnlyBoolean('alter-row', vanillagrid), vg.attributes.defaultGridInfo.alterRow),
-        frozenColCount : nvl(getAttributeOnlyNumberIntegerOrZero('frozen-col-count', vanillagrid), vg.attributes.defaultGridInfo.frozenColCount),
-        frozenRowCount : nvl(getAttributeOnlyNumberIntegerOrZero('frozen-row-count', vanillagrid), vg.attributes.defaultGridInfo.frozenRowCount),
-        sortable : nvl(getAttributeOnlyBoolean('sortable', vanillagrid), vg.attributes.defaultGridInfo.sortable),
-        filterable : nvl(getAttributeOnlyBoolean('filterable', vanillagrid), vg.attributes.defaultGridInfo.filterable),
-        allCheckable : nvl(getAttributeOnlyBoolean('all-checkable', vanillagrid), vg.attributes.defaultGridInfo.allCheckable),
-        checkedValue : nvl(vanillagrid.getAttribute('checked-value'), vg.attributes.defaultGridInfo.checkedValue),
-        uncheckedValue : nvl(vanillagrid.getAttribute('unchecked-value'), vg.attributes.defaultGridInfo.uncheckedValue),
+const getGridInfo = (vg: Vanillagrid, vanillagridBox: HTMLElement) => {
+    const gridInfo: GridInfo = {
+        name : nvl(vanillagridBox.getAttribute('name'), vanillagridBox.getAttribute('data-id')) as string,
+        locked : nvl(getAttributeOnlyBoolean('locked', vanillagridBox), vg.attributes.defaultGridInfo.locked),
+        lockedColor : nvl(getAttributeOnlyBoolean('locked-color', vanillagridBox), vg.attributes.defaultGridInfo.lockedColor),
+        resizable : nvl(getAttributeOnlyBoolean('resizable', vanillagridBox), vg.attributes.defaultGridInfo.resizable),
+        redoable : nvl(getAttributeOnlyBoolean('redoable', vanillagridBox), vg.attributes.defaultGridInfo.redoable),
+        redoCount : nvl(getAttributeOnlyNumberIntegerOrZero('redo-count', vanillagridBox), vg.attributes.defaultGridInfo.redoCount),
+        visible : nvl(getAttributeOnlyBoolean('visible', vanillagridBox), vg.attributes.defaultGridInfo.visible),
+        headerVisible : nvl(getAttributeOnlyBoolean('header-visible', vanillagridBox), vg.attributes.defaultGridInfo.headerVisible),
+        rownumVisible : nvl(getAttributeOnlyBoolean('rownum-visible', vanillagridBox), vg.attributes.defaultGridInfo.rownumVisible),
+        rownumSize : nvl(vanillagridBox.getAttribute('rownum-size'), vg.attributes.defaultGridInfo.rownumSize),
+        statusVisible : nvl(getAttributeOnlyBoolean('status-visible', vanillagridBox), vg.attributes.defaultGridInfo.statusVisible),
+        selectionPolicy : nvl((isIncludeEnum(selectionPolicyUnit, toLowerCase(vanillagridBox.getAttribute('selection-policy'))) ? toLowerCase(vanillagridBox.getAttribute('selectionPolicy')) : ''), vg.attributes.defaultGridInfo.selectionPolicy),
+        nullValue : nvl(vanillagridBox.getAttribute('null-value'), vg.attributes.defaultGridInfo.nullValue),
+        dateFormat : nvl(vanillagridBox.getAttribute('date-format'), vg.attributes.defaultGridInfo.dateFormat),
+        monthFormat : nvl(vanillagridBox.getAttribute('month-format'), vg.attributes.defaultGridInfo.monthFormat),
+        alterRow : nvl(getAttributeOnlyBoolean('alter-row', vanillagridBox), vg.attributes.defaultGridInfo.alterRow),
+        frozenColCount : nvl(getAttributeOnlyNumberIntegerOrZero('frozen-col-count', vanillagridBox), vg.attributes.defaultGridInfo.frozenColCount),
+        frozenRowCount : nvl(getAttributeOnlyNumberIntegerOrZero('frozen-row-count', vanillagridBox), vg.attributes.defaultGridInfo.frozenRowCount),
+        sortable : nvl(getAttributeOnlyBoolean('sortable', vanillagridBox), vg.attributes.defaultGridInfo.sortable),
+        filterable : nvl(getAttributeOnlyBoolean('filterable', vanillagridBox), vg.attributes.defaultGridInfo.filterable),
+        allCheckable : nvl(getAttributeOnlyBoolean('all-checkable', vanillagridBox), vg.attributes.defaultGridInfo.allCheckable),
+        checkedValue : nvl(vanillagridBox.getAttribute('checked-value'), vg.attributes.defaultGridInfo.checkedValue),
+        uncheckedValue : nvl(vanillagridBox.getAttribute('unchecked-value'), vg.attributes.defaultGridInfo.uncheckedValue),
         rownumLockedColor : null,
         statusLockedColor : null,
     }
-    grid._gridInfo.rownumLockedColor = nvl(getAttributeOnlyBoolean('rownum-locked-color', vanillagrid), grid._gridInfo.locked);
-    grid._gridInfo.statusLockedColor = nvl(getAttributeOnlyBoolean('status-locked-color', vanillagrid), grid._gridInfo.locked);
-    if (grid._gridInfo.checkedValue === grid._gridInfo.uncheckedValue) throw new Error('Checked and unchecked values cannot be the same.');
-    
-    grid._gridCssInfo = {
-        width : nvl(vanillagrid.getAttribute('width'), vg.attributes.defaultGridCssInfo.width),
-        height : nvl(vanillagrid.getAttribute('height'), vg.attributes.defaultGridCssInfo.height),
-        margin : nvl(vanillagrid.getAttribute('margin'), vg.attributes.defaultGridCssInfo.margin),
-        padding : nvl(vanillagrid.getAttribute('padding'), vg.attributes.defaultGridCssInfo.padding),
-        sizeLevel : nvl(getAttributeOnlyNumberIntegerOrZero('size-level', vanillagrid), vg.attributes.defaultGridCssInfo.sizeLevel),
-        verticalAlign : nvl((isIncludeEnum(verticalAlignUnit, toLowerCase(vanillagrid.getAttribute('vertical-align'))) ? toLowerCase(vanillagrid.getAttribute('vertical-align')) : ''), vg.attributes.defaultGridCssInfo.verticalAlign),
-        horizenBorderSize : nvl(getAttributeOnlyNumberIntegerOrZero('horizen-border-size', vanillagrid), vg.attributes.defaultGridCssInfo.horizenBorderSize),
-        verticalBorderSize : nvl(getAttributeOnlyNumberIntegerOrZero('vertical-border-size', vanillagrid), vg.attributes.defaultGridCssInfo.verticalBorderSize),
-        gridFontFamily : nvl(vanillagrid.getAttribute('grid-font-family'), vg.attributes.defaultGridCssInfo.gridFontFamily),
-        editorFontFamily : nvl(vanillagrid.getAttribute('editor-font-family'), vg.attributes.defaultGridCssInfo.editorFontFamily),
-        color : nvl(vanillagrid.getAttribute('color'), vg.attributes.defaultGridCssInfo.color),
-        colorSet : nvl(vanillagrid.getAttribute('color-set'), vg.attributes.defaultGridCssInfo.colorSet),
-        overflowWrap : nvl(vanillagrid.getAttribute('overflow-wrap'), vg.attributes.defaultGridCssInfo.overflowWrap),
-        wordBreak : nvl(vanillagrid.getAttribute('word-break'), vg.attributes.defaultGridCssInfo.wordBreak),
-        whiteSpace : nvl(vanillagrid.getAttribute('white-space'), vg.attributes.defaultGridCssInfo.whiteSpace),
-        linkHasUnderLine : nvl(getAttributeOnlyBoolean('link-has-under-line', vanillagrid), vg.attributes.defaultGridCssInfo.linkHasUnderLine),
-        invertColor : nvl(getAttributeOnlyBoolean('invert-color', vanillagrid), vg.attributes.defaultGridCssInfo.invertColor),
-        gridBorderColor : nvl(vanillagrid.getAttribute('grid-border-color'), vg.attributes.defaultGridCssInfo.gridBorderColor),
-        headerCellBackColor : nvl(vanillagrid.getAttribute('header-cell-back-color'), vg.attributes.defaultGridCssInfo.headerCellBackColor),
-        headerCellBorderColor : nvl(vanillagrid.getAttribute('header-cell-border-color'), vg.attributes.defaultGridCssInfo.headerCellBorderColor),
-        headerCellFontColor : nvl(vanillagrid.getAttribute('header-cell-font-color'), vg.attributes.defaultGridCssInfo.headerCellFontColor),
-        footerCellBackColor : nvl(vanillagrid.getAttribute('footer-cell-back-color'), vg.attributes.defaultGridCssInfo.footerCellBackColor),
-        footerCellBorderColor : nvl(vanillagrid.getAttribute('footer-cell-border-color'), vg.attributes.defaultGridCssInfo.footerCellBorderColor),
-        footerCellFontColor : nvl(vanillagrid.getAttribute('footer-cell-font-color'), vg.attributes.defaultGridCssInfo.footerCellFontColor),
-        bodyBackColor : nvl(vanillagrid.getAttribute('body-back-color'), vg.attributes.defaultGridCssInfo.bodyBackColor),
-        bodyCellBackColor : nvl(vanillagrid.getAttribute('body-cell-back-color'), vg.attributes.defaultGridCssInfo.bodyCellBackColor),
-        bodyCellBorderColor : nvl(vanillagrid.getAttribute('body-cell-border-color'), vg.attributes.defaultGridCssInfo.bodyCellBorderColor),
-        bodyCellFontColor : nvl(vanillagrid.getAttribute('body-cell-font-color'), vg.attributes.defaultGridCssInfo.bodyCellFontColor),
-        editorBackColor : nvl(vanillagrid.getAttribute('editor-back-color'), vg.attributes.defaultGridCssInfo.editorBackColor),
-        editorFontColor : nvl(vanillagrid.getAttribute('editor-font-color'), vg.attributes.defaultGridCssInfo.editorFontColor),
-        selectCellBackColor : nvl(vanillagrid.getAttribute('select-cell-back-color'), vg.attributes.defaultGridCssInfo.selectCellBackColor),
-        selectCellFontColor : nvl(vanillagrid.getAttribute('select-cell-font-color'), vg.attributes.defaultGridCssInfo.selectCellFontColor),
-        selectColBackColor : nvl(vanillagrid.getAttribute('selectCol-back-color'), vg.attributes.defaultGridCssInfo.selectColBackColor),
-        selectColFontColor : nvl(vanillagrid.getAttribute('selectCol-font-color'), vg.attributes.defaultGridCssInfo.selectColFontColor),
-        selectRowBackColor : nvl(vanillagrid.getAttribute('selectRow-back-color'), vg.attributes.defaultGridCssInfo.selectRowBackColor),
-        selectRowFontColor : nvl(vanillagrid.getAttribute('selectRow-font-color'), vg.attributes.defaultGridCssInfo.selectRowFontColor),
-        mouseoverCellBackColor : nvl(vanillagrid.getAttribute('mouseover-cell-back-color'), vg.attributes.defaultGridCssInfo.mouseoverCellBackColor),
-        mouseoverCellFontColor : nvl(vanillagrid.getAttribute('mouseover-cell-font-color'), vg.attributes.defaultGridCssInfo.mouseoverCellFontColor),
-        lockCellBackColor : nvl(vanillagrid.getAttribute('lock-cell-back-color'), vg.attributes.defaultGridCssInfo.lockCellBackColor),
-        lockCellFontColor : nvl(vanillagrid.getAttribute('lock-cell-font-color'), vg.attributes.defaultGridCssInfo.lockCellFontColor),
-        alterRowBackColor : nvl(vanillagrid.getAttribute('alter-row-back-color'), vg.attributes.defaultGridCssInfo.alterRowBackColor),
-        alterRowFontColor : nvl(vanillagrid.getAttribute('alter-row-font-color'), vg.attributes.defaultGridCssInfo.alterRowFontColor),
-        buttonFontColor : nvl(vanillagrid.getAttribute('button-font-color'), vg.attributes.defaultGridCssInfo.buttonFontColor),
-        buttonBorderColor : nvl(vanillagrid.getAttribute('buttonBorderColor'), vg.attributes.defaultGridCssInfo.buttonBorderColor),
-        buttonBackColor : nvl(vanillagrid.getAttribute('button-back-color'), vg.attributes.defaultGridCssInfo.buttonBackColor),
-        buttonHoverFontColor : nvl(vanillagrid.getAttribute('buttonHover-font-color'), vg.attributes.defaultGridCssInfo.buttonHoverFontColor),
-        buttonHoverBackColor : nvl(vanillagrid.getAttribute('buttonHover-back-color'), vg.attributes.defaultGridCssInfo.buttonHoverBackColor),
-        buttonActiveFontColor : nvl(vanillagrid.getAttribute('buttonActive-font-color'), vg.attributes.defaultGridCssInfo.buttonActiveFontColor),
-        buttonActiveBackColor : nvl(vanillagrid.getAttribute('buttonActive-back-color'), vg.attributes.defaultGridCssInfo.buttonActiveBackColor),
-        linkFontColor : nvl(vanillagrid.getAttribute('link-font-color'), vg.attributes.defaultGridCssInfo.linkFontColor),
-        linkHoverFontColor : nvl(vanillagrid.getAttribute('linkHover-font-color'), vg.attributes.defaultGridCssInfo.linkHoverFontColor),
-        linkActiveFontColor : nvl(vanillagrid.getAttribute('linkActive-font-color'), vg.attributes.defaultGridCssInfo.linkActiveFontColor),
-        linkVisitedFontColor : nvl(vanillagrid.getAttribute('linkVisited-font-color'), vg.attributes.defaultGridCssInfo.linkVisitedFontColor),
-        linkFocusFontColor : nvl(vanillagrid.getAttribute('linkFocus-font-color'), vg.attributes.defaultGridCssInfo.linkFocusFontColor),
+    gridInfo.rownumLockedColor = nvl(getAttributeOnlyBoolean('rownum-locked-color', vanillagridBox), gridInfo.locked);
+    gridInfo.statusLockedColor = nvl(getAttributeOnlyBoolean('status-locked-color', vanillagridBox), gridInfo.locked);
+    if (gridInfo.checkedValue === gridInfo.uncheckedValue) throw new Error('Checked and unchecked values cannot be the same.');
+    return gridInfo;
+};
+
+const getGridCssInfo = (vg: Vanillagrid, vanillagridBox: HTMLElement) => {
+    const gridCssInfo: GridCssInfo = {
+        width : nvl(vanillagridBox.getAttribute('width'), vg.attributes.defaultGridCssInfo.width),
+        height : nvl(vanillagridBox.getAttribute('height'), vg.attributes.defaultGridCssInfo.height),
+        margin : nvl(vanillagridBox.getAttribute('margin'), vg.attributes.defaultGridCssInfo.margin),
+        padding : nvl(vanillagridBox.getAttribute('padding'), vg.attributes.defaultGridCssInfo.padding),
+        sizeLevel : nvl(getAttributeOnlyNumberIntegerOrZero('size-level', vanillagridBox), vg.attributes.defaultGridCssInfo.sizeLevel),
+        verticalAlign : nvl((isIncludeEnum(verticalAlignUnit, toLowerCase(vanillagridBox.getAttribute('vertical-align'))) ? toLowerCase(vanillagridBox.getAttribute('vertical-align')) : ''), vg.attributes.defaultGridCssInfo.verticalAlign),
+        horizenBorderSize : nvl(getAttributeOnlyNumberIntegerOrZero('horizen-border-size', vanillagridBox), vg.attributes.defaultGridCssInfo.horizenBorderSize),
+        verticalBorderSize : nvl(getAttributeOnlyNumberIntegerOrZero('vertical-border-size', vanillagridBox), vg.attributes.defaultGridCssInfo.verticalBorderSize),
+        gridFontFamily : nvl(vanillagridBox.getAttribute('grid-font-family'), vg.attributes.defaultGridCssInfo.gridFontFamily),
+        editorFontFamily : nvl(vanillagridBox.getAttribute('editor-font-family'), vg.attributes.defaultGridCssInfo.editorFontFamily),
+        color : nvl(vanillagridBox.getAttribute('color'), vg.attributes.defaultGridCssInfo.color),
+        colorSet : nvl(vanillagridBox.getAttribute('color-set'), vg.attributes.defaultGridCssInfo.colorSet),
+        overflowWrap : nvl(vanillagridBox.getAttribute('overflow-wrap'), vg.attributes.defaultGridCssInfo.overflowWrap),
+        wordBreak : nvl(vanillagridBox.getAttribute('word-break'), vg.attributes.defaultGridCssInfo.wordBreak),
+        whiteSpace : nvl(vanillagridBox.getAttribute('white-space'), vg.attributes.defaultGridCssInfo.whiteSpace),
+        linkHasUnderLine : nvl(getAttributeOnlyBoolean('link-has-under-line', vanillagridBox), vg.attributes.defaultGridCssInfo.linkHasUnderLine),
+        invertColor : nvl(getAttributeOnlyBoolean('invert-color', vanillagridBox), vg.attributes.defaultGridCssInfo.invertColor),
+        gridBorderColor : nvl(vanillagridBox.getAttribute('grid-border-color'), vg.attributes.defaultGridCssInfo.gridBorderColor),
+        headerCellBackColor : nvl(vanillagridBox.getAttribute('header-cell-back-color'), vg.attributes.defaultGridCssInfo.headerCellBackColor),
+        headerCellBorderColor : nvl(vanillagridBox.getAttribute('header-cell-border-color'), vg.attributes.defaultGridCssInfo.headerCellBorderColor),
+        headerCellFontColor : nvl(vanillagridBox.getAttribute('header-cell-font-color'), vg.attributes.defaultGridCssInfo.headerCellFontColor),
+        footerCellBackColor : nvl(vanillagridBox.getAttribute('footer-cell-back-color'), vg.attributes.defaultGridCssInfo.footerCellBackColor),
+        footerCellBorderColor : nvl(vanillagridBox.getAttribute('footer-cell-border-color'), vg.attributes.defaultGridCssInfo.footerCellBorderColor),
+        footerCellFontColor : nvl(vanillagridBox.getAttribute('footer-cell-font-color'), vg.attributes.defaultGridCssInfo.footerCellFontColor),
+        bodyBackColor : nvl(vanillagridBox.getAttribute('body-back-color'), vg.attributes.defaultGridCssInfo.bodyBackColor),
+        bodyCellBackColor : nvl(vanillagridBox.getAttribute('body-cell-back-color'), vg.attributes.defaultGridCssInfo.bodyCellBackColor),
+        bodyCellBorderColor : nvl(vanillagridBox.getAttribute('body-cell-border-color'), vg.attributes.defaultGridCssInfo.bodyCellBorderColor),
+        bodyCellFontColor : nvl(vanillagridBox.getAttribute('body-cell-font-color'), vg.attributes.defaultGridCssInfo.bodyCellFontColor),
+        editorBackColor : nvl(vanillagridBox.getAttribute('editor-back-color'), vg.attributes.defaultGridCssInfo.editorBackColor),
+        editorFontColor : nvl(vanillagridBox.getAttribute('editor-font-color'), vg.attributes.defaultGridCssInfo.editorFontColor),
+        selectCellBackColor : nvl(vanillagridBox.getAttribute('select-cell-back-color'), vg.attributes.defaultGridCssInfo.selectCellBackColor),
+        selectCellFontColor : nvl(vanillagridBox.getAttribute('select-cell-font-color'), vg.attributes.defaultGridCssInfo.selectCellFontColor),
+        selectColBackColor : nvl(vanillagridBox.getAttribute('selectCol-back-color'), vg.attributes.defaultGridCssInfo.selectColBackColor),
+        selectColFontColor : nvl(vanillagridBox.getAttribute('selectCol-font-color'), vg.attributes.defaultGridCssInfo.selectColFontColor),
+        selectRowBackColor : nvl(vanillagridBox.getAttribute('selectRow-back-color'), vg.attributes.defaultGridCssInfo.selectRowBackColor),
+        selectRowFontColor : nvl(vanillagridBox.getAttribute('selectRow-font-color'), vg.attributes.defaultGridCssInfo.selectRowFontColor),
+        mouseoverCellBackColor : nvl(vanillagridBox.getAttribute('mouseover-cell-back-color'), vg.attributes.defaultGridCssInfo.mouseoverCellBackColor),
+        mouseoverCellFontColor : nvl(vanillagridBox.getAttribute('mouseover-cell-font-color'), vg.attributes.defaultGridCssInfo.mouseoverCellFontColor),
+        lockCellBackColor : nvl(vanillagridBox.getAttribute('lock-cell-back-color'), vg.attributes.defaultGridCssInfo.lockCellBackColor),
+        lockCellFontColor : nvl(vanillagridBox.getAttribute('lock-cell-font-color'), vg.attributes.defaultGridCssInfo.lockCellFontColor),
+        alterRowBackColor : nvl(vanillagridBox.getAttribute('alter-row-back-color'), vg.attributes.defaultGridCssInfo.alterRowBackColor),
+        alterRowFontColor : nvl(vanillagridBox.getAttribute('alter-row-font-color'), vg.attributes.defaultGridCssInfo.alterRowFontColor),
+        buttonFontColor : nvl(vanillagridBox.getAttribute('button-font-color'), vg.attributes.defaultGridCssInfo.buttonFontColor),
+        buttonBorderColor : nvl(vanillagridBox.getAttribute('buttonBorderColor'), vg.attributes.defaultGridCssInfo.buttonBorderColor),
+        buttonBackColor : nvl(vanillagridBox.getAttribute('button-back-color'), vg.attributes.defaultGridCssInfo.buttonBackColor),
+        buttonHoverFontColor : nvl(vanillagridBox.getAttribute('buttonHover-font-color'), vg.attributes.defaultGridCssInfo.buttonHoverFontColor),
+        buttonHoverBackColor : nvl(vanillagridBox.getAttribute('buttonHover-back-color'), vg.attributes.defaultGridCssInfo.buttonHoverBackColor),
+        buttonActiveFontColor : nvl(vanillagridBox.getAttribute('buttonActive-font-color'), vg.attributes.defaultGridCssInfo.buttonActiveFontColor),
+        buttonActiveBackColor : nvl(vanillagridBox.getAttribute('buttonActive-back-color'), vg.attributes.defaultGridCssInfo.buttonActiveBackColor),
+        linkFontColor : nvl(vanillagridBox.getAttribute('link-font-color'), vg.attributes.defaultGridCssInfo.linkFontColor),
+        linkHoverFontColor : nvl(vanillagridBox.getAttribute('linkHover-font-color'), vg.attributes.defaultGridCssInfo.linkHoverFontColor),
+        linkActiveFontColor : nvl(vanillagridBox.getAttribute('linkActive-font-color'), vg.attributes.defaultGridCssInfo.linkActiveFontColor),
+        linkVisitedFontColor : nvl(vanillagridBox.getAttribute('linkVisited-font-color'), vg.attributes.defaultGridCssInfo.linkVisitedFontColor),
+        linkFocusFontColor : nvl(vanillagridBox.getAttribute('linkFocus-font-color'), vg.attributes.defaultGridCssInfo.linkFocusFontColor),
         cellFontSize : null,
         cellMinHeight : null,
     };
-    grid._gridCssInfo.cellFontSize = nvl(vanillagrid.getAttribute('cell-font-size'), ((grid._gridCssInfo.sizeLevel! + 15) / 20) * vg.attributes.defaultGridCssInfo.cellFontSize! + 'px');
-    grid._gridCssInfo.cellMinHeight = nvl(vanillagrid.getAttribute('cell-min-height'), ((grid._gridCssInfo.sizeLevel! + 15) / 20) * vg.attributes.defaultGridCssInfo.cellMinHeight! + 'px');
-    if (grid._gridCssInfo.colorSet){
-        grid._gridCssInfo.color = getColorFromColorSet(grid._gridCssInfo.colorSet);
-        setColorSet(grid._gridCssInfo);
+    gridCssInfo.cellFontSize = nvl(vanillagridBox.getAttribute('cell-font-size'), ((gridCssInfo.sizeLevel! + 15) / 20) * vg.attributes.defaultGridCssInfo.cellFontSize! + 'px');
+    gridCssInfo.cellMinHeight = nvl(vanillagridBox.getAttribute('cell-min-height'), ((gridCssInfo.sizeLevel! + 15) / 20) * vg.attributes.defaultGridCssInfo.cellMinHeight! + 'px');
+    if (gridCssInfo.colorSet){
+        gridCssInfo.color = getColorFromColorSet(gridCssInfo.colorSet);
+        setColorSet(gridCssInfo);
     }
     else {
-        setColorSet(grid._gridCssInfo);
+        setColorSet(gridCssInfo);
     }
-    if (grid._gridCssInfo.invertColor) {
-        setInvertColor(grid._gridCssInfo);
+    if (gridCssInfo.invertColor) {
+        setInvertColor(gridCssInfo);
     }
+    return gridCssInfo;
 };
 
-const setColInfo = (vg: Vanillagrid, vanillagrid: HTMLElement, grid: Grid) => {
+const getColInfo = (vg: Vanillagrid, vanillagridBox: HTMLElement, gridInfo: GridInfo) => {
     const colInfos: ColInfo[] = [];
     let colCount = 0;
     let headerRowCount = 1;
     let styleWidth;
     let footerRowCount = 0;
-    Array.from(vanillagrid.querySelectorAll('v-col')).forEach(col => {
+    Array.from(vanillagridBox.querySelectorAll('[data-col]')).forEach(col => {
         let headers = col.getAttribute('header');
         if (!headers) headers = col.getAttribute('id')
         
@@ -479,8 +141,8 @@ const setColInfo = (vg: Vanillagrid, vanillagrid: HTMLElement, grid: Grid) => {
         if (!isIncludeEnum(enumWidthUnit, unit)) throw new Error('Width units can only be pixel or %.');
         
     });
-    let rownumSize = grid._gridInfo.rownumVisible ? grid._gridInfo.rownumSize + ' ' : '0px ';
-    let statusSize = grid._gridInfo.statusVisible ? '60px ' : '0px ';
+    let rownumSize = gridInfo.rownumVisible ? gridInfo.rownumSize + ' ' : '0px ';
+    let statusSize = gridInfo.statusVisible ? '60px ' : '0px ';
 
     let colInfo: ColInfo ={
         colId : 'v-g-rownum',
@@ -490,7 +152,7 @@ const setColInfo = (vg: Vanillagrid, vanillagrid: HTMLElement, grid: Grid) => {
         untarget : false,
         rowMerge : false,
         colMerge : false,
-        colVisible : grid._gridInfo.rownumVisible,
+        colVisible : gridInfo.rownumVisible,
         rowVisible : true,
         required : false,
         resizable : false,
@@ -500,7 +162,7 @@ const setColInfo = (vg: Vanillagrid, vanillagrid: HTMLElement, grid: Grid) => {
         dataType : 'text',
         selectSize : null,
         locked : true,
-        lockedColor : grid._gridInfo.rownumLockedColor,
+        lockedColor : gridInfo.rownumLockedColor,
         format : null,
         codes : null,
         defaultCode : null,
@@ -536,7 +198,7 @@ const setColInfo = (vg: Vanillagrid, vanillagrid: HTMLElement, grid: Grid) => {
         untarget : true,
         rowMerge : false,
         colMerge : false,
-        colVisible : grid._gridInfo.statusVisible,
+        colVisible : gridInfo.statusVisible,
         rowVisible : true,
         required : false,
         resizable : false,
@@ -546,7 +208,7 @@ const setColInfo = (vg: Vanillagrid, vanillagrid: HTMLElement, grid: Grid) => {
         dataType : 'code',
         selectSize : null,
         locked : true,
-        lockedColor : grid._gridInfo.statusLockedColor,
+        lockedColor : gridInfo.statusLockedColor,
         format : null,
         codes : ['C','U','D'],
         defaultCode : null,
@@ -575,7 +237,7 @@ const setColInfo = (vg: Vanillagrid, vanillagrid: HTMLElement, grid: Grid) => {
     colInfos.push(colInfo);
 
     colCount = 2;
-    Array.from(vanillagrid.querySelectorAll('v-col') as NodeListOf<HTMLElement>).forEach(col => {
+    Array.from(vanillagridBox.querySelectorAll('[data-col]') as NodeListOf<HTMLElement>).forEach(col => {
         colCount++;
         if (!col.getAttribute('id')) throw new Error('Column ID is required.');
         if (colInfos.some(colInfo => colInfo.colId === col.getAttribute('id'))) throw new Error('Column ID is primary key.');
@@ -645,7 +307,7 @@ const setColInfo = (vg: Vanillagrid, vanillagrid: HTMLElement, grid: Grid) => {
         let dataType = toLowerCase(col.getAttribute('data-type'));
         if (!dataType) dataType = vg.attributes.defaultColInfo.dataType!;
         colInfo.dataType = dataType;
-        colInfo.untarget = nvl(getAttributeOnlyBoolean('untarget', col), grid._gridInfo.selectionPolicy === 'none');
+        colInfo.untarget = nvl(getAttributeOnlyBoolean('untarget', col), gridInfo.selectionPolicy === 'none');
         colInfo.rowMerge = nvl(getAttributeOnlyBoolean('row-merge', col), vg.attributes.defaultColInfo.rowMerge);
         colInfo.colMerge = nvl(getAttributeOnlyBoolean('col-merge', col), vg.attributes.defaultColInfo.colMerge);
         colInfo.colVisible = nvl(getAttributeOnlyBoolean('visible', col), vg.attributes.defaultColInfo.colVisible);
@@ -661,8 +323,8 @@ const setColInfo = (vg: Vanillagrid, vanillagrid: HTMLElement, grid: Grid) => {
         }
         colInfo.originWidth = styleWidth;
         colInfo.selectSize = nvl((isIncludeEnum(enumWidthUnit, extractNumberAndUnit(col.getAttribute('select-size'))!.unit!) ? col.getAttribute('select-size') : ''), vg.attributes.defaultColInfo.selectSize);
-        colInfo.locked = nvl(getAttributeOnlyBoolean('locked', col), grid._gridInfo.locked);
-        colInfo.lockedColor = nvl(getAttributeOnlyBoolean('locked-color', col), grid._gridInfo.lockedColor);
+        colInfo.locked = nvl(getAttributeOnlyBoolean('locked', col), gridInfo.locked);
+        colInfo.lockedColor = nvl(getAttributeOnlyBoolean('locked-color', col), gridInfo.lockedColor);
         colInfo.format = nvl(col.getAttribute('format'), vg.attributes.defaultColInfo.format);
         colInfo.codes = col.getAttribute('codes') ? col.getAttribute('codes')!.split(';') : vg.attributes.defaultColInfo.codes;
         colInfo.defaultCode = nvl(col.getAttribute('default-code'), vg.attributes.defaultColInfo.defaultCode);
@@ -689,14 +351,13 @@ const setColInfo = (vg: Vanillagrid, vanillagrid: HTMLElement, grid: Grid) => {
         colInfo.fontUnderline = nvl(getAttributeOnlyBoolean('font-underline', col), vg.attributes.defaultColInfo.fontUnderline);
         
         colInfos.push(colInfo);
-        vanillagrid.removeChild(col);
+        vanillagridBox.removeChild(col);
     });
-    grid._colInfos = colInfos;
-    grid._defaultColInfo = vg.attributes.defaultColInfo;
+    return colInfos;
 };
 
-const setEvent = (grid: Grid) => {
-    grid._events = {
+const getEvent = () => {
+    return {
         onActiveCell(row: number, colId: string) {return true},
         onActiveCells(startRow: number, startColId: string, endRow: number, endColId: string) {return true},
         onActiveRow(row: number) {return true},
@@ -728,5 +389,359 @@ const setEvent = (grid: Grid) => {
         onKeydownEditor(event: KeyboardEvent) {return true},
         onInputEditor(event: InputEvent) {return true},
         onKeydownGrid(event: KeyboardEvent) {return true},
+    }
+};
+
+export const mountVanillagrid = (vg: Vanillagrid, gridList: Record<string, Grid>, handler: Handler, targetElement?: HTMLElement) => {
+    if(!vg._initialized) throw new Error('Please initialize vanillagrid');
+    const targetEl = targetElement ? targetElement : document;
+
+    const vanillagridBoxList: NodeListOf<HTMLElement> = targetEl.querySelectorAll('[data-vanillagrid]');
+    for(const vanillagridBox of vanillagridBoxList) {
+        const gId = getAttributeWithCheckRequired('data-id', vanillagridBox)!;
+        if(gridList[gId]) throw new Error('There is a duplicate grid ID.');
+        vanillagridBox.classList.add(gId + '_vanillagrid');
+
+        const gridElement = document.createElement('v-g') as GridElements;
+        gridElement.classList.add(gId + '_v-g');
+
+        const gridHeader = document.createElement('v-g-h') as GridHeader;
+        gridHeader._gridId = gId;
+        gridHeader._type = 'gh';
+        gridHeader.classList.add(gId + '_v-g-h');
+        gridHeader._gridHeaderCells = [];
+
+        const gridBody = document.createElement('v-g-b') as GridBody;
+        gridBody._gridId = gId;
+        gridBody._type = 'gb';
+        gridBody.classList.add(gId + '_v-g-b');
+        gridBody._gridBodyCells = [];
+        
+        const gridFooter = document.createElement('v-g-f') as GridFooter;
+        gridFooter._gridId = gId;
+        gridFooter._type = 'gf';
+        gridFooter.classList.add(gId + '_v-g-f');
+        gridFooter._gridFooterCells = [];
+
+        const gridInfo = getGridInfo(vg, vanillagridBox);
+        const grid: Grid = {
+            data: {
+                id: gId,
+                gridInfo: gridInfo,
+                gridCssInfo: getGridCssInfo(vg, vanillagridBox),
+                colInfos: getColInfo(vg, vanillagridBox, gridInfo),
+                variables: {
+                    activeRows : [],
+                    activeCols : [],
+                    activeCells : [],
+                    targetCell : null,
+                    records : [],
+                    recordseq : 0,
+                    sortToggle : {},
+                    filters : [],
+                    isDrawable : true,
+                },
+            },
+            events: getEvent(),
+            methods: {} as GridMethods,
+            elements: {
+                grid: gridElement,
+                gridHeader: gridHeader,
+                gridBody: gridBody,
+                gridFooter: gridFooter,
+            }
+        };
+        gridList[gId] = grid;
+
+        setGridCssStyle(grid);
+        setGridMethod(vg, grid, handler);
+                
+        gridHeader.addEventListener('dblclick', function (e: any) {
+            if (vg._status.onHeaderDragging) return;
+            let headerCell: Cell;
+            if (e.target._type === 'ghd') {
+                headerCell = e.target;
+            }
+            else if (e.target._type === 'sort'){
+                headerCell = e.target.parentNode;
+            }
+            else {
+                return;
+            }
+            if(headerCell._grid.events.onBeforeDblClickHeader(headerCell._row, headerCell.colId) === false) {
+                e.stopPropagation();
+                e.preventDefault();
+                return;
+            }
+            if (e.target.dataType === 'checkbox' && grid.data.gridInfo.allCheckable && headerCell._isLastCell) {
+                grid.methods.setColSameValue(e.target.cIndex, !handler.getCheckboxCellTrueOrFalse(handler._getCell(gridElement, 1, e.target.index)!), true);
+                return;
+            }
+
+            if (!grid.data.gridInfo.sortable) return;
+            if (!handler.__getColInfo(gridElement, headerCell.colId)!.sortable) return;
+            if (!headerCell._isLastCell) return;
+            
+            grid.methods.sort(headerCell.colId, !grid.data.variables.sortToggle[headerCell.colId]);
+            
+            const removeSpans = headerCell.parentNode!.querySelectorAll('.' + headerCell._gridId + '_sortSpan');
+            removeSpans.forEach((el: any) => {
+                el.parentNode.removeChild(el);
+            });
+            let sortSpan: any;
+            if(grid.data.variables.sortToggle[headerCell.colId]) {
+                if(vg.elements.sortAscSpan && vg.elements.sortAscSpan instanceof HTMLElement && vg.elements.sortAscSpan.nodeType === 1) {
+                    sortSpan = vg.elements.sortAscSpan.cloneNode(true);
+                }
+                else {
+                    sortSpan = document.createElement('span');
+                    sortSpan.style.fontSize = '0.5em';
+                    sortSpan.style.paddingLeft = '5px';
+                    sortSpan.innerText = '▲';
+                }
+            }
+            else {
+                if(vg.elements.sortDescSpan && vg.elements.sortDescSpan instanceof HTMLElement && vg.elements.sortDescSpan.nodeType === 1) {
+                    sortSpan = vg.elements.sortDescSpan.cloneNode(true);
+                }
+                else {
+                    sortSpan = document.createElement('span');
+                    sortSpan.style.fontSize = '0.5em';
+                    sortSpan.style.paddingLeft = '5px';
+                    sortSpan.innerText = '▼';
+                }
+            }
+            sortSpan._gridId = headerCell._gridId;
+            sortSpan.isChild = true;
+            sortSpan._type = 'sort';
+            sortSpan.classList.add(headerCell._gridId + '_sortSpan');
+            sortSpan.classList.add(grid.data.variables.sortToggle[headerCell.colId] ? headerCell._gridId + '_ascSpan' : headerCell._gridId + '_descSpan');
+            headerCell.append(sortSpan);
+
+            headerCell._grid.events.onAfterDblClickHeader(headerCell._row, headerCell.colId);
+        });
+        gridHeader.addEventListener('click', function (e: any) {
+            let headerCell: Cell;
+            if (e.target._type === 'ghd') {
+                headerCell = e.target;
+                if(headerCell._grid.events.onBeforeClickHeader(headerCell._row, headerCell.colId) === false) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    return;
+                }
+                headerCell._grid.events.onAfterClickHeader(headerCell._row, headerCell.colId);
+            }
+            else if (e.target._type === 'filter'){
+                headerCell = e.target.parentNode;
+                if(headerCell._grid.events.onClickFilter(headerCell._row, headerCell.colId, e.target) === false) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    return;
+                }
+                const removeSpans = headerCell.parentNode!.querySelectorAll('.' + headerCell._gridId + '_filterSelect');
+                const filterSelect = e.target.querySelectorAll('.' + headerCell._gridId + '_filterSelect')[0];
+                removeSpans.forEach((el: any) => {
+                    if (filterSelect !== el && el.value === 'ALL') el.style.display = 'none';
+                });
+                if (filterSelect.style.display === 'none') {
+                    filterSelect.style.display = 'block';
+                }
+                else {
+                    filterSelect.style.display = 'none';
+                }
+            }
+        });
+        gridBody.addEventListener('mousemove', function (e) {
+            if (vg._status.isDragging) {
+                vg._status.mouseX = e.clientX;
+                vg._status.mouseY = e.clientY;
+            }
+        });
+        gridBody.addEventListener('mouseleave',function (e: any) {
+            if (vg._status.isDragging) {
+                const mouseX = e.clientX;
+                const mouseY = e.clientY;
+                
+                const deltaX = mouseX - mouseX;
+                const deltaY = mouseY - mouseY;
+                
+                let direction = '';
+
+                if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                    
+                    direction = deltaX > 0 ? 'right' : 'left';
+                } else {
+                    
+                    direction = deltaY > 0 ? 'down' : 'up';
+                }
+                handler.startScrolling(gridElement, direction);
+            }
+        });
+        gridBody.addEventListener('mouseenter', function (e) {
+            if (vg._status.scrollInterval) {
+                handler.stopScrolling(vg);
+            }
+        });
+        gridBody.addEventListener('dblclick', function (e: any) {
+            let cell: Cell;
+            if (e.target._type === 'gbdv') {
+                cell = e.target.parentNode;
+            }
+            else {
+                cell = e.target;
+            }
+            if (cell._type !== 'gbd') return;
+            if(grid.events.onBeforeDblClickCell(cell._row, cell.colId) === false) return;
+            if (['select','checkbox','button','link'].indexOf(cell.dataType!) >= 0) return;
+            handler.createGridEditor(cell);
+            grid.events.onAfterDblClickCell(cell._row, cell.colId);
+        });
+        gridElement.addEventListener('click', function (e: any) {
+            if (!e.target._type) return;
+            let cell: Cell
+            if (e.target._type === 'gbdv') {
+                cell = e.target.parentNode;
+            }
+            else {
+                cell = e.target;
+            }
+            if (!cell) return;
+            if (cell.untarget || cell._type !== 'gbd') {
+                return;
+            }
+            if(cell.firstChild && (cell.firstChild as any).nType !== 'select') {
+                if(grid.events.onBeforeClickCell(cell._row, cell.colId) === false) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    return;
+                }
+            }
+            if (e.target.nType) {
+                switch (e.target.nType) {
+                    case 'checkbox':
+                        if(grid.events.onClickCheckbox(cell._row, cell.colId, e.target) === false) {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            return;
+                        }
+                        vg._status.editOldValue = e.target.parentNode.cValue;
+                        break;
+                    case 'button':
+                        if(grid.events.onClickButton(cell._row, cell.colId, e.target) === false) {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            return;
+                        }
+                        break;
+                    case 'link':
+                        if(grid.events.onClickLink(cell._row, cell.colId, e.target) === false) {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            return;
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            }
+            Object.keys(vg.dataType).forEach((key) => {
+                if(cell.dataType === key) {
+                    if(vg.dataType[key].onClick) {
+                        if(typeof vg.dataType[key].onClick !== 'function') throw new Error('onClick must be a function.');
+                        if((vg.dataType as any)[key].onClick(e, handler.__getData(cell)) === false) {
+                            return;
+                        }
+                    }
+                }
+            });
+            grid.events.onAfterClickCell(cell._row, cell.colId);
+        })
+        gridElement.addEventListener('mousedown', function (e: any) {
+            if (!e.target._type) return;
+            let cell: Cell;
+            if (e.target._type === 'gbdv') {
+                cell = e.target.parentNode;
+            }
+            else {
+                cell = e.target;
+            }
+            if (cell.untarget || cell._type !== 'gbd') {
+                return;
+            }
+            if (e.target.nType) {
+                switch (e.target.nType) {
+                    case 'select':
+                        if(grid.events.onBeforeClickCell(cell._row, cell.colId) === false) {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            return;
+                        }
+                        if(grid.events.onClickSelect(cell._row, cell.colId, e.target) === false) {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            return;
+                        }
+                        vg._status.editOldValue = e.target.value;
+                        break;
+                    default:
+                        break;
+                }
+            }
+            Object.keys(vg.dataType).forEach((key) => {
+                if(cell.dataType === key) {
+                    if(vg.dataType[key].onMousedown) {
+                        if(typeof vg.dataType[key].onMousedown !== 'function') throw new Error('onMousedown must be a function.');
+                        if((vg.dataType as any)[key].onMousedown(e, handler.__getData(cell)) === false) {
+                            return;
+                        }
+                    }
+                }
+            });
+            vg._status.activeGrid = grid;
+            vg._status.isDragging = true;
+            if (grid.data.gridInfo.selectionPolicy === 'range' && e.shiftKey && grid.data.variables.targetCell) {
+                handler.unselectCells(grid);
+                handler.selectCells(grid.data.variables.targetCell, cell);
+            }
+            else {
+                handler.selectCell(cell);
+            }
+        });
+        gridElement.addEventListener('mousemove', function (e: any) {
+            let cell;
+            if (e.target._type === 'gbdv') {
+                cell = e.target.parentNode;
+            }
+            else if (e.target._type === 'gbd'){
+                cell = e.target;
+            }
+            if (!cell) return;
+
+            if (grid.data.gridInfo.selectionPolicy !== 'range') return;
+            if (vg._status.mouseoverCell === cell) return;
+            vg._status.mouseoverCell = cell;
+            
+            if (vg._status.isDragging && grid.data.variables.targetCell) {
+                handler. unselectCells(grid);
+                handler.selectCells(grid.data.variables.targetCell, cell);
+            }
+        });
+        gridElement.addEventListener('mouseleave', function (e: any) {
+            if (grid.data.gridInfo.selectionPolicy !== 'range') return;
+            vg._status.mouseoverCell = null;
+
+            if (vg._status.isDragging) {
+                vg._status.isDragging = false;
+            }
+        });
+
+        gridElement.append(gridHeader);
+        gridElement.append(gridBody);
+        gridElement.append(gridFooter);
+
+        vanillagridBox.append(gridElement);
+               
+        handler.__loadHeader(gridElement);
+        handler.__loadFooter(gridElement);
     }
 }
