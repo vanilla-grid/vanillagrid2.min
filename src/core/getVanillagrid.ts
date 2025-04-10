@@ -1,17 +1,115 @@
-import type { Grid, Vanillagrid, VanillagridConfig } from "../types/vanillagrid";
+import type { Vanillagrid, VanillagridConfig } from "../types/vanillagrid";
+import type { Grid } from "../types/grid";
 import type { DefaultGridCssInfo, DefaultGridInfo } from "../types/gridInfo";
-import type { DefaultColInfo } from "../types/colInfo";
-import type { Cell } from "../types/cell";
+import type { ColInfo, DefaultColInfo } from "../types/colInfo";
+import type { Cell, CellData, CellRecord } from "../types/cell";
+import type { Handler } from "../types/handler";
 import { SelectionPolicy, VerticalAlign } from "../types/enum";
-import { modifyCell } from "../utils/handleElement";
-import { copyGrid, getMoveColCell, getMoveRowCell, getTabCell, pasteGrid, redoundo, selectAndCheckboxOnChange, selectCell, selectCells, stopScrolling, unselectCells } from "../utils/handleActive";
-import { ___getDatasWithoutExceptedProperty, __getData, _getCell } from "../utils/handleGrid";
-import { createGridEditor } from "../utils/handleCell";
 import { injectCustomElement } from "../utils/createElement";
 import { mountVanillagrid } from "./mountVanillagrid";
 import { unmountVanillagrid } from "./unmountVanillagrid";
+import { setHandleActive } from "../utils/handleActive";
+import { setHandleElement } from "../utils/handleElement";
+import { setHandleGrid } from "../utils/handleGrid";
+import { setHandleCell } from "../utils/handleCell";
 
-export let singletonVanillagrid: Vanillagrid | null = null;
+let singletonVanillagrid: Vanillagrid | null = null;
+const gridList: Record<string, Grid> = {};
+const handler = {
+    reConnectedCallbackElement(cell: Cell) {},
+    selectCell(targetCell: Cell) {},
+    focusCell(targetCell: Cell) {},
+    resetSelection(grid: Grid) {},
+    unselectCells(grid: Grid) {},
+    selectCells(startCell: Cell, endCell: Cell, _focusCell?: Cell) {},
+    setActiveCol(grid: Grid) {},
+    setActiveRow(grid: Grid) {},
+    startScrolling(grid: Grid, action: string) {},
+    stopScrolling(vg: Vanillagrid) {},
+    copyGrid(copyCells: Cell[]) {},
+    getCopyText(copyCells: Cell[]) {},
+    pasteGrid(e: ClipboardEvent, grid: Grid) {},
+    getRecordsWithModifyValue(cell: Cell, value: any, isMethodCalled?: boolean) {},
+    getTabCell(targetCell: Cell, isNegative: boolean) {},
+    getMoveRowCell(targetCell: Cell, mRow: number) {},
+    getMoveColCell(targetCell: Cell, mCol: number) {},
+    recordGridModify(grid: Grid, records: CellRecord[]) {},
+    redoundo(grid: Grid, isRedo?: boolean) {},
+    selectAndCheckboxOnChange(target: any) {},
+    modifyColSize(grid: Grid, targetCell: Cell, modifySize: number) {},
+    changeColSize(grid: Grid, targetCol: number, changeSize: number) {},
+    modifyCellValue(cell: Cell, value: any, records: CellRecord[], isMethodCalled?: boolean) {},
+    modifyCell(vg: Vanillagrid) {},
+    sort(grid: Grid, arr: CellData[][], id: string, isAsc?: boolean, isNumSort?: boolean) {},
+    setFilterOptions(select: any, options: any) {},
+    reloadColFilterValue(grid: Grid, colId: number | string) {},
+    reloadFilter(grid: Grid, colId: number | string) {},
+    reloadColForMerge(grid: Grid, colIndex: number) {},
+    reloadGridWithModifyCell(grid: Grid, colIndex: number) {},
+    reloadGridForMerge(grid: Grid) {},
+    reloadFooterValue(grid: Grid) {},
+    setGridDataRowCol(el: Cell, row: number, col: number) {},
+    setGridDataPosition(el: Cell) {},
+    getGridCell(grid: Grid, colInfo: ColInfo, valueOrData: any, rowCount: number, colCount: number) {},
+    __getDefaultColInfo(grid: Grid, newColInfo: ColInfo, isAdd?: boolean) {},
+    __getColInfo(grid: Grid, colIndexOrColId: string | number, useError?: boolean) {},
+    __getColIndex(grid: Grid, colIndexOrColId: number | string, useError?: boolean) {},
+    __setGridColSize(grid: Grid) {},
+    _getCellChildNode(cell: Cell) {},
+    __loadHeader(grid: Grid) {},
+    _getHeaderRow(grid: Grid, rowIndex: number) {},
+    _getHeaderCell(grid: Grid, rowIndex: number, colIndexOrColId: number | string) {},
+    _getHeaderCells(grid: Grid) {},
+    __getHeaderFilter(grid: Grid, colIndexOrColId: number | string) {},
+    __loadFooter(grid: Grid) {},
+    _getFooterRow(grid: Grid, rowIndex: number) {},
+    _getFooterCell(grid: Grid, rowIndex: number, colIndexOrColId: number | string) {},
+    _getFooterCells(grid: Grid) {},
+    _getRow(grid: Grid, rowIndex: number) {},
+    _getCell(grid: Grid, rowIndex: number, colIndexOrColId: number | string) {},
+    _getCells(grid: Grid) {},
+    __gridBodyCellsReConnected(grid: Grid) {},
+    __mountGridBodyCell(grid: Grid) {},
+    __clear(grid: Grid) {},
+    __checkRowIndex(grid: Grid, row: number) {},
+    __checkColRownumOrStatus(grid: Grid, colIndexOrColId: number | string) {},
+    __checkColIndex(grid: Grid, col: number) {},
+    ___getDatasWithoutExceptedProperty(grid: Grid, exceptedProperty?: string[]) {},
+    _doFilter(grid: Grid) {},
+    __gridCellReConnectedWithControlSpan(cell: Cell) {},
+    __getData(cell: Cell, exceptedProperty?: string[]) {},
+    __setCellData(grid: Grid, row: number, colIndexOrColId: number | string, cellData: CellData, isImmutableColCheck?: boolean) {},
+    _getDataTypeStyle(grid: Grid) {},
+    _getFilterSpan() {},
+    _getFooterFormula() {},
+    isCellVisible(cell: Cell) {},
+    getFirstCellValidNumber(footerCell: Cell) {},
+    removeGridEditor(activeGridEditor: any) {},
+    addBagicEventListenerToGridEditor(gridEditor: HTMLElement, activeGrid: Grid) {},
+    setBagicAttributesToGridEditor(gridEditor: any, cell: Cell) {},
+    createGridEditorTextarea(cell: Cell) {},
+    createGridEditorNumber(cell: Cell) {},
+    createGridEditorDate(cell: Cell) {},
+    createGridEditorMonth(cell: Cell) {},
+    createGridEditorMask(cell: Cell) {},
+    createGridEditorCode(cell: Cell) {},
+    createGridEditor(cell: Cell, isEnterKey?: boolean) {},
+    getValidValue(cell: Cell, value: any) {},
+    getTextFromCell (cell: Cell) {},
+    getFormatNumber(format: string, value: any) {},
+    getFormatNumberFromCell(cell: Cell) {},
+    getDateWithValueDateFormat(dateStr: string) {},
+    getDateWithValueMonthFormat(dateStr: string) {},
+    getDateWithInputDateFormat(dateStr: string) {},
+    getDateWithInputMonthFormat(dateStr: string) {},
+    getDateWithGridDateFormat(cell: Cell) {},
+    getDateWithGridMonthFormat(cell: Cell) {},
+    getCheckboxCellTrueOrFalse(cell: Cell) {},
+    getCodeValue(code: string[], defaultCode: string | null, value: string) {},
+    getMaskValue(format: string, value: string) {},
+    setSelectOptions(select: any, options: any) {},
+    getSelectOptions(select: any) {}
+} as Handler;
 
 export const getVanillagrid = (config?: VanillagridConfig): Vanillagrid => {
     if(singletonVanillagrid) return singletonVanillagrid;
@@ -19,7 +117,6 @@ export const getVanillagrid = (config?: VanillagridConfig): Vanillagrid => {
     if(!config) config = getVanillagridConfig();
 
     singletonVanillagrid = {
-        grids: {},
         elements : {
             sortAscSpan: config.elements.sortAscSpan,
             sortDescSpan: config.elements.sortDescSpan,
@@ -33,7 +130,11 @@ export const getVanillagrid = (config?: VanillagridConfig): Vanillagrid => {
             defaultColInfo: config.attributes.defaultColInfo,
         },
         checkByte: config.checkByte,
-        getGrid: (gridId: string) => {},
+        getGrid: (gridId: string) => {
+            if(gridList[gridId]) return null;
+            const grid: Grid = gridList[gridId];
+            return grid.methods ? grid.methods : null;
+        },
         documentEvent: {
             mousedown: null,
             mouseup: null,
@@ -57,14 +158,17 @@ export const getVanillagrid = (config?: VanillagridConfig): Vanillagrid => {
             scrollInterval: null,
         },
         init() { initVanillagrid(); },
-        mountGrid(element?: HTMLElement) { mountVanillagrid(singletonVanillagrid!, element) },
+        mountGrid(element?: HTMLElement) { mountVanillagrid(singletonVanillagrid!, gridList, handler, element) },
         destroy() { destroyVanillagrid() },
-        unmountGrid(element?: HTMLElement) { unmountVanillagrid(singletonVanillagrid!, element) },
-    } as Vanillagrid;
+        unmountGrid(element?: HTMLElement) { unmountVanillagrid(singletonVanillagrid!, gridList, element) },
+        _VanillaGrid: null,
+        _GridHeader: null,
+        _GridBody: null,
+        _GridFooter: null,
+        _GridData: null,
+        _initialized: false,
+    };
 
-    singletonVanillagrid.getGrid = (gridId) => {
-        return singletonVanillagrid!.grids[gridId];
-    }
     return singletonVanillagrid;
 }
 
@@ -210,34 +314,18 @@ export const getVanillagridConfig = (): VanillagridConfig => {
 }
 
 const initVanillagrid = () => {
-    /*
-    const dataTypeUnit = {
-        TEXT: 'text',
-        NUMBER: 'number',
-        DATE: 'date',
-        MONTH: 'month',
-        MASK: 'mask',
-        SELECT : 'select',
-        CHECKBOX : 'checkbox',
-        BUTTON : 'button',
-        LINK : 'link',
-        CODE : 'code',
-    };
-    if(vg.dataType) {
-        Object.keys(vg.dataType).forEach((key) => {
-            (dataTypeUnit as any)[toUpperCase(key)] = key;
-        });
-    }
-    Object.freeze(dataTypeUnit);
-    */
     const vg: Vanillagrid = singletonVanillagrid!;
+    setHandleActive(vg, gridList, handler);
+    setHandleElement(vg, gridList, handler);
+    setHandleGrid(vg, gridList, handler);
+    setHandleCell(vg, gridList, handler);
 
     vg.documentEvent.mousedown = function (e: any) {
         if (vg._status.activeGridEditor && vg._status.activeGridEditor !== e.target) {
-            modifyCell(vg);
+            handler.modifyCell(vg);
         }
         
-        if (vg._status.activeGrid && !vg._status.activeGrid.contains(e.target)) {
+        if (vg._status.activeGrid && !vg._status.activeGrid.elements.grid.contains(e.target)) {
             vg._status.activeGrid = null;
         }
     };
@@ -247,7 +335,7 @@ const initVanillagrid = () => {
     vg.documentEvent.mouseup = function (e: any) {
         vg._status.mouseX = 0;
         vg._status.mouseY = 0;
-        stopScrolling(vg);
+        handler.stopScrolling(vg);
 
         if (vg._status.isDragging) {
             vg._status.isDragging = false;
@@ -262,7 +350,7 @@ const initVanillagrid = () => {
     vg.documentEvent.keydown = function (e: any) {
         if (vg._status.activeGrid && !vg._status.activeGridEditor) {
             
-            if(vg._status.activeGrid._events.onKeydownGrid(e) === false) {
+            if(vg._status.activeGrid.events.onKeydownGrid(e) === false) {
                 e.stopPropagation();
                 e.preventDefault();
                 return;
@@ -272,33 +360,33 @@ const initVanillagrid = () => {
                 switch (e.key) {
                     case 'z':
                     case 'Z': 
-                        redoundo(vg._status.activeGrid);
+                        handler.redoundo(vg._status.activeGrid);
                         e.preventDefault();
                         break;
                     case 'y':
                     case 'Y': 
-                        redoundo(vg._status.activeGrid, false);
+                        handler.redoundo(vg._status.activeGrid, false);
                         e.preventDefault();
                         break;
                     case 'a':
                     case 'A': 
-                        vg._status.activeGrid._variables._targetCell = _getCell(vg._status.activeGrid, 1, 3);
-                        selectCells(_getCell(vg._status.activeGrid, 1, 1)!, _getCell(vg._status.activeGrid, vg._status.activeGrid.getRowCount(), vg._status.activeGrid.getColCount())!);
+                        vg._status.activeGrid.data.variables.targetCell = handler._getCell(vg._status.activeGrid, 1, 3)!;
+                        handler.selectCells(handler._getCell(vg._status.activeGrid, 1, 1)!, handler._getCell(vg._status.activeGrid, vg._status.activeGrid.methods.getRowCount(), vg._status.activeGrid.methods.getColCount())!);
                         e.preventDefault();
                         break;
                     default:
                         break;
                 }
             }
-            if (vg._status.activeGrid._gridInfo.selectionPolicy === 'none' || vg._status.activeGrid._variables._activeCells.length <= 0) return;
-            const startCell = vg._status.activeGrid._variables._activeCells[0];
-            const endCell = vg._status.activeGrid._variables._activeCells[vg._status.activeGrid._variables._activeCells.length - 1];
+            if (vg._status.activeGrid.data.gridInfo.selectionPolicy === 'none' || vg._status.activeGrid.data.variables.activeCells.length <= 0) return;
+            const startCell = vg._status.activeGrid.data.variables.activeCells[0];
+            const endCell = vg._status.activeGrid.data.variables.activeCells[vg._status.activeGrid.data.variables.activeCells.length - 1];
             let newTargetCell: Cell;
             Object.keys(vg.dataType).forEach((key) => {
-                if(vg._status.activeGrid!._variables._targetCell!.dataType === key) {
+                if(vg._status.activeGrid!.data.variables.targetCell!.dataType === key) {
                     if(vg.dataType[key].onSelectedAndKeyDown) {
                         if(typeof vg.dataType[key].onSelectedAndKeyDown !== 'function') throw new Error('onSelectedAndKeyDown must be a function.');
-                        if(vg.dataType[key].onSelectedAndKeyDown(e, __getData(vg._status.activeGrid!._variables._targetCell!)) === false) {
+                        if(vg.dataType[key].onSelectedAndKeyDown(e, handler.__getData(vg._status.activeGrid!.data.variables.targetCell!)!) === false) {
                             return;
                         }
                     }
@@ -306,129 +394,129 @@ const initVanillagrid = () => {
             });
             switch (e.key) {
                 case 'Tab':
-                    newTargetCell = getTabCell(vg._status.activeGrid._variables._targetCell!, e.shiftKey)!;
-                    selectCell(newTargetCell);
+                    newTargetCell = handler.getTabCell(vg._status.activeGrid.data.variables.targetCell!, e.shiftKey)!;
+                    handler.selectCell(newTargetCell);
                     e.preventDefault();
                     break;
                 case 'F2':
-                    createGridEditor(vg._status.activeGrid._variables._targetCell!);
+                    handler.createGridEditor(vg._status.activeGrid.data.variables.targetCell!);
                     e.preventDefault();
                     break;
                 case 'Enter':
-                    if (vg._status.activeGrid._variables._targetCell!.dataType === 'select') {
-                        vg._status.editOldValue = (vg._status.activeGrid._variables._targetCell as any).firstChild.value;
-                        (vg._status.activeGrid._variables._targetCell as any).firstChild.focus();
+                    if (vg._status.activeGrid.data.variables.targetCell!.dataType === 'select') {
+                        vg._status.editOldValue = (vg._status.activeGrid.data.variables.targetCell as any).firstChild.value;
+                        (vg._status.activeGrid.data.variables.targetCell as any).firstChild.focus();
                     }
-                    else if (vg._status.activeGrid._variables._targetCell!.dataType === 'checkbox') {
-                        vg._status.editOldValue = vg._status.activeGrid._variables._targetCell!.value;
-                        (vg._status.activeGrid._variables._targetCell as any).firstChild.checked = !(vg._status.activeGrid._variables._targetCell as any).firstChild.checked;
-                        selectAndCheckboxOnChange(vg._status.activeGrid._variables._targetCell!.firstChild);
+                    else if (vg._status.activeGrid.data.variables.targetCell!.dataType === 'checkbox') {
+                        vg._status.editOldValue = vg._status.activeGrid.data.variables.targetCell!.value;
+                        (vg._status.activeGrid.data.variables.targetCell as any).firstChild.checked = !(vg._status.activeGrid.data.variables.targetCell as any).firstChild.checked;
+                        handler.selectAndCheckboxOnChange(vg._status.activeGrid.data.variables.targetCell!.firstChild);
                         
-                        newTargetCell = getMoveRowCell(vg._status.activeGrid._variables._targetCell!, 1)!;
-                        selectCell(newTargetCell);
+                        newTargetCell = handler.getMoveRowCell(vg._status.activeGrid.data.variables.targetCell!, 1)!;
+                        handler.selectCell(newTargetCell);
                         e.preventDefault();
                     }
-                    else if (['text','number','date','month','mask','code'].indexOf(vg._status.activeGrid._variables._targetCell!.dataType!) >= 0) {
-                        createGridEditor(vg._status.activeGrid._variables._targetCell!, true);
+                    else if (['text','number','date','month','mask','code'].indexOf(vg._status.activeGrid.data.variables.targetCell!.dataType!) >= 0) {
+                        handler.createGridEditor(vg._status.activeGrid.data.variables.targetCell!, true);
                         e.preventDefault();
                     }
                     break;
                 case ' ':
-                    if (vg._status.activeGrid._variables._targetCell!.dataType === 'select') {
-                        if (vg._status.activeGrid._variables._targetCell!.untarget || vg._status.activeGrid._variables._targetCell!.locked) {
+                    if (vg._status.activeGrid.data.variables.targetCell!.dataType === 'select') {
+                        if (vg._status.activeGrid.data.variables.targetCell!.untarget || vg._status.activeGrid.data.variables.targetCell!.locked) {
                             e.preventDefault();
                             return;
                         }
-                        vg._status.editOldValue = (vg._status.activeGrid._variables._targetCell as any).firstChild.value;
-                        (vg._status.activeGrid._variables._targetCell as any).firstChild.focus();
+                        vg._status.editOldValue = (vg._status.activeGrid.data.variables.targetCell as any).firstChild.value;
+                        (vg._status.activeGrid.data.variables.targetCell as any).firstChild.focus();
                     }
-                    else if (vg._status.activeGrid._variables._targetCell!.dataType === 'button') {
-                        (vg._status.activeGrid._variables._targetCell as any).firstChild.focus();
+                    else if (vg._status.activeGrid.data.variables.targetCell!.dataType === 'button') {
+                        (vg._status.activeGrid.data.variables.targetCell as any).firstChild.focus();
                     }
-                    else if (vg._status.activeGrid._variables._targetCell!.dataType === 'checkbox') {
-                        if (vg._status.activeGrid._variables._targetCell!.untarget || vg._status.activeGrid._variables._targetCell!.locked) {
+                    else if (vg._status.activeGrid.data.variables.targetCell!.dataType === 'checkbox') {
+                        if (vg._status.activeGrid.data.variables.targetCell!.untarget || vg._status.activeGrid.data.variables.targetCell!.locked) {
                             e.preventDefault();
                             return;
                         }
-                        vg._status.editOldValue = vg._status.activeGrid._variables._targetCell!.value;
-                        (vg._status.activeGrid._variables._targetCell as any).firstChild.checked = !(vg._status.activeGrid._variables._targetCell as any).firstChild.checked;
-                        selectAndCheckboxOnChange(vg._status.activeGrid._variables._targetCell!.firstChild);
+                        vg._status.editOldValue = vg._status.activeGrid.data.variables.targetCell!.value;
+                        (vg._status.activeGrid.data.variables.targetCell as any).firstChild.checked = !(vg._status.activeGrid.data.variables.targetCell as any).firstChild.checked;
+                        handler.selectAndCheckboxOnChange(vg._status.activeGrid.data.variables.targetCell!.firstChild);
                         e.preventDefault();
                     }
-                    else if (['text','number','date','month','mask','code'].indexOf(vg._status.activeGrid._variables._targetCell!.dataType!) >= 0) {
-                        createGridEditor(vg._status.activeGrid._variables._targetCell!);
+                    else if (['text','number','date','month','mask','code'].indexOf(vg._status.activeGrid.data.variables.targetCell!.dataType!) >= 0) {
+                        handler.createGridEditor(vg._status.activeGrid.data.variables.targetCell!);
                         e.preventDefault();
                     }
                     break;
                 case 'ArrowUp':
-                    if (vg._status.activeGrid._gridInfo.selectionPolicy === 'range' && e.shiftKey) {
-                        unselectCells(vg._status.activeGrid);
-                        if (vg._status.activeGrid._variables._targetCell!._row >= endCell._row) {
-                            newTargetCell = getMoveRowCell(startCell, -1)!;
-                            selectCells(newTargetCell, endCell, newTargetCell);
+                    if (vg._status.activeGrid.data.gridInfo.selectionPolicy === 'range' && e.shiftKey) {
+                        handler.unselectCells(vg._status.activeGrid);
+                        if (vg._status.activeGrid.data.variables.targetCell!._row >= endCell._row) {
+                            newTargetCell = handler.getMoveRowCell(startCell, -1)!;
+                            handler.selectCells(newTargetCell, endCell, newTargetCell);
                         }
                         else {
-                            newTargetCell = getMoveRowCell(endCell, -1)!;
-                            selectCells(startCell, newTargetCell);
+                            newTargetCell = handler.getMoveRowCell(endCell, -1)!;
+                            handler.selectCells(startCell, newTargetCell);
                         }
                     }
                     else {
-                        newTargetCell = getMoveRowCell(vg._status.activeGrid._variables._targetCell!, -1)!;
-                        selectCell(newTargetCell);
+                        newTargetCell = handler.getMoveRowCell(vg._status.activeGrid.data.variables.targetCell!, -1)!;
+                        handler.selectCell(newTargetCell);
                     }
                     e.preventDefault();
                     break;
                 case 'ArrowDown':
-                    if (vg._status.activeGrid._gridInfo.selectionPolicy === 'range' && e.shiftKey) {
-                        unselectCells(vg._status.activeGrid);
-                        if (vg._status.activeGrid._variables._targetCell!._row <= startCell._row) {
-                            newTargetCell = getMoveRowCell(endCell, 1)!;
-                            selectCells(startCell, newTargetCell);
+                    if (vg._status.activeGrid.data.gridInfo.selectionPolicy === 'range' && e.shiftKey) {
+                        handler.unselectCells(vg._status.activeGrid);
+                        if (vg._status.activeGrid.data.variables.targetCell!._row <= startCell._row) {
+                            newTargetCell = handler.getMoveRowCell(endCell, 1)!;
+                            handler.selectCells(startCell, newTargetCell);
                         }
                         else {
-                            newTargetCell = getMoveRowCell(startCell, 1)!;
-                            selectCells(newTargetCell, endCell, newTargetCell);
+                            newTargetCell = handler.getMoveRowCell(startCell, 1)!;
+                            handler.selectCells(newTargetCell, endCell, newTargetCell);
                         }
                     }
                     else {
-                        newTargetCell = getMoveRowCell(vg._status.activeGrid._variables._targetCell!, 1)!;
-                        selectCell( newTargetCell);
+                        newTargetCell = handler.getMoveRowCell(vg._status.activeGrid.data.variables.targetCell!, 1)!;
+                        handler.selectCell( newTargetCell);
                     }
                     e.preventDefault();
                     break;
                 case 'ArrowLeft':
-                    if (vg._status.activeGrid._gridInfo.selectionPolicy === 'range' && e.shiftKey) {
-                        unselectCells(vg._status.activeGrid);
-                        if (vg._status.activeGrid._variables._targetCell!._col >= endCell._col) {
-                            newTargetCell = getMoveColCell(startCell, -1)!;
-                            selectCells(newTargetCell, endCell, newTargetCell);
+                    if (vg._status.activeGrid.data.gridInfo.selectionPolicy === 'range' && e.shiftKey) {
+                        handler.unselectCells(vg._status.activeGrid);
+                        if (vg._status.activeGrid.data.variables.targetCell!._col >= endCell._col) {
+                            newTargetCell = handler.getMoveColCell(startCell, -1)!;
+                            handler.selectCells(newTargetCell, endCell, newTargetCell);
                         }
                         else {
-                            newTargetCell = getMoveColCell(endCell, -1)!;
-                            selectCells(startCell, newTargetCell);
+                            newTargetCell = handler.getMoveColCell(endCell, -1)!;
+                            handler.selectCells(startCell, newTargetCell);
                         }
                     }
                     else {
-                        newTargetCell = getMoveColCell(vg._status.activeGrid._variables._targetCell!, -1)!;
-                        selectCell(newTargetCell);
+                        newTargetCell = handler.getMoveColCell(vg._status.activeGrid.data.variables.targetCell!, -1)!;
+                        handler.selectCell(newTargetCell);
                     }
                     e.preventDefault();
                     break;
                 case 'ArrowRight':
-                    if (vg._status.activeGrid._gridInfo.selectionPolicy === 'range' && e.shiftKey) {
-                        unselectCells(vg._status.activeGrid);
-                        if (vg._status.activeGrid._variables._targetCell!._col <= startCell._col) {
-                            newTargetCell = getMoveColCell(endCell, 1)!;
-                            selectCells(startCell, newTargetCell);
+                    if (vg._status.activeGrid.data.gridInfo.selectionPolicy === 'range' && e.shiftKey) {
+                        handler.unselectCells(vg._status.activeGrid);
+                        if (vg._status.activeGrid.data.variables.targetCell!._col <= startCell._col) {
+                            newTargetCell = handler.getMoveColCell(endCell, 1)!;
+                            handler.selectCells(startCell, newTargetCell);
                         }
                         else {
-                            newTargetCell = getMoveColCell(startCell, 1)!;
-                            selectCells(newTargetCell, endCell, newTargetCell)!;
+                            newTargetCell = handler.getMoveColCell(startCell, 1)!;
+                            handler.selectCells(newTargetCell, endCell, newTargetCell)!;
                         }
                     }
                     else {
-                        newTargetCell = getMoveColCell(vg._status.activeGrid._variables._targetCell!, 1)!;
-                        selectCell(newTargetCell);
+                        newTargetCell = handler.getMoveColCell(vg._status.activeGrid.data.variables.targetCell!, 1)!;
+                        handler.selectCell(newTargetCell);
                     }
                     e.preventDefault();
                     break;
@@ -441,10 +529,10 @@ const initVanillagrid = () => {
     document.addEventListener('keydown', vg.documentEvent.keydown);
     vg.documentEvent.copy = function (e: any) {
         if (vg._status.activeGrid && !vg._status.activeGridEditor) {
-            const currentActiveCells = vg._status.activeGrid._variables._activeCells;
+            const currentActiveCells = vg._status.activeGrid.data.variables.activeCells;
             if (currentActiveCells.length > 0) {
                 e.preventDefault();
-                copyGrid(currentActiveCells);
+                handler.copyGrid(currentActiveCells);
             }
         }
     };
@@ -453,27 +541,27 @@ const initVanillagrid = () => {
 
     vg.documentEvent.paste = function (e: any) {
         if (vg._status.activeGrid && !vg._status.activeGridEditor) {
-            if (vg._status.activeGrid._variables._activeCells.length > 0) {
+            if (vg._status.activeGrid.data.variables.activeCells.length > 0) {
                 e.preventDefault();
-                pasteGrid(e, vg._status.activeGrid);
+                handler.pasteGrid(e, vg._status.activeGrid);
             }
         }
     };
     document.removeEventListener('paste', vg.documentEvent.paste);
     document.addEventListener('paste', vg.documentEvent.paste);
 
-    injectCustomElement(vg);
+    injectCustomElement(vg, gridList, handler);
     vg._initialized = true;
 }
 
 const destroyVanillagrid = () => {
     if(!singletonVanillagrid) return;
-    Object.values(singletonVanillagrid.grids).forEach((grid: Grid | null) => {
-        const vanillagrid = document.getElementById(grid!._id);
-        const stylesSheet = document.getElementById(grid!._id + '_styles-sheet');
+    Object.values(gridList).forEach((grid: Grid | null) => {
+        const vanillagrid = document.getElementById(grid!.data.id);
+        const stylesSheet = document.getElementById(grid!.data.id + '_styles-sheet');
         if (vanillagrid) (vanillagrid as any).parentNode.removeChild(vanillagrid);
         if (stylesSheet) (stylesSheet as any).parentNode.removeChild(stylesSheet);
-        delete singletonVanillagrid!.grids[grid!._id];
+        delete gridList[grid!.data.id];
         grid = null;
     });
     document.removeEventListener('mousedown', singletonVanillagrid.documentEvent.mousedown!);
@@ -481,6 +569,7 @@ const destroyVanillagrid = () => {
     document.removeEventListener('keydown', singletonVanillagrid.documentEvent.keydown!);
     document.removeEventListener('copy', singletonVanillagrid.documentEvent.copy!);
     document.removeEventListener('paste', singletonVanillagrid.documentEvent.paste!);
-
+    
+    singletonVanillagrid.unmountGrid();
     singletonVanillagrid = null;
 }
