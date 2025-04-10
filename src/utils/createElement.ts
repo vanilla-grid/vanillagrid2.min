@@ -1,26 +1,26 @@
-import type { Grid, Vanillagrid } from "../types/vanillagrid";
+import type { Vanillagrid } from "../types/vanillagrid";
+import type { Grid } from "../types/grid";
 import type { Cell } from "../types/cell";
+import type { Handler } from "../types/handler";
 import { footerUnit } from "../types/enum";
-import { getFirstCellValidNumber, getFormatNumber, isCellVisible } from "./handleCell";
-import { _doFilter, _getCell, _getCellChildNode, _getDataTypeStyle, _getFilterSpan, _getFooterCell, _getFooterCells, _getFooterFormula, _getHeaderCell } from "./handleGrid";
 import { extractNumberAndUnit, getCssTextFromObject, getOnlyNumberWithNaNToNull, getOnlyNumberWithNaNToZero, removeAllChild } from "./utils";
 
 export const getGridCssStyle = (grid: Grid) => {
-    const gId = grid._id;
+    const gId = grid.data.id;
     const csses: any = {};
     csses['.' + gId + '_vanillagrid'] = {
-        'width': grid._gridCssInfo.width,
-        'height': grid._gridCssInfo.height,
-        'display': grid._gridInfo.visible ? 'block' : 'none',
-        'border': '1px solid ' + grid._gridCssInfo.gridBorderColor,
+        'width': grid.data.gridCssInfo.width,
+        'height': grid.data.gridCssInfo.height,
+        'display': grid.data.gridInfo.visible ? 'block' : 'none',
+        'border': '1px solid ' + grid.data.gridCssInfo.gridBorderColor,
         'overflow': 'auto',
         'background-color': '#fff',
-        'margin': grid._gridCssInfo.margin,
-        'padding': grid._gridCssInfo.padding,
-        'font-family': grid._gridCssInfo.gridFontFamily,
+        'margin': grid.data.gridCssInfo.margin,
+        'padding': grid.data.gridCssInfo.padding,
+        'font-family': grid.data.gridCssInfo.gridFontFamily,
     };
     csses['.' + gId + '_v-g'] = {
-        'background-color': grid._gridCssInfo.bodyBackColor,
+        'background-color': grid.data.gridCssInfo.bodyBackColor,
         'display': 'flex',
         'position': 'relative',
         'flex-direction': 'column',
@@ -37,7 +37,7 @@ export const getGridCssStyle = (grid: Grid) => {
         'position': 'sticky',
         'top': '0',
         'z-index': '250',
-        'display': grid._gridInfo.headerVisible ? 'grid' : 'none',
+        'display': grid.data.gridInfo.headerVisible ? 'grid' : 'none',
     };
     csses['.' + gId + '_v-g-b'] = {
         'margin-bottom': '22px',
@@ -53,13 +53,13 @@ export const getGridCssStyle = (grid: Grid) => {
         'margin-top': 'auto',
     };
     csses['.' + gId + '_h-v-g-d'] = {
-        'background-color': grid._gridCssInfo.headerCellBackColor,
+        'background-color': grid.data.gridCssInfo.headerCellBackColor,
         'justify-content': 'center',
         'text-align': 'center',
-        'align-items' : grid._gridCssInfo.verticalAlign,
-        'border-bottom': grid._gridCssInfo.horizenBorderSize + 'px solid ' + grid._gridCssInfo.headerCellBorderColor,
-        'border-right': grid._gridCssInfo.verticalBorderSize + 'px solid ' + grid._gridCssInfo.headerCellBorderColor,
-        'color': grid._gridCssInfo.headerCellFontColor,
+        'align-items' : grid.data.gridCssInfo.verticalAlign,
+        'border-bottom': grid.data.gridCssInfo.horizenBorderSize + 'px solid ' + grid.data.gridCssInfo.headerCellBorderColor,
+        'border-right': grid.data.gridCssInfo.verticalBorderSize + 'px solid ' + grid.data.gridCssInfo.headerCellBorderColor,
+        'color': grid.data.gridCssInfo.headerCellFontColor,
     };
     csses['.' + gId + '_h-v-g-d select'] = {
         'color': '#333',
@@ -68,78 +68,78 @@ export const getGridCssStyle = (grid: Grid) => {
         'color': '#333',
     };
     csses['.' + gId + '_b-v-g-d'] = {
-        'align-items' : grid._gridCssInfo.verticalAlign,
-        'background-color': grid._gridCssInfo.bodyCellBackColor,
-        'border-bottom': grid._gridCssInfo.horizenBorderSize + 'px solid ' + grid._gridCssInfo.bodyCellBorderColor,
-        'border-right': grid._gridCssInfo.verticalBorderSize + 'px solid ' + grid._gridCssInfo.bodyCellBorderColor,
-        'color': grid._gridCssInfo.bodyCellFontColor,
+        'align-items' : grid.data.gridCssInfo.verticalAlign,
+        'background-color': grid.data.gridCssInfo.bodyCellBackColor,
+        'border-bottom': grid.data.gridCssInfo.horizenBorderSize + 'px solid ' + grid.data.gridCssInfo.bodyCellBorderColor,
+        'border-right': grid.data.gridCssInfo.verticalBorderSize + 'px solid ' + grid.data.gridCssInfo.bodyCellBorderColor,
+        'color': grid.data.gridCssInfo.bodyCellFontColor,
     };
     csses['.' + gId + '_f-v-g-d'] = {
         'justify-content': 'center',
         'text-align': 'center',
-        'align-items' : grid._gridCssInfo.verticalAlign,
-        'background-color': grid._gridCssInfo.footerCellBackColor,
-        'border-top': grid._gridCssInfo.horizenBorderSize + 'px solid ' + grid._gridCssInfo.footerCellBorderColor,
-        'color': grid._gridCssInfo.footerCellFontColor,
+        'align-items' : grid.data.gridCssInfo.verticalAlign,
+        'background-color': grid.data.gridCssInfo.footerCellBackColor,
+        'border-top': grid.data.gridCssInfo.horizenBorderSize + 'px solid ' + grid.data.gridCssInfo.footerCellBorderColor,
+        'color': grid.data.gridCssInfo.footerCellFontColor,
     };
     csses['.' + gId + '_f-v-g-d-value'] = {
-        'border-right': grid._gridCssInfo.verticalBorderSize + 'px solid ' + grid._gridCssInfo.bodyCellBorderColor,
+        'border-right': grid.data.gridCssInfo.verticalBorderSize + 'px solid ' + grid.data.gridCssInfo.bodyCellBorderColor,
     };
     csses['.' + gId + '_b-v-g-d-alter'] = {
-        'align-items' : grid._gridCssInfo.verticalAlign,
-        'background-color': grid._gridCssInfo.alterRowBackColor,
-        'border-bottom': grid._gridCssInfo.horizenBorderSize + 'px solid ' + grid._gridCssInfo.bodyCellBorderColor,
-        'border-right': grid._gridCssInfo.verticalBorderSize + 'px solid ' + grid._gridCssInfo.bodyCellBorderColor,
-        'color': grid._gridCssInfo.alterRowFontColor,
+        'align-items' : grid.data.gridCssInfo.verticalAlign,
+        'background-color': grid.data.gridCssInfo.alterRowBackColor,
+        'border-bottom': grid.data.gridCssInfo.horizenBorderSize + 'px solid ' + grid.data.gridCssInfo.bodyCellBorderColor,
+        'border-right': grid.data.gridCssInfo.verticalBorderSize + 'px solid ' + grid.data.gridCssInfo.bodyCellBorderColor,
+        'color': grid.data.gridCssInfo.alterRowFontColor,
     };
     csses['.' + gId + '_b-v-g-d-locked'] = {
-        'background-color': grid._gridCssInfo.lockCellBackColor,
-        'border-bottom': grid._gridCssInfo.horizenBorderSize + 'px solid ' + grid._gridCssInfo.bodyCellBorderColor,
-        'border-right': grid._gridCssInfo.verticalBorderSize + 'px solid ' + grid._gridCssInfo.bodyCellBorderColor,
-        'color': grid._gridCssInfo.lockCellFontColor,
+        'background-color': grid.data.gridCssInfo.lockCellBackColor,
+        'border-bottom': grid.data.gridCssInfo.horizenBorderSize + 'px solid ' + grid.data.gridCssInfo.bodyCellBorderColor,
+        'border-right': grid.data.gridCssInfo.verticalBorderSize + 'px solid ' + grid.data.gridCssInfo.bodyCellBorderColor,
+        'color': grid.data.gridCssInfo.lockCellFontColor,
     };
     csses['.' + gId + '_v-g-d'] = {
-        'font-size': grid._gridCssInfo.cellFontSize,
+        'font-size': grid.data.gridCssInfo.cellFontSize,
         'display': 'flex',
-        'min-height': grid._gridCssInfo.cellMinHeight,
+        'min-height': grid.data.gridCssInfo.cellMinHeight,
         'overflow': 'hidden',
         'white-space': 'nowrap',
         'padding-left': '5px',
         'padding-right': '5px',
     };
-    if (grid._gridCssInfo.overflowWrap) csses['.' + gId + '_v-g-d']['overflow-wrap'] = grid._gridCssInfo.overflowWrap;
-    if (grid._gridCssInfo.wordBreak) csses['.' + gId + '_v-g-d']['word-break'] = grid._gridCssInfo.wordBreak;
-    if (grid._gridCssInfo.whiteSpace) csses['.' + gId + '_v-g-d']['white-space'] = grid._gridCssInfo.whiteSpace;
+    if (grid.data.gridCssInfo.overflowWrap) csses['.' + gId + '_v-g-d']['overflow-wrap'] = grid.data.gridCssInfo.overflowWrap;
+    if (grid.data.gridCssInfo.wordBreak) csses['.' + gId + '_v-g-d']['word-break'] = grid.data.gridCssInfo.wordBreak;
+    if (grid.data.gridCssInfo.whiteSpace) csses['.' + gId + '_v-g-d']['white-space'] = grid.data.gridCssInfo.whiteSpace;
 
     csses['.' + gId + '_editor'] = {
-        'font-size': grid._gridCssInfo.cellFontSize,
-        'background-color': grid._gridCssInfo.editorBackColor,
+        'font-size': grid.data.gridCssInfo.cellFontSize,
+        'background-color': grid.data.gridCssInfo.editorBackColor,
         'border': 'none',
-        'color': grid._gridCssInfo.editorFontColor,
+        'color': grid.data.gridCssInfo.editorFontColor,
         'overflow' : 'hidden',
         'resize': 'none',
         'box-sizing': 'border-box',
-        'font-family': grid._gridCssInfo.gridFontFamily,
+        'font-family': grid.data.gridCssInfo.gridFontFamily,
         'text-align': 'inherit',
     };
     csses['.' + gId + '_editor:focus'] = {
         'outline': 'none',
     };
     csses['.' + gId + '_mouseover-cell'] = {
-        'background-color': grid._gridCssInfo.mouseoverCellBackColor + ' !important',
-        'color': grid._gridCssInfo.mouseoverCellFontColor + ' !important',
+        'background-color': grid.data.gridCssInfo.mouseoverCellBackColor + ' !important',
+        'color': grid.data.gridCssInfo.mouseoverCellFontColor + ' !important',
     };
     csses['.' + gId + '_selected-cell'] = {
-        'background-color': grid._gridCssInfo.selectCellBackColor + ' !important',
-        'color': grid._gridCssInfo.selectCellFontColor + ' !important',
+        'background-color': grid.data.gridCssInfo.selectCellBackColor + ' !important',
+        'color': grid.data.gridCssInfo.selectCellFontColor + ' !important',
     };
     csses['.' + gId + '_selected-col'] = {
-        'background-color': grid._gridCssInfo.selectColBackColor,
-        'color': grid._gridCssInfo.selectColFontColor,
+        'background-color': grid.data.gridCssInfo.selectColBackColor,
+        'color': grid.data.gridCssInfo.selectColFontColor,
     };
     csses['.' + gId + '_selected-row'] = {
-        'background-color': grid._gridCssInfo.selectRowBackColor,
-        'color': grid._gridCssInfo.selectRowFontColor,
+        'background-color': grid.data.gridCssInfo.selectRowBackColor,
+        'color': grid.data.gridCssInfo.selectRowFontColor,
     };
     csses['.' + gId + '_filterSpan'] = {
         'display': 'block',
@@ -153,7 +153,7 @@ export const getGridCssStyle = (grid: Grid) => {
         'margin': '5px',
     };
     csses['.' + gId + '_data-value-select'] = {
-        'font-size': grid._gridCssInfo.cellFontSize,
+        'font-size': grid.data.gridCssInfo.cellFontSize,
         'cursor': 'pointer',
         'border': 'none',
         'background': 'none',
@@ -167,23 +167,23 @@ export const getGridCssStyle = (grid: Grid) => {
     }
     csses['.' + gId + '_data-value-button'] = {
         'min-width': '95%',
-        'height': (extractNumberAndUnit(grid._gridCssInfo.cellMinHeight)!.number * 0.85) + 'px',
-        'line-height': (extractNumberAndUnit(grid._gridCssInfo.cellMinHeight)!.number * 0.85) + 'px',
-        'font-size': grid._gridCssInfo.cellFontSize,
+        'height': (extractNumberAndUnit(grid.data.gridCssInfo.cellMinHeight)!.number * 0.85) + 'px',
+        'line-height': (extractNumberAndUnit(grid.data.gridCssInfo.cellMinHeight)!.number * 0.85) + 'px',
+        'font-size': grid.data.gridCssInfo.cellFontSize,
         'cursor': 'pointer',
         'border': 'none',
-        'color': grid._gridCssInfo.buttonFontColor,
-        'background-color': grid._gridCssInfo.buttonBackColor,
-        'box-shadow': '0.75px 0.75px 1px 0.25px ' + grid._gridCssInfo.buttonBorderColor,
+        'color': grid.data.gridCssInfo.buttonFontColor,
+        'background-color': grid.data.gridCssInfo.buttonBackColor,
+        'box-shadow': '0.75px 0.75px 1px 0.25px ' + grid.data.gridCssInfo.buttonBorderColor,
     }
     csses['.' + gId + '_data-value-button:hover'] = {
-        'color': grid._gridCssInfo.buttonHoverFontColor,
-        'background-color': grid._gridCssInfo.buttonHoverBackColor,
+        'color': grid.data.gridCssInfo.buttonHoverFontColor,
+        'background-color': grid.data.gridCssInfo.buttonHoverBackColor,
     }
     csses['.' + gId + '_data-value-button:active'] = {
-        'color': grid._gridCssInfo.buttonActiveFontColor,
-        'background-color': grid._gridCssInfo.buttonActiveBackColor,
-        'box-shadow': '0px 0px 0.5px 0.25px ' + grid._gridCssInfo.buttonBorderColor,
+        'color': grid.data.gridCssInfo.buttonActiveFontColor,
+        'background-color': grid.data.gridCssInfo.buttonActiveBackColor,
+        'box-shadow': '0px 0px 0.5px 0.25px ' + grid.data.gridCssInfo.buttonBorderColor,
     }
     csses['.' + gId + '_data-value-button:focus'] = {
         'outline': 'none',
@@ -192,26 +192,26 @@ export const getGridCssStyle = (grid: Grid) => {
         'opacity': '0.7',
     }
     csses['.' + gId + '_data-value-link'] = {
-        'color': grid._gridCssInfo.linkFontColor,
-        'text-decoration': grid._gridCssInfo.linkHasUnderLine ? 'underline' : 'none',
+        'color': grid.data.gridCssInfo.linkFontColor,
+        'text-decoration': grid.data.gridCssInfo.linkHasUnderLine ? 'underline' : 'none',
     }
     csses['.' + gId + '_data-value-link:visited'] = {
-        'color': grid._gridCssInfo.linkVisitedFontColor,
+        'color': grid.data.gridCssInfo.linkVisitedFontColor,
     }
     csses['.' + gId + '_data-value-link:hover'] = {
-        'color': grid._gridCssInfo.linkHoverFontColor + ' !important',
+        'color': grid.data.gridCssInfo.linkHoverFontColor + ' !important',
     }
     csses['.' + gId + '_data-value-link:active'] = {
-        'color': grid._gridCssInfo.linkActiveFontColor + ' !important',
+        'color': grid.data.gridCssInfo.linkActiveFontColor + ' !important',
     }
     csses['.' + gId + '_data-value-link:focus'] = {
-        'color': grid._gridCssInfo.linkFocusFontColor + ' !important',
+        'color': grid.data.gridCssInfo.linkFocusFontColor + ' !important',
     }
     return csses;
 }
 
 export const setGridCssStyle = (grid: Grid) => {
-    const gId = grid._id;
+    const gId = grid.data.id;
     let cssText = '';
     const csses = getGridCssStyle(grid);
     const cssKeys = Object.keys(csses);
@@ -237,7 +237,7 @@ export const setGridCssStyle = (grid: Grid) => {
     }
 }
 
-export const injectCustomElement = (vg: Vanillagrid) => {
+export const injectCustomElement = (vg: Vanillagrid, gridList: Record<string, Grid>, handler: Handler) => {
     vg._VanillaGrid = class extends HTMLElement {
         constructor() {
             super();
@@ -253,10 +253,10 @@ export const injectCustomElement = (vg: Vanillagrid) => {
         }
         connectedCallback() {
             if (!this.style.gridTemplateColumns.includes('%')) {
-                const _grid = vg.grids[(this as any)._gridId];
+                const _grid = gridList[(this as any)._gridId];
                 let totalWidth = 0;
-                for(let col = 1; col < _grid.getColCount(); col++) {
-                    totalWidth += extractNumberAndUnit(_grid.getColOriginWidth(col))!.number;
+                for(let col = 1; col < _grid.methods.getColCount(); col++) {
+                    totalWidth += extractNumberAndUnit(_grid.methods.getColOriginWidth(col))!.number;
                 }
                 this.style.width = totalWidth + 'px';
             }
@@ -270,10 +270,10 @@ export const injectCustomElement = (vg: Vanillagrid) => {
         }
         connectedCallback() {
             if (!this.style.gridTemplateColumns.includes('%')) {
-                const _grid = vg.grids[(this as any)._gridId];
+                const _grid = gridList[(this as any)._gridId];
                 let totalWidth = 0;
-                for(let col = 1; col < _grid.getColCount(); col++) {
-                    totalWidth += extractNumberAndUnit(_grid.getColOriginWidth(col))!.number;
+                for(let col = 1; col < _grid.methods.getColCount(); col++) {
+                    totalWidth += extractNumberAndUnit(_grid.methods.getColOriginWidth(col))!.number;
                 }
                 this.style.width = totalWidth + 'px';
             }
@@ -287,11 +287,11 @@ export const injectCustomElement = (vg: Vanillagrid) => {
         }
         connectedCallback() {
             if (!this.style.gridTemplateColumns.includes('%')) {
-                const _grid = vg.grids[(this as any)._gridId];
+                const _grid = gridList[(this as any)._gridId];
                 let totalWidth = 0;
-                if(!_getFooterCells(_grid) || _getFooterCells(_grid).length <= 0) return;
-                for(let col = 1; col < _grid.getColCount(); col++) {
-                    totalWidth += extractNumberAndUnit(_grid.getColOriginWidth(col))!.number;
+                if(!handler._getFooterCells(_grid) || handler._getFooterCells(_grid).length <= 0) return;
+                for(let col = 1; col < _grid.methods.getColCount(); col++) {
+                    totalWidth += extractNumberAndUnit(_grid.methods.getColOriginWidth(col))!.number;
                 }
                 this.style.width = totalWidth + 'px';
             }
@@ -324,25 +324,25 @@ export const injectCustomElement = (vg: Vanillagrid) => {
                         let leftElementOffsetWidth = 0
     
                         for(let c = _cell._col - 1; c > 0; c--) {
-                            leftElement = _getHeaderCell(_grid, _cell._row, c);
+                            leftElement = handler._getHeaderCell(_grid, _cell._row, c);
                             if (!leftElement) {
                                 leftElementOffsetWidth = leftElementOffsetWidth + 0;
                             }
                             else if (leftElement.isRowMerge) {
                                 let r = _cell._row - 1;
-                                let spanNode = _getHeaderCell(_grid, r, c);
+                                let spanNode = handler._getHeaderCell(_grid, r, c);
                                 while(spanNode) {
                                     if (r < 0) break;
                                     if (!spanNode.isRowMerge) {
                                         break;
                                     }
                                     r--;
-                                    spanNode = _getHeaderCell(_grid, r, c);
+                                    spanNode = handler._getHeaderCell(_grid, r, c);
                                 }
                                 leftElementOffsetWidth = leftElementOffsetWidth + spanNode.offsetWidth;
                             }
                             else {
-                                leftElementOffsetWidth = leftElementOffsetWidth + _getHeaderCell(_grid, _cell._row, c).offsetWidth;
+                                leftElementOffsetWidth = leftElementOffsetWidth + handler._getHeaderCell(_grid, _cell._row, c).offsetWidth;
                             }
                         }
                         _cell.style.position = 'sticky',
@@ -353,7 +353,7 @@ export const injectCustomElement = (vg: Vanillagrid) => {
                     
                     if (_cell.isRowMerge) {
                         let r = _cell._row - 1;
-                        let spanNode = _getHeaderCell(_grid, r, _cell._col);
+                        let spanNode = handler._getHeaderCell(_grid, r, _cell._col);
                         while(spanNode) {
                             if (r < 0) break;
                             if (!spanNode.isRowMerge) {
@@ -364,14 +364,14 @@ export const injectCustomElement = (vg: Vanillagrid) => {
                                 break;
                             }
                             r--;
-                            spanNode = _getHeaderCell(_grid, r, _cell._col);
+                            spanNode = handler._getHeaderCell(_grid, r, _cell._col);
                         }
                         _cell.style.display = 'none';
                     }
                     
                     if (_cell.isColMerge) {
                         let c = _cell._col - 1;
-                        let spanNode = _getHeaderCell(_grid, _cell._row, c);
+                        let spanNode = handler._getHeaderCell(_grid, _cell._row, c);
                         while(spanNode) {
                             if (c < 0) break;
                             if (!spanNode.isColMerge) {
@@ -383,7 +383,7 @@ export const injectCustomElement = (vg: Vanillagrid) => {
                                 break;
                             }
                             c--;
-                            spanNode = _getHeaderCell(_grid, _cell._row, c);
+                            spanNode = handler._getHeaderCell(_grid, _cell._row, c);
                         }
                         _cell.style.display = 'none';
                     }
@@ -396,7 +396,7 @@ export const injectCustomElement = (vg: Vanillagrid) => {
                         let targetCell: any = this;
                         if (_cell.isRowMerge) {
                             for(let r = _cell._row - 1; r > 0; r--) {
-                                targetCell = _getHeaderCell(_grid, r, _cell._col);
+                                targetCell = handler._getHeaderCell(_grid, r, _cell._col);
                                 if (targetCell.rowSpan) break;
                             }
                         }
@@ -405,7 +405,7 @@ export const injectCustomElement = (vg: Vanillagrid) => {
                     if (_gridInfo.filterable === true && _grid.getColInfo(_cell.colId).filterable &&
                         _grid.getHeaderRowCount() === _cell._row && _cell.colId !== 'v-g-rownum' && _cell.colId !== 'v-g-status') {
                         let filterSpan: any;
-                        const vgFilterSpan = _getFilterSpan(_grid);
+                        const vgFilterSpan = handler._getFilterSpan();
                         if(vgFilterSpan && vgFilterSpan instanceof HTMLElement && vgFilterSpan.nodeType === 1) {
                             filterSpan = vgFilterSpan.cloneNode(true);
                         }
@@ -446,7 +446,7 @@ export const injectCustomElement = (vg: Vanillagrid) => {
                         let targetCell: any = this;
                         if (_cell.isRowMerge) {
                             for(let r = _cell._row - 1; r > 0; r--) {
-                                targetCell = _getHeaderCell(_grid, r, _cell._col);
+                                targetCell = handler._getHeaderCell(_grid, r, _cell._col);
                                 if (targetCell.rowSpan) break;
                             }
                         }
@@ -462,25 +462,25 @@ export const injectCustomElement = (vg: Vanillagrid) => {
                         let leftElementOffsetWidth = 0
     
                         for(let c = _cell._col - 1; c > 0; c--) {
-                            leftElement = _getFooterCell(_grid, _cell._row, c);
+                            leftElement = handler._getFooterCell(_grid, _cell._row, c);
                             if (!leftElement) {
                                 leftElementOffsetWidth = leftElementOffsetWidth + 0;
                             }
                             else if (leftElement.isRowMerge) {
                                 let r = _cell._row - 1;
-                                let spanNode = _getFooterCell(_grid, r, c);
+                                let spanNode = handler._getFooterCell(_grid, r, c);
                                 while(spanNode) {
                                     if (r < 0) break;
                                     if (!spanNode.isRowMerge) {
                                         break;
                                     }
                                     r--;
-                                    spanNode = _getFooterCell(_grid, r, c);
+                                    spanNode = handler._getFooterCell(_grid, r, c);
                                 }
                                 leftElementOffsetWidth = leftElementOffsetWidth + spanNode.offsetWidth;
                             }
                             else {
-                                leftElementOffsetWidth = leftElementOffsetWidth + _getFooterCell(_grid, _cell._row, c).offsetWidth;
+                                leftElementOffsetWidth = leftElementOffsetWidth + handler._getFooterCell(_grid, _cell._row, c).offsetWidth;
                             }
                         }
                         _cell.style.position = '-webkit-sticky',
@@ -493,7 +493,7 @@ export const injectCustomElement = (vg: Vanillagrid) => {
                         _cell.classList.add(_cell._gridId + '_f-v-g-d-value');
                         let preSibling;
                         try {
-                            preSibling = _getFooterCell(_grid, _cell._row, _cell._col - 1);
+                            preSibling = handler._getFooterCell(_grid, _cell._row, _cell._col - 1);
                         } catch (error) {
                             preSibling = null;
                         }
@@ -509,11 +509,11 @@ export const injectCustomElement = (vg: Vanillagrid) => {
                                     _cell.style.justifyContent = 'right';
                                     _cell.style.textAlign = 'right';
                                     if (_grid.getRowCount() > 0) {
-                                        tempNumber = getFirstCellValidNumber((this as any));
+                                        tempNumber = handler.getFirstCellValidNumber((this as any));
                                         footerNumber = tempNumber;
                                         for(let r = 2; r <= _grid.getRowCount(); r++ ) {
-                                            tempCell = _getCell(_grid, r, _cell._col);
-                                            if (!isCellVisible(tempCell!)) continue;
+                                            tempCell = handler._getCell(_grid, r, _cell._col);
+                                            if (!handler.isCellVisible(tempCell!)) continue;
                                             tempNumber = getOnlyNumberWithNaNToNull(tempCell!.value);
                                             if (tempNumber !== null && tempNumber > footerNumber!) {
                                                 footerNumber = tempNumber;
@@ -525,11 +525,11 @@ export const injectCustomElement = (vg: Vanillagrid) => {
                                     _cell.style.justifyContent = 'right';
                                     _cell.style.textAlign = 'right';
                                     if (_grid.getRowCount() > 0) {
-                                        tempNumber = getFirstCellValidNumber((this as any));
+                                        tempNumber = handler.getFirstCellValidNumber((this as any));
                                         footerNumber = tempNumber;
                                         for(let r = 2; r <= _grid.getRowCount(); r++ ) {
-                                            tempCell = _getCell(_grid, r, _cell._col);
-                                            if (!isCellVisible(tempCell!)) continue;
+                                            tempCell = handler._getCell(_grid, r, _cell._col);
+                                            if (!handler.isCellVisible(tempCell!)) continue;
                                             tempNumber = getOnlyNumberWithNaNToNull(tempCell!.value);
                                             if (tempNumber !== null && tempNumber < footerNumber!) {
                                                 footerNumber = tempNumber;
@@ -543,8 +543,8 @@ export const injectCustomElement = (vg: Vanillagrid) => {
                                     if (_grid.getRowCount() > 0) {
                                         footerNumber = 0;
                                         for(let r = 1; r <= _grid.getRowCount(); r++ ) {
-                                            tempCell = _getCell(_grid, r, _cell._col);
-                                            if (!isCellVisible(tempCell!)) continue;
+                                            tempCell = handler._getCell(_grid, r, _cell._col);
+                                            if (!handler.isCellVisible(tempCell!)) continue;
                                             footerNumber = Math.round((footerNumber + getOnlyNumberWithNaNToZero(tempCell!.value)) * 100000) / 100000;
                                         }
                                     }
@@ -557,8 +557,8 @@ export const injectCustomElement = (vg: Vanillagrid) => {
                                         tempNumber = 0;
                                         let count = 0;
                                         for(let r = 1; r <= _grid.getRowCount(); r++ ) {
-                                            tempCell = _getCell(_grid, r, _cell._col);
-                                            if (!isCellVisible(tempCell!)) continue;
+                                            tempCell = handler._getCell(_grid, r, _cell._col);
+                                            if (!handler.isCellVisible(tempCell!)) continue;
                                             footerNumber = Math.round((footerNumber + getOnlyNumberWithNaNToZero(tempCell!.value)) * 100000) / 100000;
                                             if (tempCell!.value !== null && tempCell!.value !== undefined && !isNaN(tempCell!.value)) {
                                                 count++;
@@ -579,7 +579,7 @@ export const injectCustomElement = (vg: Vanillagrid) => {
                                 footerNumber = '-'
                             }
                             else {
-                                footerNumber = getFormatNumber(_grid.getColFormat(_cell._col)!, footerNumber)
+                                footerNumber = handler.getFormatNumber(_grid.getColFormat(_cell._col)!, footerNumber)
                             }
                             _cell.innerText = footerNumber;
                             _cell.value = footerNumber;
@@ -593,8 +593,8 @@ export const injectCustomElement = (vg: Vanillagrid) => {
                             _cell.innerText = _cell.footer;
                             _cell.value = _cell.footer;
     
-                            const vgFooterFormula = _getFooterFormula(_grid);
-                            if(vgFooterFormula.constructor === Object) {
+                            const vgFooterFormula = handler._getFooterFormula()!;
+                            if(vgFooterFormula && vgFooterFormula.constructor === Object) {
                                 Object.keys(vgFooterFormula).forEach(key => {
                                     if(_cell.footer === key) {
                                         const result = vgFooterFormula[key](_grid.getColValues(_cell.index!));
@@ -642,7 +642,7 @@ export const injectCustomElement = (vg: Vanillagrid) => {
                             _cell.style.justifyContent = 'center';
                             _cell.style.textAlign = 'center';
     
-                            const dataTypeStyle = _getDataTypeStyle(_grid);
+                            const dataTypeStyle = handler._getDataTypeStyle(_grid);
                             Object.keys(dataTypeStyle).forEach((key) => {
                                 if(_cell.dataType === key) {
                                     if(dataTypeStyle[key].constructor !== Object) throw new Error('Cellstyle can only be inserted in object type.');
@@ -656,32 +656,32 @@ export const injectCustomElement = (vg: Vanillagrid) => {
                     while (_cell.firstChild) {
                         _cell.removeChild(_cell.firstChild);
                     }
-                    _cell.append(_getCellChildNode(_cell)!);
+                    _cell.append(handler._getCellChildNode(_cell)!);
                     
                     if (_cell._row <= _gridInfo.frozenRowCount!) {
                         let headerOffsetHeight = _grid.gridHeader.offsetHeight;
                         let topElement;
                         let topElementOffsetHeight = 0;
                         for(let r = _cell._row - 1; r > 0; r--) {
-                            topElement = _getCell(_grid, r, _cell._col);
+                            topElement = handler._getCell(_grid, r, _cell._col);
                             if (!topElement) {
                                 topElementOffsetHeight = topElementOffsetHeight + 0;
                             }
                             else if (topElement.isColMerge) {
                                 let c = _cell._col - 1;
-                                let spanNode = _getCell(_grid, r, c)!;
+                                let spanNode = handler._getCell(_grid, r, c)!;
                                 while(spanNode) {
                                     if (c < 0) break;
                                     if (!spanNode.isColMerge) {
                                         break;
                                     }
                                     c--;
-                                    spanNode = _getCell(_grid, r, c)!;
+                                    spanNode = handler._getCell(_grid, r, c)!;
                                 }
                                 topElementOffsetHeight = topElementOffsetHeight + spanNode.offsetHeight;
                             }
                             else {
-                                topElementOffsetHeight = topElementOffsetHeight + _getCell(_grid, r, _cell._col)!.offsetHeight;
+                                topElementOffsetHeight = topElementOffsetHeight + handler._getCell(_grid, r, _cell._col)!.offsetHeight;
                             }
                         }
                         _cell.style.position = 'sticky';
@@ -696,25 +696,25 @@ export const injectCustomElement = (vg: Vanillagrid) => {
                         let leftElementOffsetWidth = 0
     
                         for(let c = _cell._col - 1; c > 0; c--) {
-                            leftElement = _getCell(_grid, _cell._row, c);
+                            leftElement = handler._getCell(_grid, _cell._row, c);
                             if (!leftElement) {
                                 leftElementOffsetWidth = leftElementOffsetWidth + 0;
                             }
                             else if (leftElement.isRowMerge) {
                                 let r = _cell._row - 1;
-                                let spanNode = _getCell(_grid, r, c);
+                                let spanNode = handler._getCell(_grid, r, c);
                                 while(spanNode) {
                                     if (r < 0) break;
                                     if (!spanNode.isRowMerge) {
                                         break;
                                     }
                                     r--;
-                                    spanNode = _getCell(_grid, r, c);
+                                    spanNode = handler._getCell(_grid, r, c);
                                 }
                                 leftElementOffsetWidth = leftElementOffsetWidth + spanNode!.offsetWidth;
                             }
                             else {
-                                leftElementOffsetWidth = leftElementOffsetWidth + _getCell(_grid, _cell._row, c)!.offsetWidth;
+                                leftElementOffsetWidth = leftElementOffsetWidth + handler._getCell(_grid, _cell._row, c)!.offsetWidth;
                             }
                         }
                         _cell.style.position = 'sticky';
@@ -726,7 +726,7 @@ export const injectCustomElement = (vg: Vanillagrid) => {
                     
                     if (_cell.isRowMerge) {
                         let r = _cell._row - 1;
-                        let spanNode = _getCell(_grid, r, _cell._col);
+                        let spanNode = handler._getCell(_grid, r, _cell._col);
                         while(spanNode) {
                             if (r < 0) break;
                             if (!spanNode.isRowMerge) {
@@ -736,17 +736,17 @@ export const injectCustomElement = (vg: Vanillagrid) => {
                                 break;
                             }
                             r--;
-                            spanNode = _getCell(_grid, r, _cell._col);
+                            spanNode = handler._getCell(_grid, r, _cell._col);
                         }
                         
-                        if (isCellVisible(spanNode!)) {
+                        if (handler.isCellVisible(spanNode!)) {
                             _cell.style.display = 'none';
                         }
                     }
                     
                     if (_cell.isColMerge) {
                         let c = _cell._col - 1;
-                        let spanNode = _getCell(_grid, _cell._row, c);
+                        let spanNode = handler._getCell(_grid, _cell._row, c);
                         while(spanNode) {
                             if (c < 0) break;
                             if (!spanNode.isColMerge) {
@@ -759,7 +759,7 @@ export const injectCustomElement = (vg: Vanillagrid) => {
                                 break;
                             }
                             c--;
-                            spanNode = _getCell(_grid, _cell._row, c);
+                            spanNode = handler._getCell(_grid, _cell._row, c);
                         }
                         _cell.style.display = 'none';
                     }
