@@ -1,4 +1,4 @@
-export type { Vanillagrid, VanillagridConfig, Grid, CheckByte } from "./types/vanillagrid";
+export type { Vanillagrid, VanillagridConfig, CheckByte } from "./types/vanillagrid";
 export type { GridInfo, GridCssInfo, DefaultGridInfo, DefaultGridCssInfo } from "./types/gridInfo";
 export type { ColInfo, DefaultColInfo } from "./types/colInfo";
 export type { Cell, CellData, CellRecord } from "./types/cell";
