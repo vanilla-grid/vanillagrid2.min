@@ -1,4 +1,5 @@
-import type { Grid } from "./vanillagrid";
+
+import type { Grid } from "./grid";
 import type { ColInfo } from "./colInfo";
 
 /**
@@ -77,27 +78,3 @@ export interface CellRecord {
      */
     newValue: any;
 }
-
-/*
-export interface CellData extends Omit<ColInfo,
-'id' |
-'index' |
-'name' |
-'header' |
-'footer' | 
-'rowMerge' |
-'colMerge' |
-'colVisible' |
-'required' |
-'resizable' |
-'sortable' |
-'filterable' |
-'originWidth' |
-'filterValues' |
-'filterValue' |
-'filter' |
-'rowVisible'
->{
-    value: any;
-}
-*/
