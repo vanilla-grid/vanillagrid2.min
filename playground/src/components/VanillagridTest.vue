@@ -2,18 +2,18 @@
   <div ref="gridWrap">
     <button @click="setGrid1Data">getGridData 1</button>
     <button @click="setGrid2Data">setGridData 3</button>
-    <vanilla-grid id="grid1" height="200px">
-        <v-col id="col1" header="header" data-type="text" width="600"></v-col>
-    </vanilla-grid>
-    <vanilla-grid id="grid2" locked-color="false" height="400px">
-        <v-col id="dept" header="Click the Sigma button to the left of the header;filter1(mask);dept " data-type="mask" format="AAA99" width="100" locked="true"></v-col>
-        <v-col id="f_nm" header=";filter2(text);first name" data-type="text" width="120" align="center" locked="true"></v-col>
-        <v-col id="l_nm" header=";filter3(text);last name" data-type="text" width="120" align="center" locked="true"></v-col>
-        <v-col id="d_o_j" header=";filter4(month);DOJ" data-type="month" width="120" locked="true"></v-col>
-        <v-col id="e_id" header="Please double click;sort1(text);Employee ID" data-type="text" width="120" align="center" locked="true" footer="MAX;MIN;AVG;SUM"></v-col>
-        <v-col id="salary" header=";sort2(number);salary" data-type="number" format="$ #,###.00" width="150" footer="$$MAX;$$MIN;$$AVG;$$SUM"></v-col>
-        <v-col id="status" header=";checkbox;status" data-type="checkbox" width="80"></v-col>
-    </vanilla-grid>
+    <div data-vanillagrid id="grid1" height="200px">
+        <div data-col id="col1" header="header" data-type="text" width="600"></div>
+    </div>
+    <div data-vanillagrid id="grid2" locked-color="false" height="400px">
+        <div data-col id="dept" header="Click the Sigma button to the left of the header;filter1(mask);dept " data-type="mask" format="AAA99" width="100" locked="true"></div>
+        <div data-col id="f_nm" header=";filter2(text);first name" data-type="text" width="120" align="center" locked="true"></div>
+        <div data-col id="l_nm" header=";filter3(text);last name" data-type="text" width="120" align="center" locked="true"></div>
+        <div data-col id="d_o_j" header=";filter4(month);DOJ" data-type="month" width="120" locked="true"></div>
+        <div data-col id="e_id" header="Please double click;sort1(text);Employee ID" data-type="text" width="120" align="center" locked="true" footer="MAX;MIN;AVG;SUM"></div>
+        <div data-col id="salary" header=";sort2(number);salary" data-type="number" format="$ #,###.00" width="150" footer="$$MAX;$$MIN;$$AVG;$$SUM"></div>
+        <div data-col id="status" header=";checkbox;status" data-type="checkbox" width="80"></div>
+    </div>
   </div>
 </template>
 
@@ -27,7 +27,7 @@ const vg: Vanillagrid = (proxy as any)!.$vg;
 const gridWrap = ref<HTMLElement | null>(null);
 
 const setGrid1Data = () => {
-  const grid: Grid = vg.getGrid("grid1");
+  const grid: Grid = vg.getGrid("grid1")!;
   const data = [
       {
           col1 : 'This is a text dataType.\nDouble-click to create an editor.\nPress F2 to create an editor.\nWhen you press the enter key, editor focus.\nTry it!',
@@ -219,7 +219,7 @@ const setGrid2Data = () => {
           status : "Y",
       },
   ];
-  const grid: Grid = vg.getGrid("grid2");
+  const grid: Grid = vg.getGrid("grid2")!;
   console.log(grid);
   grid.load(data);
 };
