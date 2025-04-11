@@ -287,9 +287,10 @@ export const injectCustomElement = (vg: Vanillagrid, gridList: Record<string, Gr
         }
         connectedCallback() {
             if (!this.style.gridTemplateColumns.includes('%')) {
-                const _grid = gridList[(this as any)._gridId];
+                const gridId = (this as any)._gridId;
+                const _grid = gridList[gridId];
                 let totalWidth = 0;
-                if(!handler._getFooterCells(_grid) || handler._getFooterCells(_grid).length <= 0) return;
+                if(!handler._getFooterCells(gridId) || handler._getFooterCells(gridId).length <= 0) return;
                 for(let col = 1; col < _grid.methods.getColCount(); col++) {
                     totalWidth += extractNumberAndUnit(_grid.methods.getColOriginWidth(col))!.number;
                 }
@@ -306,8 +307,9 @@ export const injectCustomElement = (vg: Vanillagrid, gridList: Record<string, Gr
         connectedCallback() {
             const _cell: Cell = this as any;
 
-            const _grid = _cell._grid;
-            const _gridInfo = _grid.getGridInfo();
+            const gridId = (this as any)._gridId;
+            const _grid = gridList[gridId];
+            const _gridInfo = _grid.methods.getGridInfo();
             
             _cell.style.removeProperty('display');
             _cell.style.removeProperty('align-items');
@@ -324,36 +326,36 @@ export const injectCustomElement = (vg: Vanillagrid, gridList: Record<string, Gr
                         let leftElementOffsetWidth = 0
     
                         for(let c = _cell._col - 1; c > 0; c--) {
-                            leftElement = handler._getHeaderCell(_grid, _cell._row, c);
+                            leftElement = handler._getHeaderCell(gridId, _cell._row, c);
                             if (!leftElement) {
                                 leftElementOffsetWidth = leftElementOffsetWidth + 0;
                             }
                             else if (leftElement.isRowMerge) {
                                 let r = _cell._row - 1;
-                                let spanNode = handler._getHeaderCell(_grid, r, c);
+                                let spanNode = handler._getHeaderCell(gridId, r, c);
                                 while(spanNode) {
                                     if (r < 0) break;
                                     if (!spanNode.isRowMerge) {
                                         break;
                                     }
                                     r--;
-                                    spanNode = handler._getHeaderCell(_grid, r, c);
+                                    spanNode = handler._getHeaderCell(gridId, r, c);
                                 }
                                 leftElementOffsetWidth = leftElementOffsetWidth + spanNode.offsetWidth;
                             }
                             else {
-                                leftElementOffsetWidth = leftElementOffsetWidth + handler._getHeaderCell(_grid, _cell._row, c).offsetWidth;
+                                leftElementOffsetWidth = leftElementOffsetWidth + handler._getHeaderCell(gridId, _cell._row, c).offsetWidth;
                             }
                         }
                         _cell.style.position = 'sticky',
-                        _cell.style.zIndex = String(300 + _grid.getColCount() - _cell._col),
+                        _cell.style.zIndex = String(300 + _grid.methods.getColCount() - _cell._col),
                         _cell.style.left = leftElementOffsetWidth + 'px';
                         _cell._frozenCol = true;
                     }
                     
                     if (_cell.isRowMerge) {
                         let r = _cell._row - 1;
-                        let spanNode = handler._getHeaderCell(_grid, r, _cell._col);
+                        let spanNode = handler._getHeaderCell(gridId, r, _cell._col);
                         while(spanNode) {
                             if (r < 0) break;
                             if (!spanNode.isRowMerge) {
@@ -364,46 +366,52 @@ export const injectCustomElement = (vg: Vanillagrid, gridList: Record<string, Gr
                                 break;
                             }
                             r--;
-                            spanNode = handler._getHeaderCell(_grid, r, _cell._col);
+                            spanNode = handler._getHeaderCell(gridId, r, _cell._col);
                         }
                         _cell.style.display = 'none';
                     }
                     
                     if (_cell.isColMerge) {
+                        console.log('################################');
+                        console.log('_cell',_cell);
+                        console.log('_cell.offsetWidth',_cell.offsetWidth);
                         let c = _cell._col - 1;
-                        let spanNode = handler._getHeaderCell(_grid, _cell._row, c);
+                        let spanNode = handler._getHeaderCell(gridId, _cell._row, c);
                         while(spanNode) {
                             if (c < 0) break;
                             if (!spanNode.isColMerge) {
                                 if (spanNode.colId === 'v-g-rownum' || spanNode.colId === 'v-g-status') break;
                                 spanNode.style.gridColumnEnd = _cell.style.gridColumnEnd;
+                                console.log('spanNode',spanNode);
+                                console.log('spanNode.style.width',spanNode.style.width);
                                 spanNode.style.width = extractNumberAndUnit(spanNode.style.width)!.number + _cell.offsetWidth + 'px';
                                 spanNode.colSpan = spanNode.colSpan ? spanNode.colSpan + 1 : 1;
                                 spanNode.style.zIndex = spanNode.style.zIndex ? spanNode.style.zIndex : '250';
                                 break;
                             }
                             c--;
-                            spanNode = handler._getHeaderCell(_grid, _cell._row, c);
+                            spanNode = handler._getHeaderCell(gridId, _cell._row, c);
                         }
                         _cell.style.display = 'none';
+                        console.log('################################');
                     }
                     
                     if (!_cell.colVisible || !_cell.rowVisible) {
                         _cell.style.display = 'none';
                     }
                     
-                    if (_grid.getHeaderRowCount() === _cell._row) {
+                    if (_grid.methods.getHeaderRowCount() === _cell._row) {
                         let targetCell: any = this;
                         if (_cell.isRowMerge) {
                             for(let r = _cell._row - 1; r > 0; r--) {
-                                targetCell = handler._getHeaderCell(_grid, r, _cell._col);
+                                targetCell = handler._getHeaderCell(gridId, r, _cell._col);
                                 if (targetCell.rowSpan) break;
                             }
                         }
                         if (targetCell) targetCell._isLastCell = true;
                     }
-                    if (_gridInfo.filterable === true && _grid.getColInfo(_cell.colId).filterable &&
-                        _grid.getHeaderRowCount() === _cell._row && _cell.colId !== 'v-g-rownum' && _cell.colId !== 'v-g-status') {
+                    if (_gridInfo.filterable === true && _grid.methods.getColInfo(_cell.colId).filterable &&
+                        _grid.methods.getHeaderRowCount() === _cell._row && _cell.colId !== 'v-g-rownum' && _cell.colId !== 'v-g-status') {
                         let filterSpan: any;
                         const vgFilterSpan = handler._getFilterSpan();
                         if(vgFilterSpan && vgFilterSpan instanceof HTMLElement && vgFilterSpan.nodeType === 1) {
@@ -421,7 +429,7 @@ export const injectCustomElement = (vg: Vanillagrid, gridList: Record<string, Gr
                         const filterSelect: any = document.createElement('select');
                         filterSelect.classList.add(_cell._gridId + '_filterSelect'); 
                         filterSelect.style.display = 'none';
-                        filterSelect._grid = _cell._grid;
+                        filterSelect._gridId = _cell._gridId;
                         filterSelect.colId = _cell.colId;
 
                         filterSelect.addEventListener('mousedown', function (e: any) {
@@ -430,12 +438,13 @@ export const injectCustomElement = (vg: Vanillagrid, gridList: Record<string, Gr
 
                         filterSelect.addEventListener('change', function (e: any) {
                             const filterNewValue = e.target.value;
-                            if ((window as any)[e.target.parentNode.parentNode.gId + '_onChooseFilter'](e.target.parentNode.parentNode.row, e.target.parentNode.parentNode.colId, this.filterOldValue, filterNewValue) === false) {
+                            const gridId = e.target._gridId;
+                            if(gridList[gridId].events.onChooseFilter(e.target.parentNode.parentNode.row, e.target.parentNode.parentNode.colId, this.filterOldValue, filterNewValue) === false) {
                                 e.stopPropagation();
                                 e.preventDefault();
                                 return;
                             }
-                            this._grid._doFilter();
+                            handler._doFilter(gridId);
                             if (filterNewValue === '$$ALL') {
                                 this.style.display = 'none';
                             }
@@ -446,7 +455,7 @@ export const injectCustomElement = (vg: Vanillagrid, gridList: Record<string, Gr
                         let targetCell: any = this;
                         if (_cell.isRowMerge) {
                             for(let r = _cell._row - 1; r > 0; r--) {
-                                targetCell = handler._getHeaderCell(_grid, r, _cell._col);
+                                targetCell = handler._getHeaderCell(gridId, r, _cell._col);
                                 if (targetCell.rowSpan) break;
                             }
                         }
@@ -462,25 +471,25 @@ export const injectCustomElement = (vg: Vanillagrid, gridList: Record<string, Gr
                         let leftElementOffsetWidth = 0
     
                         for(let c = _cell._col - 1; c > 0; c--) {
-                            leftElement = handler._getFooterCell(_grid, _cell._row, c);
+                            leftElement = handler._getFooterCell(gridId, _cell._row, c);
                             if (!leftElement) {
                                 leftElementOffsetWidth = leftElementOffsetWidth + 0;
                             }
                             else if (leftElement.isRowMerge) {
                                 let r = _cell._row - 1;
-                                let spanNode = handler._getFooterCell(_grid, r, c);
+                                let spanNode = handler._getFooterCell(gridId, r, c);
                                 while(spanNode) {
                                     if (r < 0) break;
                                     if (!spanNode.isRowMerge) {
                                         break;
                                     }
                                     r--;
-                                    spanNode = handler._getFooterCell(_grid, r, c);
+                                    spanNode = handler._getFooterCell(gridId, r, c);
                                 }
                                 leftElementOffsetWidth = leftElementOffsetWidth + spanNode.offsetWidth;
                             }
                             else {
-                                leftElementOffsetWidth = leftElementOffsetWidth + handler._getFooterCell(_grid, _cell._row, c).offsetWidth;
+                                leftElementOffsetWidth = leftElementOffsetWidth + handler._getFooterCell(gridId, _cell._row, c).offsetWidth;
                             }
                         }
                         _cell.style.position = '-webkit-sticky',
@@ -493,7 +502,7 @@ export const injectCustomElement = (vg: Vanillagrid, gridList: Record<string, Gr
                         _cell.classList.add(_cell._gridId + '_f-v-g-d-value');
                         let preSibling;
                         try {
-                            preSibling = handler._getFooterCell(_grid, _cell._row, _cell._col - 1);
+                            preSibling = handler._getFooterCell(gridId, _cell._row, _cell._col - 1);
                         } catch (error) {
                             preSibling = null;
                         }
@@ -508,11 +517,11 @@ export const injectCustomElement = (vg: Vanillagrid, gridList: Record<string, Gr
                                 case '$$MAX':
                                     _cell.style.justifyContent = 'right';
                                     _cell.style.textAlign = 'right';
-                                    if (_grid.getRowCount() > 0) {
+                                    if (_grid.methods.getRowCount() > 0) {
                                         tempNumber = handler.getFirstCellValidNumber((this as any));
                                         footerNumber = tempNumber;
-                                        for(let r = 2; r <= _grid.getRowCount(); r++ ) {
-                                            tempCell = handler._getCell(_grid, r, _cell._col);
+                                        for(let r = 2; r <= _grid.methods.getRowCount(); r++ ) {
+                                            tempCell = handler._getCell(gridId, r, _cell._col);
                                             if (!handler.isCellVisible(tempCell!)) continue;
                                             tempNumber = getOnlyNumberWithNaNToNull(tempCell!.value);
                                             if (tempNumber !== null && tempNumber > footerNumber!) {
@@ -524,11 +533,11 @@ export const injectCustomElement = (vg: Vanillagrid, gridList: Record<string, Gr
                                 case '$$MIN':
                                     _cell.style.justifyContent = 'right';
                                     _cell.style.textAlign = 'right';
-                                    if (_grid.getRowCount() > 0) {
+                                    if (_grid.methods.getRowCount() > 0) {
                                         tempNumber = handler.getFirstCellValidNumber((this as any));
                                         footerNumber = tempNumber;
-                                        for(let r = 2; r <= _grid.getRowCount(); r++ ) {
-                                            tempCell = handler._getCell(_grid, r, _cell._col);
+                                        for(let r = 2; r <= _grid.methods.getRowCount(); r++ ) {
+                                            tempCell = handler._getCell(gridId, r, _cell._col);
                                             if (!handler.isCellVisible(tempCell!)) continue;
                                             tempNumber = getOnlyNumberWithNaNToNull(tempCell!.value);
                                             if (tempNumber !== null && tempNumber < footerNumber!) {
@@ -540,10 +549,10 @@ export const injectCustomElement = (vg: Vanillagrid, gridList: Record<string, Gr
                                 case '$$SUM':
                                     _cell.style.justifyContent = 'right';
                                     _cell.style.textAlign = 'right';
-                                    if (_grid.getRowCount() > 0) {
+                                    if (_grid.methods.getRowCount() > 0) {
                                         footerNumber = 0;
-                                        for(let r = 1; r <= _grid.getRowCount(); r++ ) {
-                                            tempCell = handler._getCell(_grid, r, _cell._col);
+                                        for(let r = 1; r <= _grid.methods.getRowCount(); r++ ) {
+                                            tempCell = handler._getCell(gridId, r, _cell._col);
                                             if (!handler.isCellVisible(tempCell!)) continue;
                                             footerNumber = Math.round((footerNumber + getOnlyNumberWithNaNToZero(tempCell!.value)) * 100000) / 100000;
                                         }
@@ -552,12 +561,12 @@ export const injectCustomElement = (vg: Vanillagrid, gridList: Record<string, Gr
                                 case '$$AVG':
                                     _cell.style.justifyContent = 'right';
                                     _cell.style.textAlign = 'right';
-                                    if (_grid.getRowCount() > 0) {
+                                    if (_grid.methods.getRowCount() > 0) {
                                         footerNumber = 0;
                                         tempNumber = 0;
                                         let count = 0;
-                                        for(let r = 1; r <= _grid.getRowCount(); r++ ) {
-                                            tempCell = handler._getCell(_grid, r, _cell._col);
+                                        for(let r = 1; r <= _grid.methods.getRowCount(); r++ ) {
+                                            tempCell = handler._getCell(gridId, r, _cell._col);
                                             if (!handler.isCellVisible(tempCell!)) continue;
                                             footerNumber = Math.round((footerNumber + getOnlyNumberWithNaNToZero(tempCell!.value)) * 100000) / 100000;
                                             if (tempCell!.value !== null && tempCell!.value !== undefined && !isNaN(tempCell!.value)) {
@@ -579,13 +588,13 @@ export const injectCustomElement = (vg: Vanillagrid, gridList: Record<string, Gr
                                 footerNumber = '-'
                             }
                             else {
-                                footerNumber = handler.getFormatNumber(_grid.getColFormat(_cell._col)!, footerNumber)
+                                footerNumber = handler.getFormatNumber(_grid.methods.getColFormat(_cell._col)!, footerNumber)
                             }
                             _cell.innerText = footerNumber;
                             _cell.value = footerNumber;
                         }
                         else if (typeof _cell.footer === 'function') {
-                            const functionResult = _cell.footer(_grid.getValues());
+                            const functionResult = _cell.footer(_grid.methods.getValues());
                             _cell.innerText = functionResult;
                             _cell.value = functionResult;
                         }
@@ -597,7 +606,7 @@ export const injectCustomElement = (vg: Vanillagrid, gridList: Record<string, Gr
                             if(vgFooterFormula && vgFooterFormula.constructor === Object) {
                                 Object.keys(vgFooterFormula).forEach(key => {
                                     if(_cell.footer === key) {
-                                        const result = vgFooterFormula[key](_grid.getColValues(_cell.index!));
+                                        const result = vgFooterFormula[key](_grid.methods.getColValues(_cell.index!));
                                         _cell.innerText = result;
                                         _cell.value = result;
                                     }
@@ -609,7 +618,7 @@ export const injectCustomElement = (vg: Vanillagrid, gridList: Record<string, Gr
                         _cell.style.justifyContent = _cell.align;
                         _cell.style.textAlign = _cell.align;
                     }
-                    if (_cell._col === _grid.getColCount()) {
+                    if (_cell._col === _grid.methods.getColCount()) {
                         _cell.classList.add(_cell._gridId + '_f-v-g-d-value');
                     }
                     if (!_cell.colVisible || !_cell.rowVisible) {
@@ -642,7 +651,7 @@ export const injectCustomElement = (vg: Vanillagrid, gridList: Record<string, Gr
                             _cell.style.justifyContent = 'center';
                             _cell.style.textAlign = 'center';
     
-                            const dataTypeStyle = handler._getDataTypeStyle(_grid);
+                            const dataTypeStyle = handler._getDataTypeStyle();
                             Object.keys(dataTypeStyle).forEach((key) => {
                                 if(_cell.dataType === key) {
                                     if(dataTypeStyle[key].constructor !== Object) throw new Error('Cellstyle can only be inserted in object type.');
@@ -659,29 +668,29 @@ export const injectCustomElement = (vg: Vanillagrid, gridList: Record<string, Gr
                     _cell.append(handler._getCellChildNode(_cell)!);
                     
                     if (_cell._row <= _gridInfo.frozenRowCount!) {
-                        let headerOffsetHeight = _grid.gridHeader.offsetHeight;
+                        let headerOffsetHeight = _grid.elements.gridHeader.offsetHeight;
                         let topElement;
                         let topElementOffsetHeight = 0;
                         for(let r = _cell._row - 1; r > 0; r--) {
-                            topElement = handler._getCell(_grid, r, _cell._col);
+                            topElement = handler._getCell(gridId, r, _cell._col);
                             if (!topElement) {
                                 topElementOffsetHeight = topElementOffsetHeight + 0;
                             }
                             else if (topElement.isColMerge) {
                                 let c = _cell._col - 1;
-                                let spanNode = handler._getCell(_grid, r, c)!;
+                                let spanNode = handler._getCell(gridId, r, c)!;
                                 while(spanNode) {
                                     if (c < 0) break;
                                     if (!spanNode.isColMerge) {
                                         break;
                                     }
                                     c--;
-                                    spanNode = handler._getCell(_grid, r, c)!;
+                                    spanNode = handler._getCell(gridId, r, c)!;
                                 }
                                 topElementOffsetHeight = topElementOffsetHeight + spanNode.offsetHeight;
                             }
                             else {
-                                topElementOffsetHeight = topElementOffsetHeight + handler._getCell(_grid, r, _cell._col)!.offsetHeight;
+                                topElementOffsetHeight = topElementOffsetHeight + handler._getCell(gridId, r, _cell._col)!.offsetHeight;
                             }
                         }
                         _cell.style.position = 'sticky';
@@ -696,25 +705,25 @@ export const injectCustomElement = (vg: Vanillagrid, gridList: Record<string, Gr
                         let leftElementOffsetWidth = 0
     
                         for(let c = _cell._col - 1; c > 0; c--) {
-                            leftElement = handler._getCell(_grid, _cell._row, c);
+                            leftElement = handler._getCell(gridId, _cell._row, c);
                             if (!leftElement) {
                                 leftElementOffsetWidth = leftElementOffsetWidth + 0;
                             }
                             else if (leftElement.isRowMerge) {
                                 let r = _cell._row - 1;
-                                let spanNode = handler._getCell(_grid, r, c);
+                                let spanNode = handler._getCell(gridId, r, c);
                                 while(spanNode) {
                                     if (r < 0) break;
                                     if (!spanNode.isRowMerge) {
                                         break;
                                     }
                                     r--;
-                                    spanNode = handler._getCell(_grid, r, c);
+                                    spanNode = handler._getCell(gridId, r, c);
                                 }
                                 leftElementOffsetWidth = leftElementOffsetWidth + spanNode!.offsetWidth;
                             }
                             else {
-                                leftElementOffsetWidth = leftElementOffsetWidth + handler._getCell(_grid, _cell._row, c)!.offsetWidth;
+                                leftElementOffsetWidth = leftElementOffsetWidth + handler._getCell(gridId, _cell._row, c)!.offsetWidth;
                             }
                         }
                         _cell.style.position = 'sticky';
@@ -726,7 +735,7 @@ export const injectCustomElement = (vg: Vanillagrid, gridList: Record<string, Gr
                     
                     if (_cell.isRowMerge) {
                         let r = _cell._row - 1;
-                        let spanNode = handler._getCell(_grid, r, _cell._col);
+                        let spanNode = handler._getCell(gridId, r, _cell._col);
                         while(spanNode) {
                             if (r < 0) break;
                             if (!spanNode.isRowMerge) {
@@ -736,7 +745,7 @@ export const injectCustomElement = (vg: Vanillagrid, gridList: Record<string, Gr
                                 break;
                             }
                             r--;
-                            spanNode = handler._getCell(_grid, r, _cell._col);
+                            spanNode = handler._getCell(gridId, r, _cell._col);
                         }
                         
                         if (handler.isCellVisible(spanNode!)) {
@@ -746,7 +755,7 @@ export const injectCustomElement = (vg: Vanillagrid, gridList: Record<string, Gr
                     
                     if (_cell.isColMerge) {
                         let c = _cell._col - 1;
-                        let spanNode = handler._getCell(_grid, _cell._row, c);
+                        let spanNode = handler._getCell(gridId, _cell._row, c);
                         while(spanNode) {
                             if (c < 0) break;
                             if (!spanNode.isColMerge) {
@@ -759,7 +768,7 @@ export const injectCustomElement = (vg: Vanillagrid, gridList: Record<string, Gr
                                 break;
                             }
                             c--;
-                            spanNode = handler._getCell(_grid, _cell._row, c);
+                            spanNode = handler._getCell(gridId, _cell._row, c);
                         }
                         _cell.style.display = 'none';
                     }
