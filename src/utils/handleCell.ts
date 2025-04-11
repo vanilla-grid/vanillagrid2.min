@@ -10,30 +10,33 @@ export const setHandleCell = (vg: Vanillagrid, gridList: Record<string, Grid>, h
         return !(cell.colVisible === false || cell.rowVisible === false || cell.filter === true);
     };
     handler.getFirstCellValidNumber = (footerCell: Cell) => {
+        const gridId = footerCell._gridId;
         let returnNumber;
         let tempCell;
-        for(let r = 1; r < footerCell._grid.getRowCount(); r++ ) {
-            tempCell = handler._getCell(footerCell._grid, r, footerCell._col);
+        for(let r = 1; r < gridList[gridId].methods.getRowCount(); r++ ) {
+            tempCell = handler._getCell(gridId, r, footerCell._col);
             if (!handler.isCellVisible(tempCell!)) continue;
             returnNumber = getOnlyNumberWithNaNToNull(tempCell!.value);
             if (returnNumber) return returnNumber;
         }
         return null;
     };
-   handler.removeGridEditor = (activeGridEditor: any) => {
-        if (!activeGridEditor) return false;
-        const cell: Cell = activeGridEditor.targetCell;
-        cell._grid._events.onEditEnding(cell._row, cell.colId, vg._status.editOldValue, vg._status.editNewValue);
+   handler.removeGridEditor = () => {
+        if (!vg._status.activeGridEditor) return false;
+        const cell: Cell = (vg._status.activeGridEditor as any).targetCell;
+        const gridId = cell._gridId;
+        gridList[gridId].events.onEditEnding(cell._row, cell.colId, vg._status.editOldValue, vg._status.editNewValue);
         cell.style.padding = '';
         cell.style.fontSize = '';
-        activeGridEditor.parentNode.removeChild(activeGridEditor);
-        activeGridEditor = null; 
+        vg._status.activeGridEditor.parentNode!.removeChild(vg._status.activeGridEditor);
+        vg._status.activeGridEditor = null; 
         return true;
     };
-   handler.addBagicEventListenerToGridEditor = (gridEditor: HTMLElement, activeGrid: Grid) => {
+   handler.addBagicEventListenerToGridEditor = (gridEditor: HTMLElement) => {
         gridEditor.addEventListener('keydown', function (e) {
-            const cell = activeGrid._variables._targetCell!;
-            if(activeGrid._events.onKeydownEditor(e) === false) {
+            const activeGrid = vg._status.activeGrid!;
+            const cell = activeGrid.data.variables.targetCell!;
+            if(activeGrid.events.onKeydownEditor(e) === false) {
                 e.stopPropagation();
                 e.preventDefault();
                 return;
@@ -51,7 +54,7 @@ export const setHandleCell = (vg: Vanillagrid, gridList: Record<string, Grid>, h
                     break;
                 case 'Escape':
                     vg._status.editNewValue = vg._status.editOldValue;
-                    handler.removeGridEditor(vg._status.activeGridEditor);
+                    handler.removeGridEditor();
                     e.stopPropagation();
                     e.preventDefault();
                     break;
@@ -72,23 +75,23 @@ export const setHandleCell = (vg: Vanillagrid, gridList: Record<string, Grid>, h
             }
         });
         gridEditor.addEventListener('input', function(e) {
-            activeGrid._events.onInputEditor(e as InputEvent);
+            const activeGrid = vg._status.activeGrid!;
+            activeGrid.events.onInputEditor(e as InputEvent);
         })
     };
    handler.setBagicAttributesToGridEditor = (gridEditor: any, cell: Cell) => {
-        gridEditor.eId = cell._gridId + '_Editor';
-        gridEditor.gId = cell._gridId;
+        gridEditor._gridId = cell._gridId;
         gridEditor.targetCell = cell;
         gridEditor.style.width = cell.offsetWidth + 'px'; 
         gridEditor.style.height = cell.scrollHeight + gridEditor.offsetHeight - gridEditor.clientHeight + 'px';
-        gridEditor.classList.add(gridEditor.gId + '_editor');
+        gridEditor.classList.add(gridEditor._gridId + '_editor');
     };
    handler.createGridEditorTextarea = (cell: Cell) => {
         const gridEditor = document.createElement('textarea') as unknown as any;
         handler.setBagicAttributesToGridEditor(gridEditor, cell);
         gridEditor.placeholder;
-        gridEditor.classList.add(gridEditor.gId + '_editor_textarea');
-        const value = cell._grid._gridInfo.nullValue === cell.value? null : cell.value;
+        gridEditor.classList.add(gridEditor._gridId + '_editor_textarea');
+        const value = gridList[cell._gridId].data.gridInfo.nullValue === cell.value? null : cell.value;
         vg._status.editOldValue = value;
         gridEditor.value = vg._status.editOldValue; 
         
@@ -106,71 +109,71 @@ export const setHandleCell = (vg: Vanillagrid, gridList: Record<string, Grid>, h
             }
         }, false);
     
-        handler.addBagicEventListenerToGridEditor(gridEditor, cell._grid);
+        handler.addBagicEventListenerToGridEditor(gridEditor);
     
         return gridEditor;
     };
    handler.createGridEditorNumber = (cell: Cell) => {
         const gridEditor = document.createElement('input');
         handler.setBagicAttributesToGridEditor(gridEditor, cell);
-        gridEditor.classList.add((gridEditor as any).gId + '_editor_number');
+        gridEditor.classList.add((gridEditor as any)._gridId + '_editor_number');
         gridEditor.setAttribute('type','number');
-        const value = cell._grid._gridInfo.nullValue === cell.value? null : cell.value;
+        const value = gridList[cell._gridId].data.gridInfo.nullValue === cell.value? null : cell.value;
         vg._status.editOldValue = value;
         gridEditor.value = vg._status.editOldValue; 
-        handler.addBagicEventListenerToGridEditor(gridEditor, cell._grid);
+        handler.addBagicEventListenerToGridEditor(gridEditor);
         return gridEditor;
     };
    handler.createGridEditorDate = (cell: Cell) => {
         const gridEditor = document.createElement('input');
         handler.setBagicAttributesToGridEditor(gridEditor, cell);
-        gridEditor.classList.add((gridEditor as any).gId + '_editor_date');
+        gridEditor.classList.add((gridEditor as any)._gridId + '_editor_date');
         gridEditor.setAttribute('type','date');
         vg._status.editOldValue = handler.getDateWithInputDateFormat(cell.value);
         gridEditor.value = vg._status.editOldValue;
-        handler.addBagicEventListenerToGridEditor(gridEditor, cell._grid);
+        handler.addBagicEventListenerToGridEditor(gridEditor);
         return gridEditor;
     };
    handler.createGridEditorMonth = (cell: Cell) => {
         const gridEditor = document.createElement('input');
         handler.setBagicAttributesToGridEditor(gridEditor, cell);
-        gridEditor.classList.add((gridEditor as any).gId + '_editor_month');
+        gridEditor.classList.add((gridEditor as any)._gridId + '_editor_month');
         gridEditor.setAttribute('type','month');
         vg._status.editOldValue = handler.getDateWithInputMonthFormat(cell.value);
         gridEditor.value = vg._status.editOldValue;
-        handler.addBagicEventListenerToGridEditor(gridEditor, cell._grid);
+        handler.addBagicEventListenerToGridEditor(gridEditor);
         return gridEditor;
     };
    handler.createGridEditorMask = (cell: Cell) => {
         const gridEditor = document.createElement('input');
         handler.setBagicAttributesToGridEditor(gridEditor, cell);
-        gridEditor.classList.add((gridEditor as any).gId + '_editor_mask');
+        gridEditor.classList.add((gridEditor as any)._gridId + '_editor_mask');
         gridEditor.setAttribute('type','text');
-        const value = cell._grid._gridInfo.nullValue === cell.value? null : cell.value;
+        const value = gridList[cell._gridId].data.gridInfo.nullValue === cell.value? null : cell.value;
         vg._status.editOldValue = value;
         gridEditor.value = vg._status.editOldValue; 
         gridEditor.addEventListener('keyup', function (e: any) {
-            e.target.value = handler.getMaskValue(e.target.targetCell.cFormat, e.target.value);
+            e.target.value = handler.getMaskValue(e.target.targetCell.format, e.target.value);
         })
-        handler.addBagicEventListenerToGridEditor(gridEditor, cell._grid);
+        handler.addBagicEventListenerToGridEditor(gridEditor);
         return gridEditor;
     };
    handler.createGridEditorCode = (cell: Cell) => {
         const gridEditor = document.createElement('input');
         handler.setBagicAttributesToGridEditor(gridEditor, cell);
-        gridEditor.classList.add((gridEditor as any).gId + '_editor_code');
+        gridEditor.classList.add((gridEditor as any)._gridId + '_editor_code');
         gridEditor.setAttribute('type','text');
         const value = cell.value;
         vg._status.editOldValue = value;
         gridEditor.value = vg._status.editOldValue;
-        handler.addBagicEventListenerToGridEditor(gridEditor, cell._grid);
+        handler.addBagicEventListenerToGridEditor(gridEditor);
         return gridEditor;
     };
     handler.createGridEditor = (cell: Cell, isEnterKey = false) => {
         if (cell.locked || cell.untarget) return;
         if (['select','checkbox','button','link'].indexOf(cell.dataType!) >= 0) return;
         
-        handler.removeGridEditor(vg._status.activeGridEditor);
+        handler.removeGridEditor();
         let gridEditor: any;
         switch (cell.dataType) {
             case 'text':
@@ -198,7 +201,7 @@ export const setHandleCell = (vg: Vanillagrid, gridList: Record<string, Grid>, h
                             if(typeof vg.dataType[key].getEditor !== 'function') throw new Error('getEditor must be a function.');
                             const call_endEdit = () => {
                                 vg._status.editNewValue = vg._status.editOldValue;
-                                handler.removeGridEditor(vg._status.activeGridEditor);
+                                handler.removeGridEditor();
                             }
                             const call_modify = () => {
                                 handler.modifyCell(vg);
@@ -206,11 +209,10 @@ export const setHandleCell = (vg: Vanillagrid, gridList: Record<string, Grid>, h
                             gridEditor = vg.dataType[key].getEditor(cell, handler.__getData(cell), () => {call_modify()}, () => {call_endEdit()});
                             if(gridEditor) {
                                 if(!(gridEditor instanceof HTMLElement) || gridEditor.nodeType !== 1)  throw new Error('getEditor must return an html element.');
-                                (gridEditor as any).eId = cell._gridId + '_Editor';
-                                (gridEditor as any).gId = cell._gridId;
+                                (gridEditor as any)._gridId = cell._gridId;
                                 (gridEditor as any).targetCell = cell;
-                                gridEditor.classList.add((gridEditor as any).gId + '_editor_' + key);
-                                gridEditor.classList.add((gridEditor as any).gId + '_editor');
+                                gridEditor.classList.add((gridEditor as any)._gridId + '_editor_' + key);
+                                gridEditor.classList.add((gridEditor as any)._gridId + '_editor');
                                 vg._status.editOldValue = cell.value;
                             }
                         }
@@ -218,7 +220,7 @@ export const setHandleCell = (vg: Vanillagrid, gridList: Record<string, Grid>, h
                 });
                 break;
         }
-        if(cell._grid._events.onBeforeEditEnter(cell._row, cell.colId, gridEditor) === false) return;
+        if(gridList[cell._gridId].events.onBeforeEditEnter(cell._row, cell.colId, gridEditor) === false) return;
         if (!gridEditor) return;
         cell.style.padding = '0';
         cell.style.fontSize = '0px'; 
@@ -227,10 +229,10 @@ export const setHandleCell = (vg: Vanillagrid, gridList: Record<string, Grid>, h
         gridEditor.focus();
         if (isEnterKey) gridEditor.select();
         vg._status.activeGridEditor = gridEditor;
-        cell._grid._events.onAfterEditEnter(cell._row, cell.colId, gridEditor);
+        gridList[cell._gridId].events.onAfterEditEnter(cell._row, cell.colId, gridEditor);
     };
     handler.getValidValue = (cell: Cell, value: any) => {
-        const nullValue = nvl(cell._grid._gridInfo.nullValue, null);
+        const nullValue = nvl(gridList[cell._gridId].data.gridInfo.nullValue, null);
         if (!cell) return null;
         if (cell.dataType !== 'code') {
             if (value === undefined || value === null || value === '') return nullValue;
@@ -282,7 +284,7 @@ export const setHandleCell = (vg: Vanillagrid, gridList: Record<string, Grid>, h
                 return value;
             case 'checkbox':
                 if (typeof value === 'boolean') return value;
-                const checkedValue = cell._grid._gridInfo.checkedValue;
+                const checkedValue = gridList[cell._gridId].data.gridInfo.checkedValue;
                 return checkedValue === value;
             case 'button':
                 return value;
@@ -307,19 +309,19 @@ export const setHandleCell = (vg: Vanillagrid, gridList: Record<string, Grid>, h
     handler.getTextFromCell =  (cell: Cell) => {
         if (!cell) return '';
         let cellText: any = '';
-        let value = nvl(cell.value, cell._grid._gridInfo.nullValue);
+        let value = nvl(cell.value, gridList[cell._gridId].data.gridInfo.nullValue);
         switch (cell.dataType) {
             case 'number':
-                if(value === cell._grid._gridInfo.nullValue) cellText = value;
-                else cellText = nvl(handler.getFormatNumberFromCell(cell), cell._grid._gridInfo.nullValue);
+                if(value === gridList[cell._gridId].data.gridInfo.nullValue) cellText = value;
+                else cellText = nvl(handler.getFormatNumberFromCell(cell), gridList[cell._gridId].data.gridInfo.nullValue);
                 break;
             case 'date':
-                if(value === cell._grid._gridInfo.nullValue) cellText = value;
-                else cellText = nvl(handler.getDateWithGridDateFormat(cell), cell._grid._gridInfo.nullValue);
+                if(value === gridList[cell._gridId].data.gridInfo.nullValue) cellText = value;
+                else cellText = nvl(handler.getDateWithGridDateFormat(cell), gridList[cell._gridId].data.gridInfo.nullValue);
                 break;
             case 'month':
-                if(value === cell._grid._gridInfo.nullValue) cellText = value;
-                else cellText = nvl(handler.getDateWithGridMonthFormat(cell), cell._grid._gridInfo.nullValue);
+                if(value === gridList[cell._gridId].data.gridInfo.nullValue) cellText = value;
+                else cellText = nvl(handler.getDateWithGridMonthFormat(cell), gridList[cell._gridId].data.gridInfo.nullValue);
                 break;
             case 'select':
                 if (Array.isArray(cell.value) && cell.value.length > 0) {
@@ -327,7 +329,7 @@ export const setHandleCell = (vg: Vanillagrid, gridList: Record<string, Grid>, h
                     for(const option of cell.value) {
                         if (option.selected) cellText = option.text;
                     }
-                    if(cellText === null || cellText === undefined) cellText = cell._grid._gridInfo.nullValue;
+                    if(cellText === null || cellText === undefined) cellText = gridList[cell._gridId].data.gridInfo.nullValue;
                 }
                 break;
             case 'link':
@@ -522,7 +524,7 @@ export const setHandleCell = (vg: Vanillagrid, gridList: Record<string, Grid>, h
         if (!isValidDate(year, month, day)) {
             return null;
         }
-        const dateFormat = cell._grid._gridInfo.dateFormat;
+        const dateFormat = gridList[cell._gridId].data.gridInfo.dateFormat;
         
         switch (dateFormat) {
             case 'yyyy-mm-dd':
@@ -567,7 +569,7 @@ export const setHandleCell = (vg: Vanillagrid, gridList: Record<string, Grid>, h
             return null;
         }
         
-        switch (cell._grid._gridInfo.monthFormat) {
+        switch (gridList[cell._gridId].data.gridInfo.monthFormat) {
             case 'yyyy-mm':
                 return `${year}-${month}`;
             case 'yyyy/mm':
@@ -591,8 +593,8 @@ export const setHandleCell = (vg: Vanillagrid, gridList: Record<string, Grid>, h
     };
     handler.getCheckboxCellTrueOrFalse = (cell: Cell) => {
         const value = cell.value;
-        const checkedValue = cell._grid._gridInfo.checkedValue;
-        const uncheckedValue = cell._grid._gridInfo.uncheckedValue;
+        const checkedValue = gridList[cell._gridId].data.gridInfo.checkedValue;
+        const uncheckedValue = gridList[cell._gridId].data.gridInfo.uncheckedValue;
         if (typeof value === 'boolean') {
             if (value) {
                 cell.value = checkedValue;
