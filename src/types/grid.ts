@@ -21,7 +21,7 @@ export interface GridData{
     colInfos: ColInfo[];
     variables: GridVariables;
 }
-interface GridEvents {
+export interface GridEvents {
     onActiveCell(row: number, colId: string): boolean;
     onActiveCells(startRow: number, startColId: string, endRow: number, endColId: string): boolean;
     onActiveRow(row: number): boolean;
