@@ -6,7 +6,7 @@ import type { Handler } from "../types/handler";
 import { alignUnit, enumWidthUnit, selectionPolicyUnit, verticalAlignUnit } from "../types/enum";
 import { setGridCssStyle } from "../utils/createElement";
 import { extractNumberAndUnit, getAttributeOnlyBoolean, getAttributeOnlyNumber, getAttributeOnlyNumberInteger, getAttributeOnlyNumberIntegerOrZero, getAttributeWithCheckRequired, getColorFromColorSet, isIncludeEnum, nvl, setColorSet, setInvertColor, toLowerCase } from "../utils/utils";
-import { setGridMethod } from "./setGridMethod";
+import { getGridMethod } from "./getGridMethod";
 import { GridCssInfo, GridInfo } from "../types/gridInfo";
 import { GridMethods } from "../types/gridMethods";
 
@@ -401,9 +401,11 @@ export const mountVanillagrid = (vg: Vanillagrid, gridList: Record<string, Grid>
         const gId = getAttributeWithCheckRequired('data-id', vanillagridBox)!;
         if(gridList[gId]) throw new Error('There is a duplicate grid ID.');
         vanillagridBox.classList.add(gId + '_vanillagrid');
+        (vanillagridBox as any)._gridId = gId;
 
         const gridElement = document.createElement('v-g') as GridElements;
         gridElement.classList.add(gId + '_v-g');
+        gridElement._gridId = gId;
 
         const gridHeader = document.createElement('v-g-h') as GridHeader;
         gridHeader._gridId = gId;
@@ -452,9 +454,8 @@ export const mountVanillagrid = (vg: Vanillagrid, gridList: Record<string, Grid>
             }
         };
         gridList[gId] = grid;
-
+        grid.methods = getGridMethod(vg, grid, handler);
         setGridCssStyle(grid);
-        setGridMethod(vg, grid, handler);
                 
         gridHeader.addEventListener('dblclick', function (e: any) {
             if (vg._status.onHeaderDragging) return;
@@ -468,18 +469,18 @@ export const mountVanillagrid = (vg: Vanillagrid, gridList: Record<string, Grid>
             else {
                 return;
             }
-            if(headerCell._grid.events.onBeforeDblClickHeader(headerCell._row, headerCell.colId) === false) {
+            if(grid.events.onBeforeDblClickHeader(headerCell._row, headerCell.colId) === false) {
                 e.stopPropagation();
                 e.preventDefault();
                 return;
             }
             if (e.target.dataType === 'checkbox' && grid.data.gridInfo.allCheckable && headerCell._isLastCell) {
-                grid.methods.setColSameValue(e.target.cIndex, !handler.getCheckboxCellTrueOrFalse(handler._getCell(gridElement, 1, e.target.index)!), true);
+                grid.methods.setColSameValue(e.target.index, !handler.getCheckboxCellTrueOrFalse(handler._getCell(grid.data.id, 1, e.target.index)!), true);
                 return;
             }
 
             if (!grid.data.gridInfo.sortable) return;
-            if (!handler.__getColInfo(gridElement, headerCell.colId)!.sortable) return;
+            if (!handler.__getColInfo(grid.data.id, headerCell.colId)!.sortable) return;
             if (!headerCell._isLastCell) return;
             
             grid.methods.sort(headerCell.colId, !grid.data.variables.sortToggle[headerCell.colId]);
@@ -518,22 +519,22 @@ export const mountVanillagrid = (vg: Vanillagrid, gridList: Record<string, Grid>
             sortSpan.classList.add(grid.data.variables.sortToggle[headerCell.colId] ? headerCell._gridId + '_ascSpan' : headerCell._gridId + '_descSpan');
             headerCell.append(sortSpan);
 
-            headerCell._grid.events.onAfterDblClickHeader(headerCell._row, headerCell.colId);
+            grid.events.onAfterDblClickHeader(headerCell._row, headerCell.colId);
         });
         gridHeader.addEventListener('click', function (e: any) {
             let headerCell: Cell;
             if (e.target._type === 'ghd') {
                 headerCell = e.target;
-                if(headerCell._grid.events.onBeforeClickHeader(headerCell._row, headerCell.colId) === false) {
+                if(grid.events.onBeforeClickHeader(headerCell._row, headerCell.colId) === false) {
                     e.stopPropagation();
                     e.preventDefault();
                     return;
                 }
-                headerCell._grid.events.onAfterClickHeader(headerCell._row, headerCell.colId);
+                grid.events.onAfterClickHeader(headerCell._row, headerCell.colId);
             }
             else if (e.target._type === 'filter'){
                 headerCell = e.target.parentNode;
-                if(headerCell._grid.events.onClickFilter(headerCell._row, headerCell.colId, e.target) === false) {
+                if(grid.events.onClickFilter(headerCell._row, headerCell.colId, e.target) === false) {
                     e.stopPropagation();
                     e.preventDefault();
                     return;
@@ -574,7 +575,7 @@ export const mountVanillagrid = (vg: Vanillagrid, gridList: Record<string, Grid>
                     
                     direction = deltaY > 0 ? 'down' : 'up';
                 }
-                handler.startScrolling(gridElement, direction);
+                handler.startScrolling(grid.data.id, direction);
             }
         });
         gridBody.addEventListener('mouseenter', function (e) {
@@ -624,7 +625,7 @@ export const mountVanillagrid = (vg: Vanillagrid, gridList: Record<string, Grid>
                             e.preventDefault();
                             return;
                         }
-                        vg._status.editOldValue = e.target.parentNode.cValue;
+                        vg._status.editOldValue = e.target.parentNode.value;
                         break;
                     case 'button':
                         if(grid.events.onClickButton(cell._row, cell.colId, e.target) === false) {
@@ -700,7 +701,7 @@ export const mountVanillagrid = (vg: Vanillagrid, gridList: Record<string, Grid>
             vg._status.activeGrid = grid;
             vg._status.isDragging = true;
             if (grid.data.gridInfo.selectionPolicy === 'range' && e.shiftKey && grid.data.variables.targetCell) {
-                handler.unselectCells(grid);
+                handler.unselectCells(grid.data.id);
                 handler.selectCells(grid.data.variables.targetCell, cell);
             }
             else {
@@ -722,7 +723,7 @@ export const mountVanillagrid = (vg: Vanillagrid, gridList: Record<string, Grid>
             vg._status.mouseoverCell = cell;
             
             if (vg._status.isDragging && grid.data.variables.targetCell) {
-                handler. unselectCells(grid);
+                handler. unselectCells(grid.data.id);
                 handler.selectCells(grid.data.variables.targetCell, cell);
             }
         });
@@ -741,7 +742,7 @@ export const mountVanillagrid = (vg: Vanillagrid, gridList: Record<string, Grid>
 
         vanillagridBox.append(gridElement);
                
-        handler.__loadHeader(gridElement);
-        handler.__loadFooter(gridElement);
+        handler.__loadHeader(grid.data.id);
+        handler.__loadFooter(grid.data.id);
     }
 }
