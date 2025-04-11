@@ -14,53 +14,55 @@ export const setHandleActive = (vg: Vanillagrid, gridList: Record<string, Grid>,
         }
     };
     handler.selectCell = (targetCell: Cell) => {
-        if(targetCell._grid._events.onActiveCell(targetCell._row, targetCell.colId) === false) return false;
-        if(targetCell._grid._events.onActiveRow(targetCell._row) === false) return false;
-        if(targetCell._grid._events.onActiveCol(targetCell.colId) === false) return false;
-        if (targetCell._grid._gridInfo.selectionPolicy === 'none') return false;
-        handler.resetSelection(targetCell._grid);
-        targetCell._grid._variables._targetCell = targetCell;
+        const gridId = targetCell._gridId;
+        if(gridList[gridId].events.onActiveCell(targetCell._row, targetCell.colId) === false) return false;
+        if(gridList[gridId].events.onActiveRow(targetCell._row) === false) return false;
+        if(gridList[gridId].events.onActiveCol(targetCell.colId) === false) return false;
+        if (gridList[gridId].data.gridInfo.selectionPolicy === 'none') return false;
+        handler.resetSelection(gridId);
+        gridList[gridId].data.variables.targetCell = targetCell;
         handler.selectCells(targetCell, targetCell);
         handler.focusCell(targetCell);
         return true;
     };
     handler.focusCell = (targetCell: Cell) => {
-        const gridRect = targetCell._grid.getBoundingClientRect();
-        const header = targetCell._grid.gridHeader;
-        const footer = targetCell._grid.gridFooter;
+        const gridId = targetCell._gridId;
+        const gridRect = gridList[gridId].elements.grid.getBoundingClientRect();
+        const header = gridList[gridId].elements.gridHeader;
+        const footer = gridList[gridId].elements.gridFooter;
         const cellBRect = targetCell.getBoundingClientRect();
         const cellTopPosition = cellBRect.top - gridRect.top - header.clientHeight;
         const cellBottomPosition = cellBRect.bottom - gridRect.top + footer.clientHeight;
         const cellLeftPosition = cellBRect.left - gridRect.left;
         const cellRightPosition = cellBRect.right - gridRect.left;
         if (cellTopPosition < 0) {
-            targetCell._grid.scrollTop += cellTopPosition;
-        } else if (cellBottomPosition > targetCell._grid.clientHeight) {
-            targetCell._grid.scrollTop += cellBottomPosition - targetCell._grid.clientHeight;
+            gridList[gridId].elements.grid.scrollTop += cellTopPosition;
+        } else if (cellBottomPosition > gridList[gridId].elements.grid.clientHeight) {
+            gridList[gridId].elements.grid.scrollTop += cellBottomPosition - gridList[gridId].elements.grid.clientHeight;
         }
         if (cellLeftPosition < 0) {
-            targetCell._grid.scrollLeft += cellLeftPosition;
-        } else if (cellRightPosition > targetCell._grid.clientWidth) {
-            targetCell._grid.scrollLeft += cellRightPosition - targetCell._grid.clientWidth;
+            gridList[gridId].elements.grid.scrollLeft += cellLeftPosition;
+        } else if (cellRightPosition > gridList[gridId].elements.grid.clientWidth) {
+            gridList[gridId].elements.grid.scrollLeft += cellRightPosition - gridList[gridId].elements.grid.clientWidth;
         }
     };
-    handler.resetSelection = (grid: Grid) => {
-        if (!grid) return;
-        if (grid._variables._activeRows) grid._variables._activeRows = [];
-        if (grid._variables._activeCols) grid._variables._activeCols = [];
-        if (grid._variables._activeCells) grid._variables._activeCells = [];
-        if (grid._variables._targetCell) grid._variables._targetCell = null;
+    handler.resetSelection = (gridId: string) => {
+        if (!gridList[gridId]) return;
+        if (gridList[gridId].data.variables.activeRows) gridList[gridId].data.variables.activeRows = [];
+        if (gridList[gridId].data.variables.activeCols) gridList[gridId].data.variables.activeCols = [];
+        if (gridList[gridId].data.variables.activeCells) gridList[gridId].data.variables.activeCells = [];
+        if (gridList[gridId].data.variables.targetCell) gridList[gridId].data.variables.targetCell = null;
         
-        handler.unselectCells(grid);
+        handler.unselectCells(gridId);
     };
-    handler.unselectCells = (grid: Grid) => {
-        const selectedCells: NodeListOf<Cell> = grid.querySelectorAll('.' + grid._id + '_selected-cell');
+    handler.unselectCells = (gridId: string) => {
+        const selectedCells: NodeListOf<Cell> = gridList[gridId].elements.grid.querySelectorAll('.' + gridId + '_selected-cell');
         for(const cell of selectedCells) {
-            cell.classList.remove(grid._id + '_selected-cell');
+            cell.classList.remove(gridId + '_selected-cell');
             if (cell.dataType === 'link' || cell.dataType === 'select') {
                 const childList = cell.querySelectorAll('*');
                 childList.forEach((child: Element) => {
-                    child.classList.remove(grid._id + '_selected-cell');
+                    child.classList.remove(gridId + '_selected-cell');
                 });
             }
             if(vg.dataType) {
@@ -74,21 +76,22 @@ export const setHandleActive = (vg: Vanillagrid, gridList: Record<string, Grid>,
                 });
             }
         }
-        const selectedCols = grid.querySelectorAll('.' + grid._id + '_selected-col');
+        const selectedCols = gridList[gridId].elements.grid.querySelectorAll('.' + gridId + '_selected-col');
         for(const cell of selectedCols) {
-            cell.classList.remove(grid._id + '_selected-col');
+            cell.classList.remove(gridId + '_selected-col');
         }
-        const selectedRows = grid.querySelectorAll('.' + grid._id + '_selected-row');
+        const selectedRows = gridList[gridId].elements.grid.querySelectorAll('.' + gridId + '_selected-row');
         for(const cell of selectedRows) {
-            cell.classList.remove(grid._id + '_selected-row');
+            cell.classList.remove(gridId + '_selected-row');
         }
     };
     handler.selectCells = (startCell: Cell, endCell: Cell, _focusCell?: Cell) => {
-        if(startCell._grid._events.onActiveCells(startCell._row, startCell.colId, endCell._row, endCell.colId) === false) return false;
-        if(startCell._grid._events.onActiveRows(startCell._row, endCell._row) === false) return false;
-        if(startCell._grid._events.onActiveCols(startCell.colId, endCell.colId) === false) return false;
+        const gridId = startCell._gridId;
+        if(gridList[gridId].events.onActiveCells(startCell._row, startCell.colId, endCell._row, endCell.colId) === false) return false;
+        if(gridList[gridId].events.onActiveRows(startCell._row, endCell._row) === false) return false;
+        if(gridList[gridId].events.onActiveCols(startCell.colId, endCell.colId) === false) return false;
     
-        if (startCell._grid._gridInfo.selectionPolicy !== 'range' && startCell !== endCell) {
+        if (gridList[gridId].data.gridInfo.selectionPolicy !== 'range' && startCell !== endCell) {
             return false;
         }
         const startRow = startCell._row < endCell._row ? startCell._row : endCell._row;
@@ -96,22 +99,22 @@ export const setHandleActive = (vg: Vanillagrid, gridList: Record<string, Grid>,
         const startCol = startCell._col < endCell._col ? startCell._col : endCell._col;
         const endCol = startCell._col > endCell._col ? startCell._col : endCell._col;
     
-        startCell._grid._variables._activeCells = [];
-        startCell._grid._variables._activeRows = [];
-        startCell._grid._variables._activeCols = [];
+        gridList[gridId].data.variables.activeCells = [];
+        gridList[gridId].data.variables.activeRows = [];
+        gridList[gridId].data.variables.activeCols = [];
         
         let tempCell: Cell;
         for(let r = startRow; r <= endRow; r++) {
             for(let c = startCol; c <= endCol; c++) {
-                if (r === startRow) startCell._grid._variables._activeCols.push(c);
-                tempCell = handler._getCell(startCell._grid, r, c)!;
+                if (r === startRow) gridList[gridId].data.variables.activeCols.push(c);
+                tempCell = handler._getCell(gridId, r, c)!;
                 if (!tempCell.untarget && handler.isCellVisible(tempCell)) {
-                    startCell._grid._variables._activeCells.push(tempCell);
-                    tempCell.classList.add(startCell._grid._id + '_selected-cell');
+                    gridList[gridId].data.variables.activeCells.push(tempCell);
+                    tempCell.classList.add(gridId + '_selected-cell');
                     if (tempCell.dataType === 'link' || tempCell.dataType === 'select') {
                         const childList = tempCell.querySelectorAll('*');
                         childList.forEach(child => {
-                            child.classList.add(startCell._grid._id + '_selected-cell');
+                            child.classList.add(gridId + '_selected-cell');
                         });
                     }
                     if(vg.dataType) {
@@ -126,55 +129,55 @@ export const setHandleActive = (vg: Vanillagrid, gridList: Record<string, Grid>,
                     }
                 }
             }
-            startCell._grid._variables._activeRows.push(r);
+            gridList[gridId].data.variables.activeRows.push(r);
         }
-        handler.setActiveCol(startCell._grid);
-        handler.setActiveRow(startCell._grid);
+        handler.setActiveCol(gridId);
+        handler.setActiveRow(gridId);
     
         handler.focusCell(_focusCell ? _focusCell : endCell);
         return true;
     };
-    handler.setActiveCol = (grid: Grid) => {
-        for(const colIdx of grid._variables._activeCols) {
-            for(let r = 1; r <= grid.getHeaderRowCount(); r++) {
-                handler._getHeaderCell(grid, r, colIdx).classList.add(grid._id + '_selected-col');
+    handler.setActiveCol = (gridId: string) => {
+        for(const colIdx of gridList[gridId].data.variables.activeCols) {
+            for(let r = 1; r <= gridList[gridId].methods.getHeaderRowCount(); r++) {
+                handler._getHeaderCell(gridId, r, colIdx).classList.add(gridId + '_selected-col');
             }
         }
     };
-    handler.setActiveRow = (grid: Grid) => {
-        for(const rowIdx of grid._variables._activeRows) {
-            for(const cell of handler._getRow(grid, rowIdx)) {
-                cell.classList.add(grid._id + '_selected-row');
+    handler.setActiveRow = (gridId: string) => {
+        for(const rowIdx of gridList[gridId].data.variables.activeRows) {
+            for(const cell of handler._getRow(gridId, rowIdx)) {
+                cell.classList.add(gridId + '_selected-row');
             }
         }
     };
-    handler.startScrolling = (grid: Grid, action: string) => {
+    handler.startScrolling = (gridId: string, action: string) => {
         if (vg._status.scrollInterval) return;
         vg._status.scrollInterval = setInterval(() => {
-            if (grid._gridInfo.selectionPolicy !== 'range') return;
-            if (grid._variables._activeCells.length <= 0) return;
-            const startCell = grid._variables._activeCells[0];
-            const endCell = grid._variables._activeCells[grid._variables._activeCells.length - 1];
+            if (gridList[gridId].data.gridInfo.selectionPolicy !== 'range') return;
+            if (gridList[gridId].data.variables.activeCells.length <= 0) return;
+            const startCell = gridList[gridId].data.variables.activeCells[0];
+            const endCell = gridList[gridId].data.variables.activeCells[gridList[gridId].data.variables.activeCells.length - 1];
             let newTargetCell;
             switch (action) {
                 case 'up':
                     newTargetCell = handler.getMoveRowCell(startCell, -1);
-                    handler.unselectCells(grid);
+                    handler.unselectCells(gridId);
                     handler.selectCells(newTargetCell!, endCell, newTargetCell!);
                     break;
                 case 'down':
                     newTargetCell = handler.getMoveRowCell(endCell, 1);
-                    handler.unselectCells(grid);
+                    handler.unselectCells(gridId);
                     handler.selectCells(startCell, newTargetCell!);
                     break;
                 case 'left':
                     newTargetCell = handler.getMoveColCell(startCell, -1);
-                    handler.unselectCells(grid);
+                    handler.unselectCells(gridId);
                     handler.selectCells(newTargetCell!, endCell, newTargetCell!);
                     break;
                 case 'right':
                     newTargetCell = handler.getMoveColCell(endCell, 1);
-                    handler.unselectCells(grid);
+                    handler.unselectCells(gridId);
                     handler.selectCells(startCell, newTargetCell!);
                     break;
                 default:
@@ -187,8 +190,9 @@ export const setHandleActive = (vg: Vanillagrid, gridList: Record<string, Grid>,
         vg._status.scrollInterval = null;
     };
     handler.copyGrid = (copyCells: Cell[]) => {
+        const gridId = copyCells[0]._gridId;
         const copyText = handler.getCopyText(copyCells);
-        if(copyCells[0]._grid._events.onCopy(copyCells[0]._row, copyCells[0].colId, copyCells[copyCells.length - 1]._row, copyCells[copyCells.length - 1].colId, copyText) === false) return;
+        if(gridList[gridId].events.onCopy(copyCells[0]._row, copyCells[0].colId, copyCells[copyCells.length - 1]._row, copyCells[copyCells.length - 1].colId, copyText) === false) return;
         navigator.clipboard.writeText(copyText).then(() => {
         }, () => {
         });
@@ -221,13 +225,13 @@ export const setHandleActive = (vg: Vanillagrid, gridList: Record<string, Grid>,
         });
         return copyText;
     };
-    handler.pasteGrid = (e: ClipboardEvent, grid: Grid) => {
+    handler.pasteGrid = (e: ClipboardEvent, gridId: string) => {
         const clipboardData = e.clipboardData || (window as any).clipboardData;
-        if(grid._variables._activeCells.length <= 0) return;
-        const startCell = grid._variables._activeCells[0];
+        if(gridList[gridId].data.variables.activeCells.length <= 0) return;
+        const startCell = gridList[gridId].data.variables.activeCells[0];
         const text = clipboardData.getData('text');
     
-        if(grid._events.onPaste(startCell._row, startCell.colId, text) === false) {
+        if(gridList[gridId].events.onPaste(startCell._row, startCell.colId, text) === false) {
             e.stopPropagation();
             e.preventDefault();
             return;
@@ -263,8 +267,8 @@ export const setHandleActive = (vg: Vanillagrid, gridList: Record<string, Grid>,
         const startRowIndex = startCell._row;
         const startColIndex = startCell._col;
         
-        const maxRow = grid.getRowCount(); 
-        const maxCol = grid.getColCount(); 
+        const maxRow = gridList[gridId].methods.getRowCount(); 
+        const maxCol = gridList[gridId].methods.getColCount(); 
     
         let unvisibleRowCount = 0;
         let rowIndex = 0;
@@ -272,12 +276,12 @@ export const setHandleActive = (vg: Vanillagrid, gridList: Record<string, Grid>,
             const currentRowIndex = startRowIndex + rowIndex + unvisibleRowCount;
             
             if (currentRowIndex > maxRow) return;
-            const currentRow = handler._getRow(grid, currentRowIndex);
+            const currentRow = handler._getRow(gridId, currentRowIndex);
             
             if (!currentRow[0].rowVisible || currentRow[0].filter) {
                 unvisibleRowCount++;
                 let nextRow = 1;
-                let nextRowCell = handler._getCell(grid, currentRow[0]._row + nextRow, 1);
+                let nextRowCell = handler._getCell(gridId, currentRow[0]._row + nextRow, 1);
                 while(nextRowCell) {
                     if (!nextRowCell.rowVisible || nextRowCell.filter) {
                         unvisibleRowCount++;
@@ -286,7 +290,7 @@ export const setHandleActive = (vg: Vanillagrid, gridList: Record<string, Grid>,
                         break;
                     }
                     nextRow++;
-                    nextRowCell = handler._getCell(grid, currentRow[0]._row + nextRow, 1);
+                    nextRowCell = handler._getCell(gridId, currentRow[0]._row + nextRow, 1);
                 }
                 continue;
             }
@@ -341,7 +345,7 @@ export const setHandleActive = (vg: Vanillagrid, gridList: Record<string, Grid>,
             }
             rowIndex++;
         }
-        if (records.length > 0) handler.recordGridModify(grid, records);
+        if (records.length > 0) handler.recordGridModify(gridId, records);
     };
     handler.getRecordsWithModifyValue = (cell: Cell, value: any, isMethodCalled = false) => {
         const records: CellRecord[] = [];
@@ -351,17 +355,18 @@ export const setHandleActive = (vg: Vanillagrid, gridList: Record<string, Grid>,
     };
     handler.getTabCell = (targetCell: Cell, isNegative: boolean) => {
         if (!targetCell) return null;
+        const gridId = targetCell._gridId;
         let row = targetCell._row;
         let col = isNegative ? targetCell._col - 1 : targetCell._col + 1;
         let newTargetCell;
     
         while(!newTargetCell
             && row >= 1
-            && row <= targetCell._grid.getRowCount()) {
+            && row <= gridList[gridId].methods.getRowCount()) {
             while(!newTargetCell
                 && col >= 1
-                && col <= targetCell._grid.getColCount()) {
-                newTargetCell = handler._getCell(targetCell._grid, row, col);
+                && col <= gridList[gridId].methods.getColCount()) {
+                newTargetCell = handler._getCell(gridId, row, col);
                 if (!newTargetCell) {
                 }
                 else if (newTargetCell.isRowMerge || newTargetCell.isColMerge) {
@@ -376,21 +381,22 @@ export const setHandleActive = (vg: Vanillagrid, gridList: Record<string, Grid>,
                 col = isNegative ? col - 1 : col + 1;
             }
             row = isNegative ? row - 1 : row + 1;
-            col = isNegative ? targetCell._grid.getColCount() : 1;
+            col = isNegative ? gridList[gridId].methods.getColCount() : 1;
         }
         if (!newTargetCell) newTargetCell = targetCell;
         return newTargetCell;
     };
     handler.getMoveRowCell = (targetCell: Cell, mRow: number) => {
         if (!targetCell) return null;
+        const gridId = targetCell._gridId;
         let row = targetCell._row;
         let col = targetCell._col;
         let newTargetCell;
         if (!mRow) return targetCell;
         while(!newTargetCell) {
             row = row + mRow;
-            if (row < 1 || row > targetCell._grid.getRowCount()) break;
-            newTargetCell = handler._getCell(targetCell._grid, row, col);
+            if (row < 1 || row > gridList[gridId].methods.getRowCount()) break;
+            newTargetCell = handler._getCell(gridId, row, col);
             if (!newTargetCell) {
             }
             else if (newTargetCell.isRowMerge || newTargetCell.isColMerge) {
@@ -409,14 +415,15 @@ export const setHandleActive = (vg: Vanillagrid, gridList: Record<string, Grid>,
     };
     handler.getMoveColCell = (targetCell: Cell, mCol: number) => {
         if (!targetCell) return null;
+        const gridId = targetCell._gridId;
         let row = targetCell._row;
         let col = targetCell._col;
         let newTargetCell;
         if (!mCol) return targetCell;
         while(!newTargetCell) {
             col = col + mCol;
-            if (col < 1 || col > targetCell._grid.getColCount()) break;
-            newTargetCell = handler._getCell(targetCell._grid, row, col);
+            if (col < 1 || col > gridList[gridId].methods.getColCount()) break;
+            newTargetCell = handler._getCell(gridId, row, col);
             if (!newTargetCell) {
             }
             else if (newTargetCell.isRowMerge || newTargetCell.isColMerge) {
@@ -433,43 +440,45 @@ export const setHandleActive = (vg: Vanillagrid, gridList: Record<string, Grid>,
     
         return newTargetCell;
     };
-    handler.recordGridModify = (grid: Grid, records: CellRecord[]) => {
+    handler.recordGridModify = (gridId: string, records: CellRecord[]) => {
         if (records.length <= 0) return;
-        if (grid._variables._recordseq < grid._variables._records.length) {
-            grid._variables._records.splice(grid._variables._recordseq);
+        if (gridList[gridId].data.variables.recordseq < gridList[gridId].data.variables.records.length) {
+            gridList[gridId].data.variables.records.splice(gridList[gridId].data.variables.recordseq);
             
         }
-        grid._variables._records.push(records);
-        grid._variables._recordseq = grid._variables._recordseq + 1;
+        gridList[gridId].data.variables.records.push(records);
+        gridList[gridId].data.variables.recordseq = gridList[gridId].data.variables.recordseq + 1;
     
-        if (grid._variables._recordseq > grid._gridInfo.redoCount!){
-            grid._variables._records.shift();
-            grid._variables._recordseq = grid._variables._recordseq - 1;
+        if (gridList[gridId].data.variables.recordseq > gridList[gridId].data.gridInfo.redoCount!){
+            gridList[gridId].data.variables.records.shift();
+            gridList[gridId].data.variables.recordseq = gridList[gridId].data.variables.recordseq - 1;
         }
     };
-    handler.redoundo = (grid: Grid, isRedo?: boolean) => {
-        if (!grid._gridInfo.redoable) return false;
+    handler.redoundo = (gridId: string, isRedo?: boolean) => {
+        if (!gridList[gridId].data.gridInfo.redoable) return false;
         const _isRedo = isRedo === false ? false : true;
-        if (_isRedo && grid._variables._recordseq <= 0) return false;
-        if (!_isRedo && grid._variables._recordseq + 1 > grid._variables._records.length) return false;
-        grid._variables._recordseq = _isRedo ? grid._variables._recordseq - 1 : grid._variables._recordseq + 1
-        const redoCellDatas = _isRedo ? grid._variables._records[grid._variables._recordseq] : grid._variables._records[grid._variables._recordseq - 1];
+        if (_isRedo && gridList[gridId].data.variables.recordseq <= 0) return false;
+        if (!_isRedo && gridList[gridId].data.variables.recordseq + 1 > gridList[gridId].data.variables.records.length) return false;
+        gridList[gridId].data.variables.recordseq = _isRedo ? gridList[gridId].data.variables.recordseq - 1 : gridList[gridId].data.variables.recordseq + 1
+        const redoCellDatas = _isRedo ? gridList[gridId].data.variables.records[gridList[gridId].data.variables.recordseq] : gridList[gridId].data.variables.records[gridList[gridId].data.variables.recordseq - 1];
         if (!redoCellDatas || !Array.isArray(redoCellDatas)) return false;
         handler.selectCell(redoCellDatas[0].cell);
         for(const redoCellData of redoCellDatas) {
             redoCellData.cell.value = _isRedo ? redoCellData.oldValue : redoCellData.newValue;
             handler.reConnectedCallbackElement(redoCellData.cell);
-            handler.reloadGridWithModifyCell(grid, redoCellData.cell.index!);
+            handler.reloadGridWithModifyCell(gridId, redoCellData.cell.index!);
         }
         return true;
     };
     handler.selectAndCheckboxOnChange = (target: any) => {
         if (!target.nType) return;
         const cell: Cell = target.parentNode;
+        const gridId = cell._gridId;
+
         let beforeEventResult = true;
         if (target.nType === 'select') vg._status.editNewValue = target.value;
-        else if (target.nType === 'checkbox') vg._status.editNewValue = target.checked ? cell._grid._gridInfo.checkedValue : cell._grid._gridInfo.uncheckedValue;
-        if(cell._grid._events.onBeforeChange(cell._row, cell.colId, vg._status.editOldValue, vg._status.editNewValue) === false) {
+        else if (target.nType === 'checkbox') vg._status.editNewValue = target.checked ? gridList[gridId].data.gridInfo.checkedValue : gridList[gridId].data.gridInfo.uncheckedValue;
+        if(gridList[gridId].events.onBeforeChange(cell._row, cell.colId, vg._status.editOldValue, vg._status.editNewValue) === false) {
             beforeEventResult = false;
         }
         if (!beforeEventResult || cell.untarget || cell.locked) {
@@ -489,15 +498,15 @@ export const setHandleActive = (vg: Vanillagrid, gridList: Record<string, Grid>,
         switch (target.nType) {
             case 'select':
                 
-                handler.recordGridModify(cell._grid, handler.getRecordsWithModifyValue(cell, handler.getSelectOptions(target)));
+                handler.recordGridModify(gridId, handler.getRecordsWithModifyValue(cell, handler.getSelectOptions(target)));
                 break;
             case 'checkbox':
                 
-                handler.recordGridModify(cell._grid, handler.getRecordsWithModifyValue(cell, vg._status.editNewValue));
+                handler.recordGridModify(gridId, handler.getRecordsWithModifyValue(cell, vg._status.editNewValue));
                 break;
             default:
                 break;
         }
-        cell._grid._events.onAfterChange(cell._row, cell.colId, vg._status.editOldValue, vg._status.editNewValue);
+        gridList[gridId].events.onAfterChange(cell._row, cell.colId, vg._status.editOldValue, vg._status.editNewValue);
     };
 }
