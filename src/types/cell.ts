@@ -1,15 +1,9 @@
-
-import type { Grid } from "./grid";
 import type { ColInfo } from "./colInfo";
 
 /**
  * A special html element that data-cell inside the grid.
  */
 export interface Cell extends CellData, HTMLElement{
-    /**
-     * The ID of the grid to which the cell belongs.
-     */
-    _grid: Grid;
     /**
      * The ID of the grid to which the cell belongs.
      */
