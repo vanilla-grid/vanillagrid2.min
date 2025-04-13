@@ -11,7 +11,7 @@ import { setHandleActive } from "../utils/handleActive";
 import { setHandleElement } from "../utils/handleElement";
 import { setHandleGrid } from "../utils/handleGrid";
 import { setHandleCell } from "../utils/handleCell";
-import { setElementConnected } from "../utils/handleConnectedElement";
+import { setElementConnected } from "../utils/handleConnected";
 
 let singletonVanillagrid: Vanillagrid | null = null;
 const gridList: Record<string, Grid> = {};

@@ -1,5 +1,6 @@
 import type { Grid } from "../types/grid";
-import { extractNumberAndUnit, getCssTextFromObject, removeAllChild } from "./utils";
+import type { GridCssInfo } from "../types/gridInfo";
+import { extractNumberAndUnit, getAdjustHexColor, getColorShade, getCssTextFromObject, getHexColorFromColorName, getInvertColor, getMostLightHexColor, removeAllChild } from "./utils";
 
 export const getGridCssStyle = (grid: Grid) => {
     const gId = grid.data.id;
@@ -204,8 +205,7 @@ export const getGridCssStyle = (grid: Grid) => {
         'color': grid.data.gridCssInfo.linkFocusFontColor + ' !important',
     }
     return csses;
-}
-
+};
 export const setGridCssStyle = (grid: Grid) => {
     const gId = grid.data.id;
     let cssText = '';
@@ -231,4 +231,103 @@ export const setGridCssStyle = (grid: Grid) => {
         }
         document.getElementsByTagName('head')[0].appendChild(styleElement);
     }
-}
+};
+export const setColorSet = (cssInfo: GridCssInfo) => {
+    let color = cssInfo.color;
+    if (!color) color = '#f3f3f3';
+    if (color !== 'black' && color !== '#000' && color !== '#000000'
+        && getHexColorFromColorName(color) === '#000000') throw new Error('Please enter the correct color.');
+    color = getHexColorFromColorName(color);
+    const isLight = getColorShade(color) === 'light';
+    const fontColor = isLight ? '#333333' : '#ffffff';
+    const alterRowColorModify = getMostLightHexColor(color);
+    
+    cssInfo.gridBorderColor = getAdjustHexColor(color, '-4f');
+    cssInfo.bodyBackColor = '#ffffff';
+
+    cssInfo.headerCellBackColor = color;
+    cssInfo.headerCellBorderColor = getAdjustHexColor(color, '-4f');
+    cssInfo.headerCellFontColor = fontColor;
+
+    cssInfo.footerCellBackColor = color;
+    cssInfo.footerCellBorderColor = getAdjustHexColor(color, '-4f');
+    cssInfo.footerCellFontColor = fontColor;
+
+    cssInfo.bodyCellBackColor = '#ffffff';
+    cssInfo.bodyCellBorderColor = getAdjustHexColor(color, '-f');
+    cssInfo.bodyCellFontColor = '#333333';
+
+    cssInfo.editorBackColor = '#fefefe';
+    cssInfo.editorFontColor = '#333333';
+
+    cssInfo.selectCellBackColor = getAdjustHexColor(color, '-2f');
+    cssInfo.selectCellFontColor = fontColor;
+
+    cssInfo.selectColBackColor = getAdjustHexColor(color, '-2f');
+    cssInfo.selectColFontColor = fontColor;
+
+    cssInfo.selectRowBackColor = getAdjustHexColor(alterRowColorModify, isLight ? '-f' : '-2f');
+    cssInfo.selectRowFontColor = '#333333';
+
+    cssInfo.mouseoverCellBackColor = color;
+    cssInfo.mouseoverCellFontColor = fontColor;
+
+    cssInfo.lockCellBackColor = getAdjustHexColor(alterRowColorModify, isLight ? '-6' : '-1f');
+    cssInfo.lockCellFontColor = '#666666';
+
+    cssInfo.alterRowBackColor = alterRowColorModify;
+    cssInfo.alterRowFontColor = '#333333';
+    
+    cssInfo.buttonFontColor = fontColor;
+    cssInfo.buttonBackColor = color
+    cssInfo.buttonBorderColor = getAdjustHexColor(color, isLight ? '-cf' : '-4f');
+    cssInfo.buttonHoverFontColor = fontColor;
+    cssInfo.buttonHoverBackColor = getAdjustHexColor(color, '-f');
+    cssInfo.buttonActiveFontColor = fontColor;
+    cssInfo.buttonActiveBackColor = getAdjustHexColor(color, '-2f');
+
+    cssInfo.linkFontColor = getAdjustHexColor(color, isLight ? '-cf' : '0');
+    cssInfo.linkHoverFontColor = getAdjustHexColor(color, isLight ? '-4f' : 'af');
+    cssInfo.linkActiveFontColor = getAdjustHexColor(color, isLight ? '-cf' : '0');
+    cssInfo.linkVisitedFontColor = getAdjustHexColor(color, isLight ? '-5f' : '2f');
+    cssInfo.linkFocusFontColor = getAdjustHexColor(color, isLight ? '-4f' : 'bf');
+};
+export const setInvertColor = (cssInfo: GridCssInfo) => {
+    cssInfo.gridBorderColor = getInvertColor(cssInfo.gridBorderColor);
+    cssInfo.headerCellBackColor = getInvertColor(cssInfo.headerCellBackColor);
+    cssInfo.headerCellBorderColor = getInvertColor(cssInfo.headerCellBorderColor);
+    cssInfo.headerCellFontColor = getInvertColor(cssInfo.headerCellFontColor);
+    cssInfo.footerCellBackColor = getInvertColor(cssInfo.footerCellBackColor);
+    cssInfo.footerCellBorderColor = getInvertColor(cssInfo.footerCellBorderColor);
+    cssInfo.footerCellFontColor = getInvertColor(cssInfo.footerCellFontColor);
+    cssInfo.bodyBackColor = getInvertColor(cssInfo.bodyBackColor);
+    cssInfo.bodyCellBackColor = getInvertColor(cssInfo.bodyCellBackColor);
+    cssInfo.bodyCellBorderColor = getInvertColor(cssInfo.bodyCellBorderColor);
+    cssInfo.bodyCellFontColor = getInvertColor(cssInfo.bodyCellFontColor);
+    cssInfo.editorBackColor = getInvertColor(cssInfo.editorBackColor);
+    cssInfo.editorFontColor = getInvertColor(cssInfo.editorFontColor);
+    cssInfo.selectCellBackColor = getInvertColor(cssInfo.selectCellBackColor);
+    cssInfo.selectCellFontColor = getInvertColor(cssInfo.selectCellFontColor);
+    cssInfo.selectColBackColor = getInvertColor(cssInfo.selectColBackColor);
+    cssInfo.selectColFontColor = getInvertColor(cssInfo.selectColFontColor);
+    cssInfo.selectRowBackColor = getInvertColor(cssInfo.selectRowBackColor);
+    cssInfo.selectRowFontColor = getInvertColor(cssInfo.selectRowFontColor);
+    cssInfo.mouseoverCellBackColor = getInvertColor(cssInfo.mouseoverCellBackColor);
+    cssInfo.mouseoverCellFontColor = getInvertColor(cssInfo.mouseoverCellFontColor);
+    cssInfo.lockCellBackColor = getInvertColor(cssInfo.lockCellBackColor);
+    cssInfo.lockCellFontColor = getInvertColor(cssInfo.lockCellFontColor);
+    cssInfo.alterRowBackColor = getInvertColor(cssInfo.alterRowBackColor);
+    cssInfo.alterRowFontColor = getInvertColor(cssInfo.alterRowFontColor);
+    cssInfo.buttonFontColor = getInvertColor(cssInfo.buttonFontColor);
+    cssInfo.buttonBorderColor = getInvertColor(cssInfo.buttonBorderColor);
+    cssInfo.buttonBackColor = getInvertColor(cssInfo.buttonBackColor);
+    cssInfo.buttonHoverFontColor = getInvertColor(cssInfo.buttonHoverFontColor);
+    cssInfo.buttonHoverBackColor = getInvertColor(cssInfo.buttonHoverBackColor);
+    cssInfo.buttonActiveFontColor = getInvertColor(cssInfo.buttonActiveFontColor);
+    cssInfo.buttonActiveBackColor = getInvertColor(cssInfo.buttonActiveBackColor);
+    cssInfo.linkFontColor = getInvertColor(cssInfo.linkFontColor);
+    cssInfo.linkHoverFontColor = getInvertColor(cssInfo.linkHoverFontColor);
+    cssInfo.linkActiveFontColor = getInvertColor(cssInfo.linkActiveFontColor);
+    cssInfo.linkVisitedFontColor = getInvertColor(cssInfo.linkVisitedFontColor);
+    cssInfo.linkFocusFontColor = getInvertColor(cssInfo.linkFocusFontColor);
+};

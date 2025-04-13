@@ -4,8 +4,8 @@ import type { ColInfo } from "../types/colInfo";
 import type { CellData } from "../types/cell";
 import type { Handler } from "../types/handler";
 import { Align, alignUnit, enumWidthUnit, SelectionPolicy, selectionPolicyUnit, statusUnit, VerticalAlign, verticalAlignUnit } from "../types/enum";
-import { checkIsValueOrData, deepCopy, extractNumberAndUnit, getArrayElementWithBoundCheck, getColorFromColorSet, getHexColorFromColorName, getOnlyNumberWithNaNToNull, getVerticalAlign, isIncludeEnum, removeAllChild, setColorSet, setInvertColor, validateIntegerAndZero, validateNumber, validatePositiveIntegerAndZero } from "../utils/utils";
-import { setGridCssStyle } from "../utils/setElementStyle";
+import { checkIsValueOrData, deepCopy, extractNumberAndUnit, getArrayElementWithBoundCheck, getColorFromColorSet, getHexColorFromColorName, getOnlyNumberWithNaNToNull, getVerticalAlign, isIncludeEnum, removeAllChild, validateIntegerAndZero, validateNumber, validatePositiveIntegerAndZero } from "../utils/utils";
+import { setColorSet, setGridCssStyle, setInvertColor } from "../utils/setGridStyle";
 
 export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => {
     return {
