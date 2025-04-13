@@ -1,6 +1,6 @@
 {
   "name": "vanillagrid2",
-  "version": "1.0.0-beta.1",
+  "version": "1.0.0-beta.2",
   "description": "A simple editor using only Vanilla JS and ES5 syntax.",
   "main": "dist/Vanillagrid2.bundle.js",
   "module": "dist/Vanillagrid2.bundle.js",
