@@ -1,5 +1,5 @@
 import type { Vanillagrid } from "../types/vanillagrid";
-import type { Grid, GridBody, GridElements, GridFooter, GridHeader } from "../types/grid";
+import type { Grid } from "../types/grid";
 import type { ColInfo } from "../types/colInfo";
 import type { Cell } from "../types/cell";
 import type { Handler } from "../types/handler";
@@ -23,7 +23,10 @@ const getGridInfo = (vg: Vanillagrid, vanillagridBox: HTMLElement) => {
         rownumVisible : nvl(getAttributeOnlyBoolean('rownum-visible', vanillagridBox), vg.attributes.defaultGridInfo.rownumVisible),
         rownumSize : nvl(vanillagridBox.getAttribute('rownum-size'), vg.attributes.defaultGridInfo.rownumSize),
         statusVisible : nvl(getAttributeOnlyBoolean('status-visible', vanillagridBox), vg.attributes.defaultGridInfo.statusVisible),
-        selectionPolicy : nvl((isIncludeEnum(selectionPolicyUnit, toLowerCase(vanillagridBox.getAttribute('selection-policy'))) ? toLowerCase(vanillagridBox.getAttribute('selectionPolicy')) : ''), vg.attributes.defaultGridInfo.selectionPolicy),
+        selectionPolicy : nvl(
+            (
+                isIncludeEnum(selectionPolicyUnit, toLowerCase(vanillagridBox.getAttribute('selection-policy'))) ? toLowerCase(vanillagridBox.getAttribute('selection-policy')) : ''
+            ), vg.attributes.defaultGridInfo.selectionPolicy),
         nullValue : nvl(vanillagridBox.getAttribute('null-value'), vg.attributes.defaultGridInfo.nullValue),
         dateFormat : nvl(vanillagridBox.getAttribute('date-format'), vg.attributes.defaultGridInfo.dateFormat),
         monthFormat : nvl(vanillagridBox.getAttribute('month-format'), vg.attributes.defaultGridInfo.monthFormat),

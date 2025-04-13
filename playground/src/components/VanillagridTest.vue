@@ -5,14 +5,15 @@
     <div data-vanillagrid data-id="grid1" height="200px">
         <div data-col id="col1" header="header" data-type="text" width="600"></div>
     </div>
-    <div data-vanillagrid data-id="grid2" locked-color="false" height="400px">
-        <div data-col id="dept" header="Click the Sigma button to the left of the header;filter1(mask);dept " data-type="mask" format="AAA99" width="100" locked="true" row-merge="true"></div>
-        <div data-col id="f_nm" header=";filter2(text);first name" data-type="text" width="120" align="center" locked="true"></div>
+    <br>
+    <div data-vanillagrid data-id="grid2" locked-color="true" height="400px" size-level="3">
+        <div data-col id="dept" header="Click the Sigma button to the left of the header;filter1(mask);dept " data-type="mask" format="AAA99" width="100"  row-merge="true"></div>
+        <div data-col id="f_nm" header=";filter2(text);first name" data-type="text" width="120" align="center" locked="true" visible="false"></div>
         <div data-col id="l_nm" header=";filter3(text);last name" data-type="text" width="120" align="center" locked="true" col-merge="true"></div>
-        <div data-col id="d_o_j" header=";filter4(month);DOJ" data-type="month" width="120" locked="true"></div>
-        <div data-col id="e_id" header="sort1(text);;" data-type="text" width="120" align="center" locked="true" footer="MAX;MIN;AVG;SUM"></div>
-        <div data-col id="salary" header="sort2(number);;salary" data-type="number" format="$ #,###.00" width="150" footer="$$MAX;$$MIN;$$AVG;$$SUM"></div>
-        <div data-col id="status" header="Please double click;checkbox;status" data-type="checkbox" width="80"></div>
+        <div data-col id="d_o_j" header=";filter4(month);DOJ" data-type="month" format="yyyy/mm" width="120" locked="true"></div>
+        <div data-col id="e_id" header="sort1(text);;" data-type="number" width="120" align="center" locked="true" footer="MAX;MIN;AVG;SUM" round-number="-1"></div>
+        <div data-col id="salary" header="sort2(number);;salary" data-type="number" format="$ #,###.0" width="150" footer="$$MAX;$$MIN;$$AVG;$$SUM"></div>
+        <div data-col id="status" header="Please double click;checkbox;status" data-type="checkbox" width="80" footer="CHECK_COUNT"></div>
     </div>
   </div>
 </template>
@@ -26,210 +27,229 @@ const { proxy } = getCurrentInstance()!;
 const vg: Vanillagrid = (proxy as any)!.$vg;
 const gridWrap = ref<HTMLElement | null>(null);
 
+let grid1: GridMethods, grid2: GridMethods;
+
+const data1 = [
+    {
+        col1 : 'This is a text dataType.\nDouble-click to create an editor.\nPress F2 to create an editor.\nWhen you press the enter key, editor focus.\nTry it!',
+    },
+];
+
+const data2 = [
+    {
+        dept : "AAA01",
+        f_nm : "James",
+        l_nm : "Smith",
+        d_o_j : "201603",
+        e_id : "7",
+        salary : 100000,
+        status : "Y",
+    },
+    {
+        dept : "AAA01",
+        f_nm : "Johnson",
+        l_nm : "Johnson",
+        d_o_j : "200103",
+        e_id : "2",
+        salary : 200000,
+        status : "Y",
+    },
+    {
+        dept : "AAA01",
+        f_nm : "Michael",
+        l_nm : "Williams",
+        d_o_j : "200803",
+        e_id : "4",
+        salary : 150000,
+        status : "N",
+    },
+    {
+        dept : "AAA01",
+        f_nm : "Smith",
+        l_nm : "Smith",
+        d_o_j : "202403",
+        e_id : "46",
+        salary : 50000,
+        status : "Y",
+    },
+    {
+        dept : "AAA01",
+        f_nm : "William",
+        l_nm : "Brown",
+        d_o_j : "202203",
+        e_id : "25",
+        salary : 70000,
+        status : "N",
+    },
+    {
+        dept : "AAA01",
+        f_nm : "Charles",
+        l_nm : "Jones",
+        d_o_j : "202103",
+        e_id : "27",
+        salary : 30000,
+        status : "N",
+    },
+    {
+        dept : "AAA02",
+        f_nm : "David",
+        l_nm : "Smith",
+        d_o_j : "201403",
+        e_id : "12",
+        salary : 180000,
+        status : "N",
+    },
+    {
+        dept : "AAA02",
+        f_nm : "James",
+        l_nm : "Jones",
+        d_o_j : "202303",
+        e_id : "26",
+        salary : 80000,
+        status : "N",
+    },
+    {
+        dept : "AAA02",
+        f_nm : "Richard",
+        l_nm : "Garcia",
+        d_o_j : "202203",
+        e_id : "24",
+        salary : 60000,
+        status : "Y",
+    },
+    {
+        dept : "AAA02",
+        f_nm : "David",
+        l_nm : "Miller",
+        d_o_j : "202403",
+        e_id : "48",
+        salary : 90000,
+        status : "Y",
+    },
+    {
+        dept : "AAA02",
+        f_nm : "Joseph",
+        l_nm : "Davis",
+        d_o_j : "202403",
+        e_id : "34",
+        salary : 40000,
+        status : "Y",
+    },
+    {
+        dept : "AAA02",
+        f_nm : "Richard",
+        l_nm : "Miller",
+        d_o_j : "202303",
+        e_id : "35",
+        salary : 50000,
+        status : "Y",
+    },
+    {
+        dept : "BBB01",
+        f_nm : "Joseph",
+        l_nm : "Davis",
+        d_o_j : "200403",
+        e_id : "3",
+        salary : 140000,
+        status : "Y",
+    },
+    {
+        dept : "BBB01",
+        f_nm : "Thomas",
+        l_nm : "Johnson",
+        d_o_j : "200903",
+        e_id : "9",
+        salary : 110000,
+        status : "N",
+    },
+    {
+        dept : "BBB01",
+        f_nm : "Charles",
+        l_nm : "Brown",
+        d_o_j : "200703",
+        e_id : "11",
+        salary : 130000,
+        status : "Y",
+    },
+    {
+        dept : "BBB01",
+        f_nm : "James",
+        l_nm : "Rodriguez",
+        d_o_j : "201303",
+        e_id : "14",
+        salary : 120000,
+        status : "N",
+    },
+    {
+        dept : "BBB02",
+        f_nm : "Richard",
+        l_nm : "Garcia",
+        d_o_j : "200803",
+        e_id : "10",
+        salary : 190000,
+        status : "Y",
+    },
+    {
+        dept : "BBB02",
+        f_nm : "David",
+        l_nm : "Martinez",
+        d_o_j : "202403",
+        e_id : "37",
+        salary : 60000,
+        status : "Y",
+    },
+    {
+        dept : "BBB02",
+        f_nm : "Robert",
+        l_nm : "Rodriguez",
+        d_o_j : "202303",
+        e_id : "31",
+        salary : 90000,
+        status : "N",
+    },
+    {
+        dept : "BBB02",
+        f_nm : "James",
+        l_nm : "Williams",
+        d_o_j : "202403",
+        e_id : "40",
+        salary : 60000,
+        status : "Y",
+    },
+];
+
+const c = (grid: GridMethods, key: string, ...param: any) => {
+    console.log(grid.getGridName(), key, ' : ', grid[key](...param));
+}
+
 const setGrid1Data = () => {
-  const grid: GridMethods = vg.getGrid("grid1")!;
-  const data = [
-      {
-          col1 : 'This is a text dataType.\nDouble-click to create an editor.\nPress F2 to create an editor.\nWhen you press the enter key, editor focus.\nTry it!',
-      },
-  ];
-  console.log(grid);
-  grid.load(data);
+    c(grid1, 'getHeaderRowCount');
+    c(grid2, 'getHeaderRowCount');
+    c(grid2, 'getHeaderText', 'dept');
+    c(grid2, 'setHeaderText', 'dept', 'dept;dept;dept');
+    c(grid2, 'reloadFilterValue', );
+    c(grid2, 'reloadColFilter', 'dept');
+    // c(grid2, 'getFooterRowCount', );
+    // c(grid2, 'reloadFooterValue', );
+    // c(grid2, 'setFooterValue', );
+    // c(grid2, 'getFooterValue', );
+    // c(grid2, 'setFooterFormula', );
+    // c(grid2, 'getFooterFormula', );
+    // c(grid2, 'setFooterFunction', );
 };
 const setGrid2Data = () => {
-  const data = [
-      {
-          dept : "AAA01",
-          f_nm : "James",
-          l_nm : "Smith",
-          d_o_j : "201603",
-          e_id : "7",
-          salary : 100000,
-          status : "Y",
-      },
-      {
-          dept : "AAA01",
-          f_nm : "Johnson",
-          l_nm : "Johnson",
-          d_o_j : "200103",
-          e_id : "2",
-          salary : 200000,
-          status : "Y",
-      },
-      {
-          dept : "AAA01",
-          f_nm : "Michael",
-          l_nm : "Williams",
-          d_o_j : "200803",
-          e_id : "4",
-          salary : 150000,
-          status : "N",
-      },
-      {
-          dept : "AAA01",
-          f_nm : "Smith",
-          l_nm : "Smith",
-          d_o_j : "202403",
-          e_id : "46",
-          salary : 50000,
-          status : "Y",
-      },
-      {
-          dept : "AAA01",
-          f_nm : "William",
-          l_nm : "Brown",
-          d_o_j : "202203",
-          e_id : "25",
-          salary : 70000,
-          status : "N",
-      },
-      {
-          dept : "AAA01",
-          f_nm : "Charles",
-          l_nm : "Jones",
-          d_o_j : "202103",
-          e_id : "27",
-          salary : 30000,
-          status : "N",
-      },
-      {
-          dept : "AAA02",
-          f_nm : "David",
-          l_nm : "Smith",
-          d_o_j : "201403",
-          e_id : "12",
-          salary : 180000,
-          status : "N",
-      },
-      {
-          dept : "AAA02",
-          f_nm : "James",
-          l_nm : "Jones",
-          d_o_j : "202303",
-          e_id : "26",
-          salary : 80000,
-          status : "N",
-      },
-      {
-          dept : "AAA02",
-          f_nm : "Richard",
-          l_nm : "Garcia",
-          d_o_j : "202203",
-          e_id : "24",
-          salary : 60000,
-          status : "Y",
-      },
-      {
-          dept : "AAA02",
-          f_nm : "David",
-          l_nm : "Miller",
-          d_o_j : "202403",
-          e_id : "48",
-          salary : 90000,
-          status : "Y",
-      },
-      {
-          dept : "AAA02",
-          f_nm : "Joseph",
-          l_nm : "Davis",
-          d_o_j : "202403",
-          e_id : "34",
-          salary : 40000,
-          status : "Y",
-      },
-      {
-          dept : "AAA02",
-          f_nm : "Richard",
-          l_nm : "Miller",
-          d_o_j : "202303",
-          e_id : "35",
-          salary : 50000,
-          status : "Y",
-      },
-      {
-          dept : "BBB01",
-          f_nm : "Joseph",
-          l_nm : "Davis",
-          d_o_j : "200403",
-          e_id : "3",
-          salary : 140000,
-          status : "Y",
-      },
-      {
-          dept : "BBB01",
-          f_nm : "Thomas",
-          l_nm : "Johnson",
-          d_o_j : "200903",
-          e_id : "9",
-          salary : 110000,
-          status : "N",
-      },
-      {
-          dept : "BBB01",
-          f_nm : "Charles",
-          l_nm : "Brown",
-          d_o_j : "200703",
-          e_id : "11",
-          salary : 130000,
-          status : "Y",
-      },
-      {
-          dept : "BBB01",
-          f_nm : "James",
-          l_nm : "Rodriguez",
-          d_o_j : "201303",
-          e_id : "14",
-          salary : 120000,
-          status : "N",
-      },
-      {
-          dept : "BBB02",
-          f_nm : "Richard",
-          l_nm : "Garcia",
-          d_o_j : "200803",
-          e_id : "10",
-          salary : 190000,
-          status : "Y",
-      },
-      {
-          dept : "BBB02",
-          f_nm : "David",
-          l_nm : "Martinez",
-          d_o_j : "202403",
-          e_id : "37",
-          salary : 60000,
-          status : "Y",
-      },
-      {
-          dept : "BBB02",
-          f_nm : "Robert",
-          l_nm : "Rodriguez",
-          d_o_j : "202303",
-          e_id : "31",
-          salary : 90000,
-          status : "N",
-      },
-      {
-          dept : "BBB02",
-          f_nm : "James",
-          l_nm : "Williams",
-          d_o_j : "202403",
-          e_id : "40",
-          salary : 60000,
-          status : "Y",
-      },
-  ];
-  const grid: GridMethods = vg.getGrid("grid2")!;
-  console.log(grid);
-  grid.load(data);
 };
 
 onMounted(()=>{
-  if(!gridWrap.value) return;
-  vg.mountGrid(gridWrap.value);
+    if(!gridWrap.value) return;
+    vg.mountGrid(gridWrap.value);
+    grid1 = vg.getGrid("grid1")!;
+    grid2 = vg.getGrid("grid2")!;
+    grid1.load(data1);
+    grid2.load(data2);
 })
 onBeforeUnmount(()=>{
-  if(!gridWrap.value) return;
-  vg.unmountGrid(gridWrap.value);
+    if(!gridWrap.value) return;
+    vg.unmountGrid(gridWrap.value);
 })
 </script>

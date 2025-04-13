@@ -105,7 +105,7 @@ export interface VanillagridConfig {
      * Defines footer formulas keyed by column IDs.
      * Example: `{ "total": "sum(colId)" }`
      */
-    footerFormula: Record<string, string>;
+    footerFormula: Record<string, (colValues: any[]) => string>;
     /**
      * Data type configurations for grid cells.
      */
