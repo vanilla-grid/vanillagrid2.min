@@ -266,7 +266,7 @@ export const setHandleGrid = (vg: Vanillagrid, gridList: Record<string, Grid>, h
             const tempRows = [];
             let colCount = 1;
             for(const colInfo of grid.data.colInfos) {
-                const tempGridData = document.createElement('v-g-d') as Cell;
+                const tempGridData = document.createElement('div') as Cell;
                 tempGridData._gridId = gridId;
                 tempGridData._type = 'ghd';
                 Object.keys(colInfo).forEach(key => {
@@ -274,12 +274,7 @@ export const setHandleGrid = (vg: Vanillagrid, gridList: Record<string, Grid>, h
                         (tempGridData as any)[key] = colInfo[key as keyof ColInfo];
                     }
                 });
-                if (Array.isArray(colInfo.header)) {
-                    tempGridData.value = colInfo.header[rowCount - 1] ? colInfo.header[rowCount - 1].replaceAll('\\n','\n') : '';
-                }
-                else {
-                    tempGridData.value = colInfo.header;
-                }
+                tempGridData.value = colInfo.header![rowCount - 1] ? colInfo.header![rowCount - 1].replaceAll('\\n','\n') : '';
                 handler.setGridDataRowCol(tempGridData, rowCount, colCount);
                 if (colCount !== 1) {
                     if (!colInfo.header![rowCount - 1]) { 
@@ -369,6 +364,7 @@ export const setHandleGrid = (vg: Vanillagrid, gridList: Record<string, Grid>, h
         for(const row of grid.elements.gridHeader._gridHeaderCells) {
             for(const cell of row) {
                 grid.elements.gridHeader.append(cell);
+                handler.connectedGridData(cell);
             }
         }
     };
@@ -414,7 +410,7 @@ export const setHandleGrid = (vg: Vanillagrid, gridList: Record<string, Grid>, h
             const tempRows = [];
             let colCount = 1;
             for(const colInfo of grid.data.colInfos) {
-                const tempGridData = document.createElement('v-g-d') as Cell ;
+                const tempGridData = document.createElement('div') as Cell ;
                 tempGridData._gridId = gridId;
                 tempGridData._type = 'gfd';
                 Object.keys(colInfo).forEach(key => {
@@ -436,6 +432,7 @@ export const setHandleGrid = (vg: Vanillagrid, gridList: Record<string, Grid>, h
         for(const row of grid.elements.gridFooter._gridFooterCells) {
             for(const cell of row) {
                 grid.elements.gridFooter.append(cell);
+                handler.connectedGridData(cell);
             }
         }
     }
@@ -493,6 +490,7 @@ export const setHandleGrid = (vg: Vanillagrid, gridList: Record<string, Grid>, h
         for(const row of grid.elements.gridBody._gridBodyCells) {
             for(const cell of row) {
                 grid.elements.gridBody.append(cell);
+                handler.connectedGridData(cell);
             }
         }
         

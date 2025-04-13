@@ -5,13 +5,13 @@ import type { ColInfo, DefaultColInfo } from "../types/colInfo";
 import type { Cell, CellData, CellRecord } from "../types/cell";
 import type { Handler } from "../types/handler";
 import { SelectionPolicy, VerticalAlign } from "../types/enum";
-import { injectCustomElement } from "../utils/createElement";
 import { mountVanillagrid } from "./mountVanillagrid";
 import { unmountVanillagrid } from "./unmountVanillagrid";
 import { setHandleActive } from "../utils/handleActive";
 import { setHandleElement } from "../utils/handleElement";
 import { setHandleGrid } from "../utils/handleGrid";
 import { setHandleCell } from "../utils/handleCell";
+import { setElementConnected } from "../utils/handleConnectedElement";
 
 let singletonVanillagrid: Vanillagrid | null = null;
 const gridList: Record<string, Grid> = {};
@@ -109,6 +109,10 @@ const handler = {
      getMaskValue(format: string, value: string) {},
      setSelectOptions(select: any, options: any) {},
      getSelectOptions(select: any) {},
+     connectedGridHeader(gridId: string) {},
+     connectedGridBody(gridId: string) {},
+     connectedGridFooter(gridId: string) {},
+     connectedGridData(cell: Cell) {},
 } as Handler;
 
 export const getVanillagrid = (config?: VanillagridConfig): Vanillagrid => {
@@ -161,11 +165,6 @@ export const getVanillagrid = (config?: VanillagridConfig): Vanillagrid => {
         mountGrid(element?: HTMLElement) { mountVanillagrid(singletonVanillagrid!, gridList, handler, element) },
         destroy() { destroyVanillagrid() },
         unmountGrid(element?: HTMLElement) { unmountVanillagrid(singletonVanillagrid!, gridList, element) },
-        _VanillaGrid: null,
-        _GridHeader: null,
-        _GridBody: null,
-        _GridFooter: null,
-        _GridData: null,
         _initialized: false,
     };
 
@@ -319,6 +318,7 @@ const initVanillagrid = () => {
     setHandleElement(vg, gridList, handler);
     setHandleGrid(vg, gridList, handler);
     setHandleCell(vg, gridList, handler);
+    setElementConnected(gridList, handler);
 
     vg.documentEvent.mousedown = function (e: any) {
         if (vg._status.activeGridEditor && vg._status.activeGridEditor !== e.target) {
@@ -551,8 +551,6 @@ const initVanillagrid = () => {
     };
     document.removeEventListener('paste', vg.documentEvent.paste);
     document.addEventListener('paste', vg.documentEvent.paste);
-
-    injectCustomElement(vg, gridList, handler);
     vg._initialized = true;
 }
 

@@ -449,7 +449,7 @@ export const setHandleElement = (vg: Vanillagrid, gridList: Record<string, Grid>
             };
         }
     
-        const tempGridData = document.createElement('v-g-d') as Cell;
+        const tempGridData = document.createElement('div') as Cell;
         tempGridData._gridId = gridId;
         tempGridData._type = 'gbd';
     

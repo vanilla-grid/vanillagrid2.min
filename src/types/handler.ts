@@ -111,4 +111,11 @@ export interface Handler {
         value: any;
         text: string;
     }[];
+    /** ////////////////////////
+     * handleGrid
+     *//////////////////////////
+    connectedGridHeader(gridId: string): void;
+    connectedGridBody(gridId: string): void;
+    connectedGridFooter(gridId: string): void;
+    connectedGridData(cell: Cell): void;
 }

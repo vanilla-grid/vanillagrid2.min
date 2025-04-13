@@ -81,12 +81,6 @@ export interface Vanillagrid extends VanillagridConfig{
         scrollInterval: NodeJS.Timeout |  null,
     }
     _initialized: boolean;
-
-    _VanillaGrid: any;
-    _GridHeader: any;
-    _GridBody: any;
-    _GridFooter: any;
-    _GridData: any;
 }
 
 /**

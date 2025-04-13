@@ -9,8 +9,11 @@ export const setHandleActive = (vg: Vanillagrid, gridList: Record<string, Grid>,
         const parent = cell.parentNode;
         if (parent) {
             handler.setGridDataPosition(cell);
+            handler.connectedGridData(cell);
+            /*
             parent.removeChild(cell);
             parent.appendChild(cell);
+            */
         }
     };
     handler.selectCell = (targetCell: Cell) => {

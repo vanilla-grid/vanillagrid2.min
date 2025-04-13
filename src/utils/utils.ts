@@ -43,7 +43,7 @@ export const extractNumberAndUnit = (val: string | null) => {
     } else {
         return { number: 0, unit: '' };
     }
-}
+};
 export const toLowerCase = (val: string | null) => {
     if (!val || typeof val !== 'string') return '';
     return val.toLowerCase();

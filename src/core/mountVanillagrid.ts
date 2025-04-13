@@ -4,7 +4,7 @@ import type { ColInfo } from "../types/colInfo";
 import type { Cell } from "../types/cell";
 import type { Handler } from "../types/handler";
 import { alignUnit, enumWidthUnit, selectionPolicyUnit, verticalAlignUnit } from "../types/enum";
-import { setGridCssStyle } from "../utils/createElement";
+import { setGridCssStyle } from "../utils/setElementStyle";
 import { extractNumberAndUnit, getAttributeOnlyBoolean, getAttributeOnlyNumber, getAttributeOnlyNumberInteger, getAttributeOnlyNumberIntegerOrZero, getAttributeWithCheckRequired, getColorFromColorSet, isIncludeEnum, nvl, setColorSet, setInvertColor, toLowerCase } from "../utils/utils";
 import { getGridMethod } from "./getGridMethod";
 import { GridCssInfo, GridInfo } from "../types/gridInfo";
@@ -403,28 +403,28 @@ export const mountVanillagrid = (vg: Vanillagrid, gridList: Record<string, Grid>
         vanillagridBox.classList.add(gId + '_vanillagrid');
         (vanillagridBox as any)._gridId = gId;
 
-        const gridElement = document.createElement('v-g') as GridElements;
+        const gridElement = document.createElement('div') as any;
         gridElement.classList.add(gId + '_v-g');
         gridElement._gridId = gId;
 
-        const gridHeader = document.createElement('v-g-h') as GridHeader;
+        const gridHeader = document.createElement('div') as any;
         gridHeader._gridId = gId;
         gridHeader._type = 'gh';
         gridHeader.classList.add(gId + '_v-g-h');
         gridHeader._gridHeaderCells = [];
 
-        const gridBody = document.createElement('v-g-b') as GridBody;
+        const gridBody = document.createElement('div') as any;
         gridBody._gridId = gId;
         gridBody._type = 'gb';
         gridBody.classList.add(gId + '_v-g-b');
         gridBody._gridBodyCells = [];
         
-        const gridFooter = document.createElement('v-g-f') as GridFooter;
+        const gridFooter = document.createElement('div') as any;
         gridFooter._gridId = gId;
         gridFooter._type = 'gf';
         gridFooter.classList.add(gId + '_v-g-f');
         gridFooter._gridFooterCells = [];
-
+        
         const gridInfo = getGridInfo(vg, vanillagridBox);
         const grid: Grid = {
             data: {
@@ -552,7 +552,7 @@ export const mountVanillagrid = (vg: Vanillagrid, gridList: Record<string, Grid>
                 }
             }
         });
-        gridBody.addEventListener('mousemove', function (e) {
+        gridBody.addEventListener('mousemove', function (e: any) {
             if (vg._status.isDragging) {
                 vg._status.mouseX = e.clientX;
                 vg._status.mouseY = e.clientY;
@@ -578,7 +578,7 @@ export const mountVanillagrid = (vg: Vanillagrid, gridList: Record<string, Grid>
                 handler.startScrolling(grid.data.id, direction);
             }
         });
-        gridBody.addEventListener('mouseenter', function (e) {
+        gridBody.addEventListener('mouseenter', function (e: any) {
             if (vg._status.scrollInterval) {
                 handler.stopScrolling(vg);
             }
@@ -739,8 +739,11 @@ export const mountVanillagrid = (vg: Vanillagrid, gridList: Record<string, Grid>
         gridElement.append(gridHeader);
         gridElement.append(gridBody);
         gridElement.append(gridFooter);
-
         vanillagridBox.append(gridElement);
+        
+        handler.connectedGridHeader(gId);
+        handler.connectedGridBody(gId);
+        handler.connectedGridFooter(gId);
                
         handler.__loadHeader(grid.data.id);
         handler.__loadFooter(grid.data.id);
