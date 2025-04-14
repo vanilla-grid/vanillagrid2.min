@@ -8,12 +8,12 @@
     <br>
     <div data-vanillagrid data-id="grid2" locked-color="true" height="400px" size-level="3">
         <div data-col id="dept" header="Click the Sigma button to the left of the header;filter1(mask);dept " data-type="mask" format="AAA99" width="100"  row-merge="true"></div>
-        <div data-col id="f_nm" header=";filter2(text);first name" data-type="text" width="120" align="center" locked="true" visible="false"></div>
+        <div data-col id="f_nm" header=";filter2(text);first name" data-type="text" width="120" align="center" locked="true"></div>
         <div data-col id="l_nm" header=";filter3(text);last name" data-type="text" width="120" align="center" locked="true" col-merge="true"></div>
-        <div data-col id="d_o_j" header=";filter4(month);DOJ" data-type="month" format="yyyy/mm" width="120" locked="true"></div>
-        <div data-col id="e_id" header="sort1(text);;" data-type="number" width="120" align="center" locked="true" footer="MAX;MIN;AVG;SUM" round-number="-1"></div>
-        <div data-col id="salary" header="sort2(number);;salary" data-type="number" format="$ #,###.0" width="150" footer="$$MAX;$$MIN;$$AVG;$$SUM"></div>
-        <div data-col id="status" header="Please double click;checkbox;status" data-type="checkbox" width="80" footer="CHECK_COUNT"></div>
+        <div data-col id="d_o_j" header=";filter4(month);DOJ" data-type="month" format="yyyy/mm" width="120" align="center" locked="true"></div>
+        <div data-col id="e_id" required="true" header="sort1(text);;" data-type="number" width="120" align="center" locked="true" footer="MAX;MIN;AVG;SUM" round-number="-1"></div>
+        <div data-col id="salary" required="true" header="sort2(number);;salary" data-type="number" format="$ #,###.0" width="150" align="right" footer="$$MAX;$$MIN;$$AVG;$$SUM"></div>
+        <div data-col id="status" required="true" header="Please double click;checkbox;status" data-type="checkbox" width="80" align="center" footer="CHECK_COUNT"></div>
     </div>
   </div>
 </template>
@@ -218,26 +218,21 @@ const data2 = [
     },
 ];
 
-const c = (grid: GridMethods, key: string, ...param: any) => {
+const $ = (grid: GridMethods, key: string, ...param: any) => {
     console.log(grid.getGridName(), key, ' : ', grid[key](...param));
 }
 
 const setGrid1Data = () => {
-    c(grid1, 'getHeaderRowCount');
-    c(grid2, 'getHeaderRowCount');
-    c(grid2, 'getHeaderText', 'dept');
-    c(grid2, 'setHeaderText', 'dept', 'dept;dept;dept');
-    c(grid2, 'reloadFilterValue', );
-    c(grid2, 'reloadColFilter', 'dept');
-    // c(grid2, 'getFooterRowCount', );
-    // c(grid2, 'reloadFooterValue', );
-    // c(grid2, 'setFooterValue', );
-    // c(grid2, 'getFooterValue', );
-    // c(grid2, 'setFooterFormula', );
-    // c(grid2, 'getFooterFormula', );
-    // c(grid2, 'setFooterFunction', );
+    const colInfo: any = grid1.getDefualtColInfo();
+    colInfo.colId = 'dept';
+    colInfo.header = 'test1;test1;';
+    colInfo.align = 'right';
+    colInfo.footer = ['11','22'];
+    $(grid2, 'setColInfo', colInfo);
 };
 const setGrid2Data = () => {
+    $(grid2, 'setFooterValue', 3, 'status', 'CHECK_COUNT');
+    $(grid2, 'removeCol', 'test1');
 };
 
 onMounted(()=>{
