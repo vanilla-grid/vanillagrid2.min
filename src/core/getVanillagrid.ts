@@ -278,7 +278,7 @@ export const getVanillagridConfig = (): VanillagridConfig => {
         maxNumber : null,
         minNumber : null,
         roundNumber : null,
-        align : null,
+        align : 'left',
         verticalAlign : null,
         overflowWrap : null,
         wordBreak : null,
@@ -453,7 +453,7 @@ const initVanillagrid = () => {
                 case 'ArrowUp':
                     if (grid.data.gridInfo.selectionPolicy === 'range' && e.shiftKey) {
                         handler.unselectCells(gId);
-                        if (grid.data.variables.targetCell!._row >= endCell._row) {
+                        if (grid.data.variables.targetCell!.rowIndex >= endCell.rowIndex) {
                             newTargetCell = handler.getMoveRowCell(startCell, -1)!;
                             handler.selectCells(newTargetCell, endCell, newTargetCell);
                         }
@@ -471,7 +471,7 @@ const initVanillagrid = () => {
                 case 'ArrowDown':
                     if (grid.data.gridInfo.selectionPolicy === 'range' && e.shiftKey) {
                         handler.unselectCells(gId);
-                        if (grid.data.variables.targetCell!._row <= startCell._row) {
+                        if (grid.data.variables.targetCell!.rowIndex <= startCell.rowIndex) {
                             newTargetCell = handler.getMoveRowCell(endCell, 1)!;
                             handler.selectCells(startCell, newTargetCell);
                         }
@@ -489,7 +489,7 @@ const initVanillagrid = () => {
                 case 'ArrowLeft':
                     if (grid.data.gridInfo.selectionPolicy === 'range' && e.shiftKey) {
                         handler.unselectCells(gId);
-                        if (grid.data.variables.targetCell!._col >= endCell._col) {
+                        if (grid.data.variables.targetCell!.colIndex >= endCell.colIndex) {
                             newTargetCell = handler.getMoveColCell(startCell, -1)!;
                             handler.selectCells(newTargetCell, endCell, newTargetCell);
                         }
@@ -507,7 +507,7 @@ const initVanillagrid = () => {
                 case 'ArrowRight':
                     if (grid.data.gridInfo.selectionPolicy === 'range' && e.shiftKey) {
                         handler.unselectCells(gId);
-                        if (grid.data.variables.targetCell!._col <= startCell._col) {
+                        if (grid.data.variables.targetCell!.colIndex <= startCell.colIndex) {
                             newTargetCell = handler.getMoveColCell(endCell, 1)!;
                             handler.selectCells(startCell, newTargetCell);
                         }
