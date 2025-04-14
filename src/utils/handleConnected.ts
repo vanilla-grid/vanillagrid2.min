@@ -575,8 +575,6 @@ export const setElementConnected = (gridList: Record<string, Grid>, handler: Han
             default:
                 break;
         }
-
-
         cell.classList.add(cell._gridId + '_v-g-d');
     
         cell.addEventListener('mouseover', function (e) {
