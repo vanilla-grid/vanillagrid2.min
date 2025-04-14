@@ -1,5 +1,5 @@
-import type { GridCssInfo, GridInfo } from "./gridInfo";
-import type { ColInfo } from "./colInfo";
+import type { DefaultGridCssInfo, DefaultGridInfo, GridCssInfo, GridInfo } from "./gridInfo";
+import type { ColInfo, DefaultColInfo } from "./colInfo";
 import type { CellData } from "./cell";
 import { Align, ColorSet, SelectionPolicy, VerticalAlign } from "./enum";
 
@@ -27,6 +27,41 @@ import { Align, ColorSet, SelectionPolicy, VerticalAlign } from "./enum";
  * ```
  */
 export interface GridMethods {
+    getDefualtGridInfo(): DefaultGridInfo;
+    getDefualtGridCssInfo(): DefaultGridCssInfo;
+    getDefualtColInfo(): DefaultColInfo;
+    
+    setOnActiveCell(func: (row: number, colId: string) => boolean): void;
+    setOnActiveCells(func: (startRow: number, startColId: string, endRow: number, endColId: string) => boolean): void;
+    setOnActiveRow(func: (row: number) => boolean): void;
+    setOnActiveRows(func: (startRow: number, endRow: number) => boolean): void;
+    setOnActiveCol(func: (colId: string) => boolean): void;
+    setOnActiveCols(func: (startColId: string, endColId: string) => boolean): void;
+    setOnBeforeChange(func: (row: number, colId: string, oldValue: any, newValue: any) => boolean): void;
+    setOnAfterChange(func: (row: number, colId: string, oldValue: any, newValue: any) => void): void;
+    setOnBeforeClickCell(func: (row: number, colId: string) => boolean): void;
+    setOnAfterClickCell(func: (row: number, colId: string) => void): void;
+    setOnClickSelect(func: (row: number, colId: string, selectNode: HTMLElement) => boolean): void;
+    setOnClickCheckbox(func: (row: number, colId: string, checkboxNode: HTMLElement) => boolean): void;
+    setOnClickButton(func: (row: number, colId: string, buttonNude: HTMLElement) => boolean): void;
+    setOnClickLink(func: (row: number, colId: string, linkNode: HTMLElement) => boolean): void;
+    setOnBeforeDblClickCell(func: (row: number, colId: string) => boolean): void;
+    setOnAfterDblClickCell(func: (row: number, colId: string) => void): void;
+    setOnBeforeClickHeader(func: (row: number, colId: string) => boolean): void;
+    setOnAfterClickHeader(func: (row: number, colId: string) => void): void;
+    setOnBeforeDblClickHeader(func: (row: number, colId: string) => boolean): void;
+    setOnAfterDblClickHeader(func: (row: number, colId: string) => void): void;
+    setOnBeforeEditEnter(func: (row: number, colId: string, editorNode: HTMLElement) => boolean): void;
+    setOnAfterEditEnter(func: (row: number, colId: string, editorNode: HTMLElement) => void): void;
+    setOnEditEnding(func: (row: number, colId: string, oldValue: any, newValue: any) => boolean): void;
+    setOnClickFilter(func: (row: number, colId: string, filterNode: HTMLElement) => boolean): void;
+    setOnChooseFilter(func: (row: number, colId: string, oldValue: any, newValue: any) => boolean): void;
+    setOnPaste(func: (startRow: number, startColId: string, clipboardText: string) => boolean): void;
+    setOnCopy(func: (startRow: number, startColId: string, endRow: number, endColId: string, copyText: string) => boolean): void;
+    setOnResize(func: (colId: string) => boolean): void;
+    setOnKeydownEditor(func: (event: KeyboardEvent) => boolean): void;
+    setOnInputEditor(func: (event: InputEvent) => boolean): void;
+    setOnKeydownGrid(func: (event: KeyboardEvent) => boolean): void;
     /**
      * Returns the number of header rows in the grid.
      * 
@@ -219,10 +254,10 @@ export interface GridMethods {
      * 
      * @param row The footer row index.
      * @param colId The column index or column ID.
-     * @param func The function to apply to the footer cell.
+     * @param func The function to apply to the footer cell. func: (values: any[]) => string
      * @returns `true` if the update is successful.
      */
-    setFooterFunction(row: number, colIndexOrColId: number | string, func: Function): boolean;
+    setFooterFunction(row: number, colIndexOrColId: number | string, func: (values: any[]) => string): boolean;
     /**
      * Returns the information of the current grid.
      * 
