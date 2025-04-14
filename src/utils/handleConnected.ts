@@ -57,17 +57,17 @@ export const setElementConnected = (gridList: Record<string, Grid>, handler: Han
             case 'ghd': 
                 cell.innerText = cell.value;
                 
-                if (gridInfo.frozenRowCount! <= 0 && cell._col <= gridInfo.frozenColCount!) {
+                if (gridInfo.frozenRowCount! <= 0 && cell.colIndex <= gridInfo.frozenColCount!) {
                     let leftElement;
                     let leftElementOffsetWidth = 0
 
-                    for(let c = cell._col - 1; c > 0; c--) {
-                        leftElement = handler._getHeaderCell(gridId, cell._row, c);
+                    for(let c = cell.colIndex - 1; c > 0; c--) {
+                        leftElement = handler._getHeaderCell(gridId, cell.rowIndex, c);
                         if (!leftElement) {
                             leftElementOffsetWidth = leftElementOffsetWidth + 0;
                         }
                         else if (leftElement.isRowMerge) {
-                            let r = cell._row - 1;
+                            let r = cell.rowIndex - 1;
                             let spanNode = handler._getHeaderCell(gridId, r, c);
                             while(spanNode) {
                                 if (r < 0) break;
@@ -80,18 +80,18 @@ export const setElementConnected = (gridList: Record<string, Grid>, handler: Han
                             leftElementOffsetWidth = leftElementOffsetWidth + spanNode.offsetWidth;
                         }
                         else {
-                            leftElementOffsetWidth = leftElementOffsetWidth + handler._getHeaderCell(gridId, cell._row, c).offsetWidth;
+                            leftElementOffsetWidth = leftElementOffsetWidth + handler._getHeaderCell(gridId, cell.rowIndex, c).offsetWidth;
                         }
                     }
                     cell.style.position = 'sticky',
-                    cell.style.zIndex = String(300 + grid.methods.getColCount() - cell._col),
+                    cell.style.zIndex = String(300 + grid.methods.getColCount() - cell.colIndex),
                     cell.style.left = leftElementOffsetWidth + 'px';
                     cell._frozenCol = true;
                 }
                 
                 if (cell.isRowMerge) {
-                    let r = cell._row - 1;
-                    let spanNode = handler._getHeaderCell(gridId, r, cell._col);
+                    let r = cell.rowIndex - 1;
+                    let spanNode = handler._getHeaderCell(gridId, r, cell.colIndex);
                     while(spanNode) {
                         if (r < 0) break;
                         if (!spanNode.isRowMerge) {
@@ -102,14 +102,14 @@ export const setElementConnected = (gridList: Record<string, Grid>, handler: Han
                             break;
                         }
                         r--;
-                        spanNode = handler._getHeaderCell(gridId, r, cell._col);
+                        spanNode = handler._getHeaderCell(gridId, r, cell.colIndex);
                     }
                     cell.style.display = 'none';
                 }
                 
                 if (cell.isColMerge) {
-                    let c = cell._col - 1;
-                    let spanNode = handler._getHeaderCell(gridId, cell._row, c);
+                    let c = cell.colIndex - 1;
+                    let spanNode = handler._getHeaderCell(gridId, cell.rowIndex, c);
                     while(spanNode) {
                         if (c < 0) break;
                         if (!spanNode.isColMerge) {
@@ -120,7 +120,7 @@ export const setElementConnected = (gridList: Record<string, Grid>, handler: Han
                             break;
                         }
                         c--;
-                        spanNode = handler._getHeaderCell(gridId, cell._row, c);
+                        spanNode = handler._getHeaderCell(gridId, cell.rowIndex, c);
                     }
                     cell.style.display = 'none';
                 }
@@ -129,18 +129,18 @@ export const setElementConnected = (gridList: Record<string, Grid>, handler: Han
                     cell.style.display = 'none';
                 }
                 
-                if (grid.methods.getHeaderRowCount() === cell._row) {
+                if (grid.methods.getHeaderRowCount() === cell.rowIndex) {
                     let targetCell: Cell = cell;
                     if (cell.isRowMerge) {
-                        for(let r = cell._row - 1; r > 0; r--) {
-                            targetCell = handler._getHeaderCell(gridId, r, cell._col);
+                        for(let r = cell.rowIndex - 1; r > 0; r--) {
+                            targetCell = handler._getHeaderCell(gridId, r, cell.colIndex);
                             if (targetCell.rowSpan) break;
                         }
                     }
                     if (targetCell) targetCell._isLastCell = true;
                 }
                 if (gridInfo.filterable === true && grid.methods.getColInfo(cell.colId).filterable &&
-                    grid.methods.getHeaderRowCount() === cell._row && cell.colId !== 'v-g-rownum' && cell.colId !== 'v-g-status') {
+                    grid.methods.getHeaderRowCount() === cell.rowIndex && cell.colId !== 'v-g-rownum' && cell.colId !== 'v-g-status') {
                     let filterSpan: any;
                     const vgFilterSpan = handler._getFilterSpan();
                     if(vgFilterSpan && vgFilterSpan instanceof HTMLElement && vgFilterSpan.nodeType === 1) {
@@ -183,8 +183,8 @@ export const setElementConnected = (gridList: Record<string, Grid>, handler: Han
 
                     let targetCell: Cell = cell;
                     if (cell.isRowMerge) {
-                        for(let r = cell._row - 1; r > 0; r--) {
-                            targetCell = handler._getHeaderCell(gridId, r, cell._col);
+                        for(let r = cell.rowIndex - 1; r > 0; r--) {
+                            targetCell = handler._getHeaderCell(gridId, r, cell.colIndex);
                             if (targetCell.rowSpan) break;
                         }
                     }
@@ -194,17 +194,17 @@ export const setElementConnected = (gridList: Record<string, Grid>, handler: Han
                 cell.classList.add(cell._gridId + '_h-v-g-d');
                 break;
             case 'gfd':     
-                if (gridInfo.frozenRowCount! <= 0 && cell._col <= gridInfo.frozenColCount!) {
+                if (gridInfo.frozenRowCount! <= 0 && cell.colIndex <= gridInfo.frozenColCount!) {
                     let leftElement;
                     let leftElementOffsetWidth = 0
 
-                    for(let c = cell._col - 1; c > 0; c--) {
-                        leftElement = handler._getFooterCell(gridId, cell._row, c);
+                    for(let c = cell.colIndex - 1; c > 0; c--) {
+                        leftElement = handler._getFooterCell(gridId, cell.rowIndex, c);
                         if (!leftElement) {
                             leftElementOffsetWidth = leftElementOffsetWidth + 0;
                         }
                         else if (leftElement.isRowMerge) {
-                            let r = cell._row - 1;
+                            let r = cell.rowIndex - 1;
                             let spanNode = handler._getFooterCell(gridId, r, c);
                             while(spanNode) {
                                 if (r < 0) break;
@@ -217,7 +217,7 @@ export const setElementConnected = (gridList: Record<string, Grid>, handler: Han
                             leftElementOffsetWidth = leftElementOffsetWidth + spanNode.offsetWidth;
                         }
                         else {
-                            leftElementOffsetWidth = leftElementOffsetWidth + handler._getFooterCell(gridId, cell._row, c).offsetWidth;
+                            leftElementOffsetWidth = leftElementOffsetWidth + handler._getFooterCell(gridId, cell.rowIndex, c).offsetWidth;
                         }
                     }
                     cell.style.position = '-webkit-sticky',
@@ -225,23 +225,26 @@ export const setElementConnected = (gridList: Record<string, Grid>, handler: Han
                     cell.style.left = leftElementOffsetWidth + 'px';
                     cell._frozenCol = true;
                 }
-                
-                if (cell.footer) {
+
+                let footerArr = grid.data.colInfos[cell.colIndex - 1].footer;
+                if(!Array.isArray(footerArr)) footerArr = null;
+                const footer = footerArr && footerArr.length >= cell.rowIndex - 1 ? footerArr[cell.rowIndex - 1] : null;
+                if (footer) {
                     cell.classList.add(cell._gridId + '_f-v-g-d-value');
                     let preSibling;
                     try {
-                        preSibling = handler._getFooterCell(gridId, cell._row, cell._col - 1);
+                        preSibling = handler._getFooterCell(gridId, cell.rowIndex, cell.colIndex - 1);
                     } catch (error) {
                         preSibling = null;
                     }
                     if (preSibling) {
                         preSibling.classList.add(cell._gridId + '_f-v-g-d-value');
                     }
-                    if (Object.values(footerUnit).includes((cell as any).footer)) {
+                    if (Object.values(footerUnit).includes(footer)) {
                         let footerNumber;
                         let tempNumber;
                         let tempCell;
-                        switch (cell.footer) {
+                        switch (footer) {
                             case '$$MAX':
                                 cell.style.justifyContent = 'right';
                                 cell.style.textAlign = 'right';
@@ -249,7 +252,7 @@ export const setElementConnected = (gridList: Record<string, Grid>, handler: Han
                                     tempNumber = handler.getFirstCellValidNumber(cell);
                                     footerNumber = tempNumber;
                                     for(let r = 2; r <= grid.methods.getRowCount(); r++ ) {
-                                        tempCell = handler._getCell(gridId, r, cell._col);
+                                        tempCell = handler._getCell(gridId, r, cell.colIndex);
                                         if (!handler.isCellVisible(tempCell!)) continue;
                                         tempNumber = getOnlyNumberWithNaNToNull(tempCell!.value);
                                         if (tempNumber !== null && tempNumber > footerNumber!) {
@@ -265,7 +268,7 @@ export const setElementConnected = (gridList: Record<string, Grid>, handler: Han
                                     tempNumber = handler.getFirstCellValidNumber(cell);
                                     footerNumber = tempNumber;
                                     for(let r = 2; r <= grid.methods.getRowCount(); r++ ) {
-                                        tempCell = handler._getCell(gridId, r, cell._col);
+                                        tempCell = handler._getCell(gridId, r, cell.colIndex);
                                         if (!handler.isCellVisible(tempCell!)) continue;
                                         tempNumber = getOnlyNumberWithNaNToNull(tempCell!.value);
                                         if (tempNumber !== null && tempNumber < footerNumber!) {
@@ -280,7 +283,7 @@ export const setElementConnected = (gridList: Record<string, Grid>, handler: Han
                                 if (grid.methods.getRowCount() > 0) {
                                     footerNumber = 0;
                                     for(let r = 1; r <= grid.methods.getRowCount(); r++ ) {
-                                        tempCell = handler._getCell(gridId, r, cell._col);
+                                        tempCell = handler._getCell(gridId, r, cell.colIndex);
                                         if (!handler.isCellVisible(tempCell!)) continue;
                                         footerNumber = Math.round((footerNumber + getOnlyNumberWithNaNToZero(tempCell!.value)) * 100000) / 100000;
                                     }
@@ -294,7 +297,7 @@ export const setElementConnected = (gridList: Record<string, Grid>, handler: Han
                                     tempNumber = 0;
                                     let count = 0;
                                     for(let r = 1; r <= grid.methods.getRowCount(); r++ ) {
-                                        tempCell = handler._getCell(gridId, r, cell._col);
+                                        tempCell = handler._getCell(gridId, r, cell.colIndex);
                                         if (!handler.isCellVisible(tempCell!)) continue;
                                         footerNumber = Math.round((footerNumber + getOnlyNumberWithNaNToZero(tempCell!.value)) * 100000) / 100000;
                                         if (tempCell!.value !== null && tempCell!.value !== undefined && !isNaN(tempCell!.value)) {
@@ -316,25 +319,25 @@ export const setElementConnected = (gridList: Record<string, Grid>, handler: Han
                             footerNumber = '-'
                         }
                         else {
-                            footerNumber = handler.getFormatNumber(grid.methods.getColFormat(cell._col)!, footerNumber)
+                            footerNumber = handler.getFormatNumber(grid.methods.getColFormat(cell.colIndex)!, footerNumber)
                         }
                         cell.innerText = footerNumber;
                         cell.value = footerNumber;
                     }
-                    else if (typeof cell.footer === 'function') {
-                        const functionResult = cell.footer(grid.methods.getValues());
+                    else if (typeof footer === 'function') {
+                        const functionResult = footer(grid.methods.getValues());
                         cell.innerText = functionResult;
                         cell.value = functionResult;
                     }
                     else {
-                        cell.innerText = cell.footer;
-                        cell.value = cell.footer;
+                        cell.innerText = footer;
+                        cell.value = footer;
 
                         const vgFooterFormula = handler._getFooterFormula()!;
                         if(vgFooterFormula && vgFooterFormula.constructor === Object) {
                             Object.keys(vgFooterFormula).forEach(key => {
-                                if(cell.footer === key) {
-                                    const result = vgFooterFormula[key](grid.methods.getColValues(cell.index!));
+                                if(footer === key) {
+                                    const result = vgFooterFormula[key](grid.methods.getColValues(cell.colIndex!));
                                     cell.innerText = result;
                                     cell.value = result;
                                 }
@@ -346,7 +349,7 @@ export const setElementConnected = (gridList: Record<string, Grid>, handler: Han
                     cell.style.justifyContent = cell.align;
                     cell.style.textAlign = cell.align;
                 }
-                if (cell._col === grid.methods.getColCount()) {
+                if (cell.colIndex === grid.methods.getColCount()) {
                     cell.classList.add(cell._gridId + '_f-v-g-d-value');
                 }
                 if (!cell.colVisible || !cell.rowVisible) {
@@ -395,17 +398,17 @@ export const setElementConnected = (gridList: Record<string, Grid>, handler: Han
                 }
                 cell.append(handler._getCellChildNode(cell)!);
                 
-                if (cell._row <= gridInfo.frozenRowCount!) {
+                if (cell.rowIndex <= gridInfo.frozenRowCount!) {
                     let headerOffsetHeight = grid.elements.gridHeader.offsetHeight;
                     let topElement;
                     let topElementOffsetHeight = 0;
-                    for(let r = cell._row - 1; r > 0; r--) {
-                        topElement = handler._getCell(gridId, r, cell._col);
+                    for(let r = cell.rowIndex - 1; r > 0; r--) {
+                        topElement = handler._getCell(gridId, r, cell.colIndex);
                         if (!topElement) {
                             topElementOffsetHeight = topElementOffsetHeight + 0;
                         }
                         else if (topElement.isColMerge) {
-                            let c = cell._col - 1;
+                            let c = cell.colIndex - 1;
                             let spanNode = handler._getCell(gridId, r, c)!;
                             while(spanNode) {
                                 if (c < 0) break;
@@ -418,27 +421,27 @@ export const setElementConnected = (gridList: Record<string, Grid>, handler: Han
                             topElementOffsetHeight = topElementOffsetHeight + spanNode.offsetHeight;
                         }
                         else {
-                            topElementOffsetHeight = topElementOffsetHeight + handler._getCell(gridId, r, cell._col)!.offsetHeight;
+                            topElementOffsetHeight = topElementOffsetHeight + handler._getCell(gridId, r, cell.colIndex)!.offsetHeight;
                         }
                     }
                     cell.style.position = 'sticky';
                     cell.style.zIndex = '200';
                     cell.style.top = headerOffsetHeight + topElementOffsetHeight + 'px';
-                    if (cell._row === gridInfo.frozenRowCount) cell.style.borderBottom = gridInfo.cssInfo.verticalBorderSize + 'px solid ' + gridInfo.cssInfo.headerCellBorderColor;
+                    if (cell.rowIndex === gridInfo.frozenRowCount) cell.style.borderBottom = gridInfo.cssInfo.verticalBorderSize + 'px solid ' + gridInfo.cssInfo.headerCellBorderColor;
                     cell._frozenCol = true;
                 }
                 
-                if (gridInfo.frozenRowCount! <= 0 && cell._col <= gridInfo.frozenColCount!) {
+                if (gridInfo.frozenRowCount! <= 0 && cell.colIndex <= gridInfo.frozenColCount!) {
                     let leftElement;
                     let leftElementOffsetWidth = 0
 
-                    for(let c = cell._col - 1; c > 0; c--) {
-                        leftElement = handler._getCell(gridId, cell._row, c);
+                    for(let c = cell.colIndex - 1; c > 0; c--) {
+                        leftElement = handler._getCell(gridId, cell.rowIndex, c);
                         if (!leftElement) {
                             leftElementOffsetWidth = leftElementOffsetWidth + 0;
                         }
                         else if (leftElement.isRowMerge) {
-                            let r = cell._row - 1;
+                            let r = cell.rowIndex - 1;
                             let spanNode = handler._getCell(gridId, r, c);
                             while(spanNode) {
                                 if (r < 0) break;
@@ -451,19 +454,19 @@ export const setElementConnected = (gridList: Record<string, Grid>, handler: Han
                             leftElementOffsetWidth = leftElementOffsetWidth + spanNode!.offsetWidth;
                         }
                         else {
-                            leftElementOffsetWidth = leftElementOffsetWidth + handler._getCell(gridId, cell._row, c)!.offsetWidth;
+                            leftElementOffsetWidth = leftElementOffsetWidth + handler._getCell(gridId, cell.rowIndex, c)!.offsetWidth;
                         }
                     }
                     cell.style.position = 'sticky';
                     cell.style.zIndex = '200';
-                    if (cell._col === gridInfo.frozenColCount) cell.style.borderRight = gridInfo.cssInfo.verticalBorderSize + 'px solid ' + gridInfo.cssInfo.headerCellBorderColor;
+                    if (cell.colIndex === gridInfo.frozenColCount) cell.style.borderRight = gridInfo.cssInfo.verticalBorderSize + 'px solid ' + gridInfo.cssInfo.headerCellBorderColor;
                     cell.style.left = leftElementOffsetWidth + 'px';
                     cell._frozenRow = true;
                 }
                 
                 if (cell.isRowMerge) {
-                    let r = cell._row - 1;
-                    let spanNode = handler._getCell(gridId, r, cell._col);
+                    let r = cell.rowIndex - 1;
+                    let spanNode = handler._getCell(gridId, r, cell.colIndex);
                     while(spanNode) {
                         if (r < 0) break;
                         if (!spanNode.isRowMerge) {
@@ -473,7 +476,7 @@ export const setElementConnected = (gridList: Record<string, Grid>, handler: Han
                             break;
                         }
                         r--;
-                        spanNode = handler._getCell(gridId, r, cell._col);
+                        spanNode = handler._getCell(gridId, r, cell.colIndex);
                     }
                     
                     if (handler.isCellVisible(spanNode!)) {
@@ -482,8 +485,8 @@ export const setElementConnected = (gridList: Record<string, Grid>, handler: Han
                 }
                 
                 if (cell.isColMerge) {
-                    let c = cell._col - 1;
-                    let spanNode = handler._getCell(gridId, cell._row, c);
+                    let c = cell.colIndex - 1;
+                    let spanNode = handler._getCell(gridId, cell.rowIndex, c);
                     while(spanNode) {
                         if (c < 0) break;
                         if (!spanNode.isColMerge) {
@@ -496,7 +499,7 @@ export const setElementConnected = (gridList: Record<string, Grid>, handler: Han
                             break;
                         }
                         c--;
-                        spanNode = handler._getCell(gridId, cell._row, c);
+                        spanNode = handler._getCell(gridId, cell.rowIndex, c);
                     }
                     cell.style.display = 'none';
                 }
@@ -523,7 +526,7 @@ export const setElementConnected = (gridList: Record<string, Grid>, handler: Han
                 if (cell.wordBreak) cell.style.wordBreak = cell.wordBreak;
                 if (cell.whiteSpace) cell.style.whiteSpace = cell.whiteSpace;
                 if (cell.backColor) cell.style.backgroundColor = cell.backColor;
-                if (cell.fontColor) (cell.firstChild as any).style._color = cell.fontColor;
+                if (cell.fontColor) (cell.firstChild as any).style.colIndexor = cell.fontColor;
                 if (cell.fontBold) (cell.firstChild as any).fontWeight = 'bold';
                 if (cell.fontItalic) (cell.firstChild as any).fontStyle = 'italic';
                 if (cell.fontThruline) (cell.firstChild as any).textDecoration = 'line-through';
@@ -534,7 +537,7 @@ export const setElementConnected = (gridList: Record<string, Grid>, handler: Han
                 if (cell.filter) {
                     cell.style.display = 'none';
                 }
-                if (gridInfo.alterRow && cell._row % 2 === 0) {
+                if (gridInfo.alterRow && cell.rowIndex % 2 === 0) {
                     cell.classList.add(cell._gridId + '_b-v-g-d-alter');
                     cell.classList.remove(cell._gridId + '_b-v-g-d');
                 }
