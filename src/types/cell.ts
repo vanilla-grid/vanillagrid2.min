@@ -12,14 +12,6 @@ export interface Cell extends CellData, HTMLElement{
      * The string 'ghd' | 'gbd' | 'gfd' ('grid-header-data', 'grid-body-data', 'grid-footer-data') are a constant.
      */
     _type: string;
-    /**
-     * Row position of a cell in a grid
-     */
-    _row: number;
-    /**
-     * Column position of a cell in a grid
-     */
-    _col: number;
     _frozenCol?: boolean;
     _frozenRow?: boolean;
     _isLastCell?: boolean;
@@ -29,7 +21,7 @@ export interface Cell extends CellData, HTMLElement{
 /**
  * The data that a cell contains.
  */
-export interface CellData extends Omit<ColInfo, 'header' | 'footer'> {
+export interface CellData extends Omit<ColInfo, 'header' | 'footer' | 'filterValue' | 'filterValues'> {
     /**
      * The value that the cell has
      */
@@ -51,8 +43,7 @@ export interface CellData extends Omit<ColInfo, 'header' | 'footer'> {
      * Whether the cell uses the col Merge feature.
      */
     isColMerge?: boolean;
-    header: string | null;
-    footer: Function | string | null;
+    rowIndex: number;
 }
 
 /**
