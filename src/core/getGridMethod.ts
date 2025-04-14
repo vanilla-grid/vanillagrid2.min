@@ -4,39 +4,135 @@ import type { ColInfo } from "../types/colInfo";
 import type { CellData } from "../types/cell";
 import type { Handler } from "../types/handler";
 import { Align, alignUnit, enumWidthUnit, SelectionPolicy, selectionPolicyUnit, statusUnit, VerticalAlign, verticalAlignUnit } from "../types/enum";
-import { checkIsValueOrData, deepCopy, extractNumberAndUnit, getArrayElementWithBoundCheck, getColorFromColorSet, getHexColorFromColorName, getOnlyNumberWithNaNToNull, getVerticalAlign, isIncludeEnum, removeAllChild, validateIntegerAndZero, validateNumber, validatePositiveIntegerAndZero } from "../utils/utils";
+import { checkIsValueOrData, deepCopy, extractNumberAndUnit, getArrayElementWithBoundCheck, getColorFromColorSet, getHeaderString, getHexColorFromColorName, getOnlyNumberWithNaNToNull, getVerticalAlign, isIncludeEnum, removeAllChild, validateIntegerAndZero, validateNumber, validatePositiveIntegerAndZero } from "../utils/utils";
 import { setColorSet, setGridCssStyle, setInvertColor } from "../utils/setGridStyle";
 
 export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => {
     return {
+        getDefualtGridInfo() {
+            return vg.attributes.defaultGridInfo;
+        },
+        getDefualtGridCssInfo() {
+            return vg.attributes.defaultGridCssInfo;
+        },
+        getDefualtColInfo() {
+            return vg.attributes.defaultColInfo;
+        },
+
+        setOnActiveCell(func: (row: number, colId: string) => boolean) {
+            grid.events.onActiveCell = func;
+        },
+        setOnActiveCells(func: (startRow: number, startColId: string, endRow: number, endColId: string) => boolean) {
+            grid.events.onActiveCells = func;
+        },
+        setOnActiveRow(func: (row: number) => boolean) {
+            grid.events.onActiveRow = func;
+        },
+        setOnActiveRows(func: (startRow: number, endRow: number) => boolean) {
+            grid.events.onActiveRows = func;
+        },
+        setOnActiveCol(func: (colId: string) => boolean) {
+            grid.events.onActiveCol = func;
+        },
+        setOnActiveCols(func: (startColId: string, endColId: string) => boolean) {
+            grid.events.onActiveCols = func;
+        },
+        setOnBeforeChange(func: (row: number, colId: string, oldValue: any, newValue: any) => boolean) {
+            grid.events.onBeforeChange = func;
+        },
+        setOnAfterChange(func: (row: number, colId: string, oldValue: any, newValue: any) => void) {
+            grid.events.onAfterChange = func;
+        },
+        setOnBeforeClickCell(func: (row: number, colId: string) => boolean) {
+            grid.events.onBeforeClickCell = func;
+        },
+        setOnAfterClickCell(func: (row: number, colId: string) => void) {
+            grid.events.onAfterClickCell = func;
+        },
+        setOnClickSelect(func: (row: number, colId: string, selectNode: HTMLElement) => boolean) {
+            grid.events.onClickSelect = func;
+        },
+        setOnClickCheckbox(func: (row: number, colId: string, checkboxNode: HTMLElement) => boolean) {
+            grid.events.onClickCheckbox = func;
+        },
+        setOnClickButton(func: (row: number, colId: string, buttonNude: HTMLElement) => boolean) {
+            grid.events.onClickButton = func;
+        },
+        setOnClickLink(func: (row: number, colId: string, linkNode: HTMLElement) => boolean) {
+            grid.events.onClickLink = func;
+        },
+        setOnBeforeDblClickCell(func: (row: number, colId: string) => boolean) {
+            grid.events.onBeforeDblClickCell = func;
+        },
+        setOnAfterDblClickCell(func: (row: number, colId: string) => void) {
+            grid.events.onAfterDblClickCell = func;
+        },
+        setOnBeforeClickHeader(func: (row: number, colId: string) => boolean) {
+            grid.events.onBeforeClickHeader = func;
+        },
+        setOnAfterClickHeader(func: (row: number, colId: string) => void) {
+            grid.events.onAfterClickHeader = func;
+        },
+        setOnBeforeDblClickHeader(func: (row: number, colId: string) => boolean) {
+            grid.events.onBeforeDblClickHeader = func;
+        },
+        setOnAfterDblClickHeader(func: (row: number, colId: string) => void) {
+            grid.events.onAfterDblClickHeader = func;
+        },
+        setOnBeforeEditEnter(func: (row: number, colId: string, editorNode: HTMLElement) => boolean) {
+            grid.events.onBeforeEditEnter = func;
+        },
+        setOnAfterEditEnter(func: (row: number, colId: string, editorNode: HTMLElement) => void) {
+            grid.events.onAfterEditEnter = func;
+        },
+        setOnEditEnding(func: (row: number, colId: string, oldValue: any, newValue: any) => boolean) {
+            grid.events.onEditEnding = func;
+        },
+        setOnClickFilter(func: (row: number, colId: string, filterNode: HTMLElement) => boolean) {
+            grid.events.onClickFilter = func;
+        },
+        setOnChooseFilter(func: (row: number, colId: string, oldValue: any, newValue: any) => boolean) {
+            grid.events.onChooseFilter = func;
+        },
+        setOnPaste(func: (startRow: number, startColId: string, clipboardText: string) => boolean) {
+            grid.events.onPaste = func;
+        },
+        setOnCopy(func: (startRow: number, startColId: string, endRow: number, endColId: string, copyText: string) => boolean) {
+            grid.events.onCopy = func;
+        },
+        setOnResize(func: (colId: string) => boolean) {
+            grid.events.onResize = func;
+        },
+        setOnKeydownEditor(func: (event: KeyboardEvent) => boolean) {
+            grid.events.onKeydownEditor = func;
+        },
+        setOnInputEditor(func: (event: InputEvent) => boolean) {
+            grid.events.onInputEditor = func;
+        },
+        setOnKeydownGrid(func: (event: KeyboardEvent) => boolean) {
+            grid.events.onKeydownGrid = func;
+        },
+
         getHeaderRowCount() {
             let count = 0;
             for(const colInfo of grid.data.colInfos) {
-                if (colInfo.header!.length > count) count = colInfo.header!.length;
+                const headerArr = colInfo.header.split(';');
+                if (headerArr.length > count) count = headerArr.length;
             }
             return count;
         },
         getHeaderText(colIndexOrColId: number | string) {
-            return handler.__getColInfo(grid.data.id, colIndexOrColId, true)!.header!.join(';');
+            return handler.__getColInfo(grid.data.id, colIndexOrColId, true)!.header;
         },
         setHeaderText(colIndexOrColId: number | string, value: string) {
-            const headerTextArr = value.split(';');
-            for(let r = headerTextArr.length; r < grid.methods.getHeaderRowCount(); r++) {
-                headerTextArr.push('');
-            }
-            for(let r = headerTextArr.length; r > grid.methods.getHeaderRowCount(); r--) {
-                grid.data.colInfos.forEach((colInfo) => {
-                    colInfo.header!.push('');
-                })
-            }
-            handler.__getColInfo(grid.data.id, colIndexOrColId, true)!.header = headerTextArr;
+            handler.__getColInfo(grid.data.id, colIndexOrColId, true)!.header = getHeaderString(grid.methods.getHeaderRowCount(), value);
             handler.__loadHeader(grid.data.id);
             grid.methods.reloadFilterValue();
             return true;
         },
         reloadFilterValue() {
             for(const colInfo of grid.data.colInfos) {
-                grid.methods.reloadColFilter(colInfo.index!);
+                grid.methods.reloadColFilter(colInfo.colIndex!);
             }
             return true;
         },
@@ -47,7 +143,7 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
         getFooterRowCount() {
             let count = 0;
             for(const colInfo of grid.data.colInfos) {
-                if (colInfo.footer && colInfo.footer.length > count) count = colInfo.footer.length;
+                if (colInfo.footer && Array.isArray(colInfo.footer) && colInfo.footer.length > count) count = colInfo.footer.length;
             }
             return count;
         },
@@ -56,9 +152,12 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
             return true;
         },
         setFooterValue(row: number, colId: number | string, value: string) {
-            const footerCell = handler._getFooterCell(grid.data.id, row, colId);
-            footerCell.value = value;
-            footerCell.innerText = value;
+            const footer = handler.__getColInfo(grid.data.id, colId, true)!.footer;
+            const footerArr = footer ? footer : Array(grid.methods.getFooterRowCount()).fill(null);
+            getArrayElementWithBoundCheck(footerArr, row - 1);
+            footerArr[row - 1] = value;
+            handler.__getColInfo(grid.data.id, colId, true)!.footer = footerArr;
+            handler.__loadFooter(grid.data.id);
             return true;
         },
         getFooterValue(row: number, colId: number | string) {
@@ -79,16 +178,12 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
             }
             return null;
         },
-        setFooterFunction(row: number, colId: number | string, func: Function) {
-            const footerFormulas = handler.__getColInfo(grid.data.id, colId, true)!.footer;
-            if (footerFormulas) {
-                getArrayElementWithBoundCheck(footerFormulas, row - 1); 
-                footerFormulas[row - 1] = func;
-            }
-            else {
-                handler.__getColInfo(grid.data.id, colId, true)!.footer = new Array(grid.methods.getFooterRowCount()).fill('');
-                handler.__getColInfo(grid.data.id, colId, true)!.footer[row - 1]! = func;
-            }
+        setFooterFunction(row: number, colId: number | string, func: (values: any[]) => string) {
+            const footer = handler.__getColInfo(grid.data.id, colId, true)!.footer;
+            const footerArr = footer ? footer : Array(grid.methods.getFooterRowCount()).fill(null);
+            getArrayElementWithBoundCheck(footerArr, row - 1);
+            footerArr[row - 1] = func;
+            handler.__getColInfo(grid.data.id, colId, true)!.footer = footerArr;
             handler.__loadFooter(grid.data.id);
             return true;
         },
@@ -137,6 +232,8 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
             grid.data.variables.sortToggle = {};
             grid.data.variables.filters = [];
             handler.__clear(grid.data.id);
+            handler.__loadHeader(grid.data.id);
+            handler.__loadFooter(grid.data.id);
             return true;
         },
         clearStatus() {
@@ -374,9 +471,9 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
             rownumSize = validatePositiveIntegerAndZero(rownumSize);
             const colInfo = grid.data.colInfos[0];
             colInfo.originWidth = String(rownumSize) + extractNumberAndUnit(colInfo.originWidth)!.unit
-            handler.changeColSize(grid.data.id, colInfo.index!, rownumSize);
+            handler.changeColSize(grid.data.id, colInfo.colIndex!, rownumSize);
             colInfo.colVisible = rownumSize !== 0;
-            handler.reloadGridWithModifyCell(grid.data.id, colInfo.index!);
+            handler.reloadGridWithModifyCell(grid.data.id, colInfo.colIndex!);
             return true;
         },
         getGridRownumSize() {
@@ -444,7 +541,7 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
             grid.data.gridInfo.frozenColCount = frozenColCount;
             const datas = grid.methods.getDatas();
             handler.__loadHeader(grid.data.id);
-            handler.__loadHeader(grid.data.id);
+            handler.__loadFooter(grid.data.id);
             grid.methods.load(datas);
             return true;
         },
@@ -456,7 +553,7 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
             grid.data.gridInfo.frozenRowCount = frozenRowCount;
             const datas = grid.methods.getDatas();
             handler.__loadHeader(grid.data.id);
-            handler.__loadHeader(grid.data.id);
+            handler.__loadFooter(grid.data.id);
             grid.methods.load(datas);
             return true;
         },
@@ -476,7 +573,7 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
             grid.data.gridInfo.filterable = isFilterable;
             const datas = grid.methods.getDatas();
             handler.__loadHeader(grid.data.id);
-            handler.__loadHeader(grid.data.id);
+            handler.__loadFooter(grid.data.id);
             grid.methods.load(datas);
             return true;
         },
@@ -506,7 +603,7 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
             }
             grid.data.gridInfo.checkedValue = checkeValue;
             handler.__loadHeader(grid.data.id);
-            handler.__loadHeader(grid.data.id);
+            handler.__loadFooter(grid.data.id);
             grid.methods.load(datas);
             return true;
         },
@@ -528,7 +625,7 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
             }
             grid.data.gridInfo.uncheckedValue = unCheckedValue;
             handler.__loadHeader(grid.data.id);
-            handler.__loadHeader(grid.data.id);
+            handler.__loadFooter(grid.data.id);
             grid.methods.load(datas);
             return true;
         },
@@ -545,12 +642,16 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
             
             grid.data.colInfos.splice(colIndex, 0, newColInfo);
             grid.data.colInfos.forEach((colInfo, idx) => {
-                colInfo.index = idx + 1;
+                colInfo.colIndex = idx + 1;
             });
-    
-            handler.__loadHeader(grid.data.id);
+            for(let r = 1; r <= grid.methods.getRowCount(); r++) {
+                const newCellData = handler.__getCellData(grid.data.colInfos[colIndex], r);
+                datas[r - 1].splice(colIndex, 0, newCellData);
+            }
+
             handler.__loadHeader(grid.data.id);
             grid.methods.load(datas);
+            handler.__loadFooter(grid.data.id);
             return true;
         },
         removeCol(colIndexOrColId: number | string) {
@@ -560,12 +661,12 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
     
             grid.data.colInfos.splice(colIndex - 1, 1);
             grid.data.colInfos.forEach((colInfo, idx) => {
-                colInfo.index = idx + 1;
+                colInfo.colIndex = idx + 1;
             });
-    
+
             const datas = grid.methods.getDatas();
             handler.__loadHeader(grid.data.id);
-            handler.__loadHeader(grid.data.id);
+            handler.__loadFooter(grid.data.id);
             grid.methods.load(datas);
     
             return result;
@@ -574,41 +675,43 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
             if (!colInfo) throw new Error('Column info is required.');
             if (colInfo.constructor !== Object) throw new Error('Please insert a valid column info');
             let colIndexOrColId;
-            if (colInfo.index) colIndexOrColId = colInfo.index;
+            if (colInfo.colIndex) colIndexOrColId = colInfo.colIndex;
             if (colInfo.colId) colIndexOrColId = colInfo.colId;
             if (!colIndexOrColId) throw new Error('Column id is required.');
             
             const colIndex = handler.__getColIndex(grid.data.id, colIndexOrColId, true)!;
             if (colIndex <= 2) throw new Error('The row number or status columns are immutable.');
+
+            console.log("#### 1", grid.data.colInfos[colIndex - 1]);
     
             const newColInfo = grid.data.colInfos[colIndex - 1];
             Object.keys(newColInfo).forEach((key)=>{
-                if(['colId', 'index'].indexOf(key) === -1) {
-                    const newColInfoKey = key.charAt(1).toLowerCase() + key.slice(2);
-                    Object.keys(colInfo).forEach((colInfoKey) => {
-                        if(newColInfoKey === colInfoKey) {
-                            (newColInfo as any)[key] = colInfo[colInfoKey as keyof ColInfo];
-                        }
-                    });
+                if(['filterValue', 'filterValues', 'colIndex'].indexOf(key) === -1) {
+                    (newColInfo as any)[key] = (colInfo as any)[key];
                 }
             });
+            if(!newColInfo.name) newColInfo.name = newColInfo.colId;
+            if(!newColInfo.header) newColInfo.header = getHeaderString(grid.methods.getHeaderRowCount(), newColInfo.colId);
     
             const datas = grid.methods.getDatas();
-            datas.forEach((row: any) => {
+            datas.forEach((row: CellData[]) => {
                 for(const data of row) {
                     if (data.colId === newColInfo.colId) {
-                        Object.keys(newColInfo).forEach(key => {
-                            if (['header', 'footer', 'rowMerge', 'colMerge', 'filterValue', 'index'].indexOf(key) < 0) {
-                                data[key] = (newColInfo as any)[key];
+                        Object.keys(data).forEach(key => {
+                            if (['header', 'footer', 'filterValue', 'filterValues', 'colIndex'].indexOf(key) < 0) {
+                                (data as any)[key] = (newColInfo as any)[key];
                             }
                         });
                     }
                 }
             })
+
+            console.log("#### 2", grid.data.colInfos[colIndex - 1]);
+            console.log("#### datas", datas);
     
             handler.__loadHeader(grid.data.id);
-            handler.__loadHeader(grid.data.id);
             grid.methods.load(datas);
+            handler.__loadFooter(grid.data.id);
             return true;
         },
         getColInfo(colIndexOrColId: number | string) {
@@ -616,8 +719,10 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
     
             const info: ColInfo = {
                 colId : colInfo.colId,
-                index : colInfo.index,
+                colIndex : colInfo.colIndex,
                 name : colInfo.name,
+                header : colInfo.header,
+                footer : colInfo.footer,
                 untarget : colInfo.untarget,
                 colVisible : colInfo.colVisible,
                 required : colInfo.required,
@@ -654,12 +759,7 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
                 filterValue : deepCopy(colInfo.filterValue),
                 filter : colInfo.filter,
                 rowVisible : colInfo.rowVisible,
-                header : null,
-                footer : null,
             };
-            
-            // if (colInfo.header && Array.isArray(colInfo.header)) info.header = colInfo.header.join(';');
-            // if (colInfo.footer && Array.isArray(colInfo.footer)) info.footer = colInfo.footer.join(';');
             return info;
         },
         getColDatas(colIndexOrColId: number | string): CellData[] {
@@ -743,7 +843,7 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
             let headerCell;
             let modifyFilterSelect: any;
             for(let row = 1; row <= grid.methods.getHeaderRowCount(); row++) {
-                headerCell = handler._getHeaderCell(grid.data.id, row, colInfo.index!);
+                headerCell = handler._getHeaderCell(grid.data.id, row, colInfo.colIndex!);
                 modifyFilterSelect = headerCell.querySelectorAll('.' + grid.data.id + '_filterSelect');
                 if(modifyFilterSelect.length > 0) {
                     modifyFilterSelect = modifyFilterSelect[0]
@@ -831,14 +931,14 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
             if (typeof isVisible !== 'boolean') throw new Error('Please insert a boolean type.');
             const colInfo: ColInfo = handler.__getColInfo(grid.data.id, colIndexOrColId, true)!;
             if (isVisible) {
-                handler.changeColSize(grid.data.id, colInfo.index!, extractNumberAndUnit(colInfo.originWidth)!.number);
+                handler.changeColSize(grid.data.id, colInfo.colIndex!, extractNumberAndUnit(colInfo.originWidth)!.number);
             }
             else {
-                handler.changeColSize(grid.data.id, colInfo.index!, 0)
+                handler.changeColSize(grid.data.id, colInfo.colIndex!, 0)
             }
             colInfo.colVisible = isVisible;
             handler.__loadHeader(grid.data.id);
-            handler.reloadGridWithModifyCell(grid.data.id, colInfo.index!);
+            handler.reloadGridWithModifyCell(grid.data.id, colInfo.colIndex!);
             return true;
         },
         isColVisible(colIndexOrColId: number | string) {
@@ -890,6 +990,7 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
             const colInfo: ColInfo = handler.__getColInfo(grid.data.id, colIndex, true)!;
             colInfo.filterable = isFilterable;
             handler.__loadHeader(grid.data.id);
+            handler.__loadFooter(grid.data.id);
             handler.reloadColFilterValue(grid.data.id, colIndexOrColId);
             return true;
         },
@@ -902,11 +1003,11 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
             const newOriginWidth = extractNumberAndUnit(originWidth)!;
             if (!isIncludeEnum(enumWidthUnit, newOriginWidth.unit!)) throw new Error('Width units can only be pixel or %.');
             colInfo.originWidth = newOriginWidth.number + newOriginWidth.unit!;
-            handler.changeColSize(grid.data.id, colInfo.index!, newOriginWidth.number);
+            handler.changeColSize(grid.data.id, colInfo.colIndex!, newOriginWidth.number);
             if(newOriginWidth.number === 0) colInfo.colVisible = false;
             else colInfo.colVisible = true;
             handler.__loadHeader(grid.data.id);
-            handler.reloadGridWithModifyCell(grid.data.id, colInfo.index!);
+            handler.reloadGridWithModifyCell(grid.data.id, colInfo.colIndex!);
             return true;
         },
         getColOriginWidth(colIndexOrColId: number | string) {
@@ -1399,7 +1500,7 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
             handler.__checkRowIndex(grid.data.id, row);
             const rowDatas = [];
             for(const colInfo of grid.data.colInfos) {
-                rowDatas.push(grid.methods.getCellData(row, colInfo.index!));
+                rowDatas.push(grid.methods.getCellData(row, colInfo.colIndex!));
             }
             return rowDatas;
         },
@@ -1418,7 +1519,7 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
                     for(const key in values) {
                         if (colInfo.colId === key) value = values[key];
                     }
-                    cell = handler._getCell(grid.data.id, row, colInfo.index!)!;
+                    cell = handler._getCell(grid.data.id, row, colInfo.colIndex!)!;
                     record = handler.getRecordsWithModifyValue(cell, value, true);
                     if (Array.isArray(record) && record.length > 0) records.push(record[0]);
                 }
@@ -1430,10 +1531,10 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
                     for(const key in values) {
                         if (colInfo.colId === key) value = values[key];
                     }
-                    cell = handler._getCell(grid.data.id, row, colInfo.index!)!;
+                    cell = handler._getCell(grid.data.id, row, colInfo.colIndex!)!;
                     cell.value = handler.getValidValue(cell, value);
                     handler.reConnectedCallbackElement(cell);
-                    handler.reloadGridWithModifyCell(grid.data.id, cell.index!);
+                    handler.reloadGridWithModifyCell(grid.data.id, cell.colIndex!);
                 }
             }
             return true;
@@ -1668,7 +1769,7 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
             else {
                 cell.value = handler.getValidValue(cell, value);
                 handler.reConnectedCallbackElement(cell);
-                handler.reloadGridWithModifyCell(grid.data.id, cell.index!);
+                handler.reloadGridWithModifyCell(grid.data.id, cell.colIndex!);
             }
             return true;
         },
@@ -2134,7 +2235,7 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
             return handler.selectCell(targetCell);
         },
         getTargetRow() {
-            return grid.data.variables.targetCell ? grid.data.variables.targetCell._row : null;
+            return grid.data.variables.targetCell ? grid.data.variables.targetCell.rowIndex : null;
         },
         getTargetCol() {
             return grid.data.variables.targetCell ? grid.data.variables.targetCell.colId : null;
@@ -2187,9 +2288,9 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
             };
             const activeCells = grid.data.variables.activeCells;
             if (activeCells.length > 0) {
-                range.startRow = activeCells[0]._row; 
+                range.startRow = activeCells[0].rowIndex; 
                 range.startColId = activeCells[0].colId; 
-                range.endRow = activeCells[activeCells.length - 1]._row; 
+                range.endRow = activeCells[activeCells.length - 1].rowIndex; 
                 range.endColId = activeCells[activeCells.length - 1].colId; 
             }
             return range;
