@@ -3,24 +3,24 @@ import type { Grid } from "../types/grid";
 import type { ColInfo } from "../types/colInfo";
 import type { Cell, CellData } from "../types/cell";
 import type { Handler } from "../types/handler";
-import { deepCopy, getArrayElementWithBoundCheck, removeAllChild, validatePositiveIntegerAndZero } from "./utils";
+import { deepCopy, getArrayElementWithBoundCheck, getHeaderString, removeAllChild, validatePositiveIntegerAndZero } from "./utils";
 
 export const setHandleGrid = (vg: Vanillagrid, gridList: Record<string, Grid>, handler: Handler) => {
     handler.__getDefaultColInfo = (gridId: string, newColInfo: ColInfo, isAdd = false) => {
-        if (!newColInfo || !newColInfo.colId) throw new Error('Column ID is required.');
+        if (!newColInfo || !newColInfo.colId) throw new Error('Column ID is required. (colId)');
         const grid = gridList[gridId];
         if (isAdd) {
             for(const colInfo of grid.data.colInfos) {
-                if (newColInfo.colId === colInfo.colId)  throw new Error('Column ID is primary key.');
+                if (newColInfo.colId === colInfo.colId)  throw new Error('Column ID is primary key. (colId)');
             }
         }
-    
+   
         const resultnewColInfo: ColInfo = {
             colId: newColInfo.colId,
             name : newColInfo.name ? newColInfo.name : newColInfo.colId,
-            index : null,
-            header : null,
-            footer : null,
+            colIndex : 0,
+            header : newColInfo.header ? getHeaderString(grid.methods.getHeaderRowCount(), newColInfo.header) : getHeaderString(grid.methods.getHeaderRowCount(), newColInfo.colId),
+            footer : newColInfo.footer ? newColInfo.footer : null,
     
             untarget : newColInfo.untarget ?  newColInfo.untarget : grid.data.gridInfo.selectionPolicy === 'none',
             rowMerge : newColInfo.rowMerge ?  newColInfo.rowMerge : vg.attributes.defaultColInfo.rowMerge,
@@ -96,7 +96,7 @@ export const setHandleGrid = (vg: Vanillagrid, gridList: Record<string, Grid>, h
         }
         for(const colInfo of grid.data.colInfos) {
             if (colInfo.colId === colIndexOrColId) {
-                return colInfo.index;
+                return colInfo.colIndex;
             }
         }
         if (useError) {
@@ -270,22 +270,25 @@ export const setHandleGrid = (vg: Vanillagrid, gridList: Record<string, Grid>, h
                 tempGridData._gridId = gridId;
                 tempGridData._type = 'ghd';
                 Object.keys(colInfo).forEach(key => {
-                    if (['header', 'footer', 'rowMerge', 'colMerge', 'filterValue', 'index'].indexOf(key) < 0) {
+                    if (['header', 'footer', 'filterValue', 'filterValues', 'colIndex'].indexOf(key) < 0) {
                         (tempGridData as any)[key] = colInfo[key as keyof ColInfo];
                     }
                 });
-                tempGridData.value = colInfo.header![rowCount - 1] ? colInfo.header![rowCount - 1].replaceAll('\\n','\n') : '';
+                const headerArr = colInfo.header.split(';');
+                tempGridData.value = headerArr[rowCount - 1] ? headerArr[rowCount - 1].replaceAll('\\n','\n') : '';
                 handler.setGridDataRowCol(tempGridData, rowCount, colCount);
                 if (colCount !== 1) {
-                    if (!colInfo.header![rowCount - 1]) { 
-                        
+                    if (!headerArr[rowCount - 1]) { 
                         for(let r = rowCount - 2; r >= 0; r--) {
-                            if (colInfo.header![r]) tempGridData.isRowMerge = true;
+                            if (headerArr[r]) {
+                                tempGridData.isRowMerge = true;
+                            }
                         }
-                        
                         if (!tempGridData.isRowMerge) {
                             for(let c = colCount - 2; c >= 0; c--) {
-                                if (grid.data.colInfos[c].header![rowCount - 1]) tempGridData.isColMerge = true;
+                                if (grid.data.colInfos[c].header.split(';')[rowCount - 1]) {
+                                    tempGridData.isColMerge = true;
+                                }
                             }
                         }
                     }
@@ -307,9 +310,9 @@ export const setHandleGrid = (vg: Vanillagrid, gridList: Record<string, Grid>, h
                     let deltaX;
                     let targetCell;
                     if (mouseX - left < 20) {
-                        if (cell._col <= 3) return;
+                        if (cell.colIndex <= 3) return;
                         if (cell._frozenCol) return;
-                        for(let col = cell._col - 1; col > 1; col--) {
+                        for(let col = cell.colIndex - 1; col > 1; col--) {
                             targetCell = handler._getHeaderCell(gridId, 1, col);
                             if (targetCell.colVisible === true) break;
                         }
@@ -326,9 +329,9 @@ export const setHandleGrid = (vg: Vanillagrid, gridList: Record<string, Grid>, h
                     }
                     else if (right - mouseX < 20) {
                         
-                        if (cell._col < 3) return;
+                        if (cell.colIndex < 3) return;
                         if (cell._frozenCol) return;
-                        for(let col = cell._col; col > 1; col--) {
+                        for(let col = cell.colIndex; col > 1; col--) {
                             targetCell = handler._getHeaderCell(gridId, 1, col);
                             if (targetCell.colVisible === true) break;
                         }
@@ -414,14 +417,10 @@ export const setHandleGrid = (vg: Vanillagrid, gridList: Record<string, Grid>, h
                 tempGridData._gridId = gridId;
                 tempGridData._type = 'gfd';
                 Object.keys(colInfo).forEach(key => {
-                    if (['header', 'footer', 'rowMerge', 'colMerge', 'filterValue', 'index'].indexOf(key) < 0) {
+                    if (['header', 'footer', 'filterValue', 'filterValues', 'colIndex'].indexOf(key) < 0) {
                         (tempGridData as any)[key] = colInfo[key as keyof ColInfo];
                     }
-                });
-                if (colInfo.footer && colInfo.footer[rowCount - 1]) {
-                    tempGridData.footer = colInfo.footer[rowCount - 1];
-                }
-                
+                });                
                 handler.setGridDataRowCol(tempGridData, rowCount, colCount);
                 tempRows.push(tempGridData);
                 colCount++;
@@ -548,7 +547,7 @@ export const setHandleGrid = (vg: Vanillagrid, gridList: Record<string, Grid>, h
                     colId : filterSelect.colId,
                     value : filterSelect.value,
                 };
-                handler.__getColInfo(gridId, filterSelect.parentNode.parentNode.index)!.filterValue = filterSelect.value;
+                handler.__getColInfo(gridId, filterSelect.parentNode.parentNode.colIndex)!.filterValue = filterSelect.value;
                 if (filter.value === '$$NULL' || filter.value === null || filter.value === undefined || filter.value === '') filter.value = grid.data.gridInfo.nullValue;
                 grid.data.variables.filters.push(filter);
             }
@@ -594,24 +593,67 @@ export const setHandleGrid = (vg: Vanillagrid, gridList: Record<string, Grid>, h
     handler.__gridCellReConnectedWithControlSpan = (cell: Cell) => {
         handler.reConnectedCallbackElement(cell);
         if(cell.rowSpan) {
-            for(let row = cell._row + 1; row < cell._row + cell.rowSpan; row++) {
-                handler.__gridCellReConnectedWithControlSpan(handler._getCell(cell._gridId, row, cell._col)!);
+            for(let row = cell.rowIndex + 1; row < cell.rowIndex + cell.rowSpan; row++) {
+                handler.__gridCellReConnectedWithControlSpan(handler._getCell(cell._gridId, row, cell.colIndex)!);
             }
         }
         if(cell.colSpan) {
-            for(let col = cell._col + 1; col < cell._col + cell.colSpan; col++) {
-                handler.__gridCellReConnectedWithControlSpan(handler._getCell(cell._gridId, cell._row, col)!);
+            for(let col = cell.colIndex + 1; col < cell.colIndex + cell.colSpan; col++) {
+                handler.__gridCellReConnectedWithControlSpan(handler._getCell(cell._gridId, cell.rowIndex, col)!);
             }
         }
+    };
+    handler.__getCellData = (colInfo: ColInfo, rowIndex: number): CellData => {
+        const cellData: CellData = {
+            value : null,
+            colId : colInfo.colId,
+            rowIndex : rowIndex,
+            colIndex : colInfo.colIndex,
+            name : colInfo.name,
+            untarget : colInfo.untarget,
+            rowMerge : colInfo.rowMerge,
+            colMerge : colInfo.colMerge,
+            colVisible : colInfo.colVisible,
+            required : colInfo.required,
+            resizable : colInfo.resizable,
+            sortable : colInfo.sortable,
+            filterable : colInfo.filterable,
+            originWidth : colInfo.originWidth,
+            dataType : colInfo.dataType,
+            selectSize : colInfo.selectSize,
+            locked : colInfo.locked,
+            lockedColor : colInfo.lockedColor,
+            format : colInfo.format,
+            codes : deepCopy(colInfo.codes),
+            defaultCode : colInfo.defaultCode,
+            maxLength : colInfo.maxLength,
+            maxByte : colInfo.maxByte,
+            maxNumber : colInfo.maxNumber,
+            minNumber : colInfo.minNumber,
+            roundNumber : colInfo.roundNumber,
+            align : colInfo.align,
+            verticalAlign : colInfo.verticalAlign,
+            overflowWrap : colInfo.overflowWrap,
+            wordBreak : colInfo.wordBreak,
+            whiteSpace : colInfo.whiteSpace,
+            backColor : colInfo.backColor,
+            fontColor : colInfo.fontColor,
+            fontBold : colInfo.fontBold,
+            fontItalic : colInfo.fontItalic,
+            fontThruline : colInfo.fontThruline,
+            fontUnderline : colInfo.fontUnderline,
+            filter : colInfo.filter,
+        };
+        if(colInfo.rowVisible) cellData.rowVisible = colInfo.rowVisible;
+        return cellData;
     };
     handler.__getData = (cell: Cell, exceptedProperty: string[] = []): CellData => {
         const data: CellData = {
             value : deepCopy(cell.value),
             colId : cell.colId,
-            index : cell.index,
+            rowIndex : cell.rowIndex,
+            colIndex : cell.colIndex,
             name : cell.name,
-            header : cell.header,
-            footer : cell.footer,
             untarget : cell.untarget,
             rowMerge : cell.rowMerge,
             colMerge : cell.colMerge,
@@ -644,6 +686,7 @@ export const setHandleGrid = (vg: Vanillagrid, gridList: Record<string, Grid>, h
             fontItalic : cell.fontItalic,
             fontThruline : cell.fontThruline,
             fontUnderline : cell.fontUnderline,
+            filter : cell.filter,
         };
         
         data.text = handler.getTextFromCell(cell);
@@ -651,9 +694,6 @@ export const setHandleGrid = (vg: Vanillagrid, gridList: Record<string, Grid>, h
         if(cell.colSpan) data.colSpan = cell.colSpan;
         if(cell.isRowMerge) data.isRowMerge = cell.isRowMerge;
         if(cell.isColMerge) data.isColMerge = cell.isColMerge;
-        if(cell.filterValues) data.filterValues = deepCopy(cell.filterValues);
-        if(cell.filterValue) data.filterValue = cell.filterValue;
-        if(cell.filter) data.filter = cell.filter;
         if(cell.rowVisible) data.rowVisible = cell.rowVisible;
     
         if (exceptedProperty) {
@@ -722,7 +762,7 @@ export const setHandleGrid = (vg: Vanillagrid, gridList: Record<string, Grid>, h
         if (cellData.fontUnderline) cell!.fontUnderline = cellData.fontUnderline;
         if (cellData.value) cell!.value = cellData.value;
         handler.reConnectedCallbackElement(cell!);
-        handler.reloadGridWithModifyCell(gridId, cell!.index!);
+        handler.reloadGridWithModifyCell(gridId, cell!.colIndex!);
         return true;
     };
     handler._getDataTypeStyle = () => {
