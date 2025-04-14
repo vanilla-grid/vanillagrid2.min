@@ -409,3 +409,13 @@ export const getColorFromColorSet = (colorSet: ColorSet.black
             throw new Error('Please enter the correct colorSet.');
     }
 };
+export const getHeaderString = (headerRowCount: number, header: string) => {
+    const headerArr = header.split(';');
+    if(headerRowCount > headerArr.length) {
+        for(let i = 0; i <= headerRowCount - headerArr.length; i++) {
+            headerArr.push('');
+        }
+    }
+    const headerString = headerArr.join(';');
+    return headerString;
+}
