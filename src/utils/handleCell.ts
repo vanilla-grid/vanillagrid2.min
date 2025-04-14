@@ -14,7 +14,7 @@ export const setHandleCell = (vg: Vanillagrid, gridList: Record<string, Grid>, h
         let returnNumber;
         let tempCell;
         for(let r = 1; r < gridList[gridId].methods.getRowCount(); r++ ) {
-            tempCell = handler._getCell(gridId, r, footerCell._col);
+            tempCell = handler._getCell(gridId, r, footerCell.colIndex);
             if (!handler.isCellVisible(tempCell!)) continue;
             returnNumber = getOnlyNumberWithNaNToNull(tempCell!.value);
             if (returnNumber) return returnNumber;
@@ -25,7 +25,7 @@ export const setHandleCell = (vg: Vanillagrid, gridList: Record<string, Grid>, h
         if (!vg._status.activeGridEditor) return false;
         const cell: Cell = (vg._status.activeGridEditor as any).targetCell;
         const gridId = cell._gridId;
-        gridList[gridId].events.onEditEnding(cell._row, cell.colId, vg._status.editOldValue, vg._status.editNewValue);
+        gridList[gridId].events.onEditEnding(cell.rowIndex, cell.colId, vg._status.editOldValue, vg._status.editNewValue);
         cell.style.padding = '';
         cell.style.fontSize = '';
         vg._status.activeGridEditor.parentNode!.removeChild(vg._status.activeGridEditor);
@@ -220,7 +220,7 @@ export const setHandleCell = (vg: Vanillagrid, gridList: Record<string, Grid>, h
                 });
                 break;
         }
-        if(gridList[cell._gridId].events.onBeforeEditEnter(cell._row, cell.colId, gridEditor) === false) return;
+        if(gridList[cell._gridId].events.onBeforeEditEnter(cell.rowIndex, cell.colId, gridEditor) === false) return;
         if (!gridEditor) return;
         cell.style.padding = '0';
         cell.style.fontSize = '0px'; 
@@ -229,7 +229,7 @@ export const setHandleCell = (vg: Vanillagrid, gridList: Record<string, Grid>, h
         gridEditor.focus();
         if (isEnterKey) gridEditor.select();
         vg._status.activeGridEditor = gridEditor;
-        gridList[cell._gridId].events.onAfterEditEnter(cell._row, cell.colId, gridEditor);
+        gridList[cell._gridId].events.onAfterEditEnter(cell.rowIndex, cell.colId, gridEditor);
     };
     handler.getValidValue = (cell: Cell, value: any) => {
         const nullValue = nvl(gridList[cell._gridId].data.gridInfo.nullValue, null);
