@@ -14,7 +14,7 @@ export const setHandleElement = (vg: Vanillagrid, gridList: Record<string, Grid>
         if(grid.events.onResize(targetCell.colId) === false) return;
     
         const styleGridTemplateColumnsArr = grid.elements.gridHeader.style.gridTemplateColumns.split(' ');
-        const oldColWidth = styleGridTemplateColumnsArr[targetCell._col - 1];
+        const oldColWidth = styleGridTemplateColumnsArr[targetCell.colIndex - 1];
         if (extractNumberAndUnit(oldColWidth)!.unit === '%') {
             if (modifySize > 0) {
                 modifySize = 1;
@@ -27,7 +27,7 @@ export const setHandleElement = (vg: Vanillagrid, gridList: Record<string, Grid>
             }
         }
         const newColWidth = (extractNumberAndUnit(oldColWidth)!.number + modifySize) + extractNumberAndUnit(oldColWidth)!.unit!;
-        styleGridTemplateColumnsArr[targetCell._col - 1] = newColWidth;
+        styleGridTemplateColumnsArr[targetCell.colIndex - 1] = newColWidth;
         const styleGridTemplateColumns = styleGridTemplateColumnsArr.join(' ');
         grid.elements.gridHeader.style.gridTemplateColumns = styleGridTemplateColumns;
         grid.elements.gridBody.style.gridTemplateColumns = styleGridTemplateColumns;
@@ -85,10 +85,10 @@ export const setHandleElement = (vg: Vanillagrid, gridList: Record<string, Grid>
             })
         }
         
-        if(!gridList[cell._gridId].methods.getRowStatus(cell._row)) gridList[cell._gridId].methods.setRowStatus(cell._row, 'U');
+        if(!gridList[cell._gridId].methods.getRowStatus(cell.rowIndex)) gridList[cell._gridId].methods.setRowStatus(cell.rowIndex, 'U');
         cell.value  = value;
         handler.reConnectedCallbackElement(cell);
-        handler.reloadGridWithModifyCell(cell._gridId, cell.index!);
+        handler.reloadGridWithModifyCell(cell._gridId, cell.colIndex!);
     };
     handler.modifyCell = (vg: Vanillagrid) => {
         if (!vg._status.activeGridEditor) return;
@@ -107,11 +107,11 @@ export const setHandleElement = (vg: Vanillagrid, gridList: Record<string, Grid>
             }
         });
         handler.removeGridEditor();
-        if(gridList[cell._gridId].events.onBeforeChange(cell._row, cell.colId, vg._status.editOldValue, vg._status.editNewValue) === false) return;
+        if(gridList[cell._gridId].events.onBeforeChange(cell.rowIndex, cell.colId, vg._status.editOldValue, vg._status.editNewValue) === false) return;
         const value = vg._status.editNewValue;
         const records = handler.getRecordsWithModifyValue(cell, value);
         handler.recordGridModify(cell._gridId, records);
-        gridList[cell._gridId].events.onAfterChange(cell._row, cell.colId, vg._status.editOldValue, vg._status.editNewValue);
+        gridList[cell._gridId].events.onAfterChange(cell.rowIndex, cell.colId, vg._status.editOldValue, vg._status.editNewValue);
         return;
     };
     handler.sort = (gridId: string, arr: CellData[][], id: string, isAsc = true, isNumSort = false) => {
@@ -243,7 +243,7 @@ export const setHandleElement = (vg: Vanillagrid, gridList: Record<string, Grid>
         colInfo!.filterValues = new Set();
         for(let r = 1; r <= grid.methods.getRowCount(); r++) {
             let filterValue;
-            let tempCell = handler._getCell(gridId, r, colInfo!.index!);
+            let tempCell = handler._getCell(gridId, r, colInfo!.colIndex!);
             if (!tempCell || !tempCell.rowVisible || !tempCell.colVisible) continue;
             filterValue = handler.getTextFromCell(tempCell);
     
@@ -310,7 +310,7 @@ export const setHandleElement = (vg: Vanillagrid, gridList: Record<string, Grid>
         let r, c;
         
         if (colInfo.rowMerge) {
-            c = colInfo.index;
+            c = colInfo.colIndex;
             
             for(r = 1; r <= grid.methods.getRowCount(); r++) {
                 nowCell = handler._getCell(gridId, r, c!);
@@ -328,7 +328,7 @@ export const setHandleElement = (vg: Vanillagrid, gridList: Record<string, Grid>
                     && preCell.dataType === nowCell!.dataType
                     && handler.getTextFromCell(preCell) === handler.getTextFromCell(nowCell!)
                 ) {
-                    for(let rSpan = preCell._row - 1; rSpan > 0; rSpan--) {
+                    for(let rSpan = preCell.rowIndex - 1; rSpan > 0; rSpan--) {
                         preCell = handler._getCell(gridId, rSpan, c!);
                         if (preCell!.isRowMerge !== true) {
                             preCell!.rowSpan = nvl(preCell!.rowSpan, 1) + 1;
@@ -348,7 +348,7 @@ export const setHandleElement = (vg: Vanillagrid, gridList: Record<string, Grid>
             const cells = handler._getCells(gridId);
             
             for(r = 1; r <= grid.methods.getRowCount(); r++) {
-                for(c = colInfo.index! - 1; c <= colInfo.index!; c++) {
+                for(c = colInfo.colIndex! - 1; c <= colInfo.colIndex!; c++) {
                     nowCell = handler._getCell(gridId, r, c!);
                     delete nowCell!.rowSpan;
                     delete nowCell!.isRowMerge;
@@ -357,7 +357,7 @@ export const setHandleElement = (vg: Vanillagrid, gridList: Record<string, Grid>
                 }
             }
             
-            c = colInfo.index!;
+            c = colInfo.colIndex!;
             for(r = 1; r <= grid.methods.getRowCount(); r++) {
                 preCell = cells[r - 1][c - 2]
                 nowCell = cells[r - 1][c - 1]
@@ -366,7 +366,7 @@ export const setHandleElement = (vg: Vanillagrid, gridList: Record<string, Grid>
                     && preCell.dataType === nowCell.dataType
                     && handler.getTextFromCell(preCell) === handler.getTextFromCell(nowCell)
                 ) {
-                    for(let cSpan = preCell._col - 1; cSpan > 2; cSpan--) {
+                    for(let cSpan = preCell.colIndex - 1; cSpan > 2; cSpan--) {
                         preCell = cells[r - 1][cSpan];
                         if (preCell.isColMerge !== true) {
                             preCell.colSpan = nvl(preCell.colSpan, 1) + 1;
@@ -378,7 +378,7 @@ export const setHandleElement = (vg: Vanillagrid, gridList: Record<string, Grid>
             }
             
             for(r = 1; r <= grid.methods.getRowCount(); r++) {
-                for(c = colInfo.index! - 1; c <= colInfo.index!; c++) {
+                for(c = colInfo.colIndex! - 1; c <= colInfo.colIndex!; c++) {
                     nowCell = handler._getCell(gridId, r, c!);
                     handler.reConnectedCallbackElement(nowCell!);
                 }
@@ -406,21 +406,21 @@ export const setHandleElement = (vg: Vanillagrid, gridList: Record<string, Grid>
         const footerCells = handler._getFooterCells(gridId);
         for(const footers of footerCells) {
             for(const footerCell of footers) {
-                if (footerCell.footer !== null && footerCell.footer !== undefined) {
+                const footer = gridList[gridId].data.colInfos[footerCell.colIndex - 1];
+                if (footer !== null && footer !== undefined) {
                     handler.reConnectedCallbackElement(footerCell);
                 }
             }
         }
     };
     handler.setGridDataRowCol = (el: Cell, row: number, col: number) => {
-        el._row = row;
-        el._col = col;
-        el.index = col;
+        el.rowIndex = row;
+        el.colIndex = col;
         handler.setGridDataPosition(el);
     };
     handler.setGridDataPosition = (el: Cell) => {
-        const row = el._row;
-        const col = el._col;
+        const row = el.rowIndex;
+        const col = el.colIndex;
         el.style.gridRowStart = String(row);
         el.style.gridRowEnd = String(row + 1);
         el.style.gridColumnStart = String(col);
@@ -454,7 +454,7 @@ export const setHandleElement = (vg: Vanillagrid, gridList: Record<string, Grid>
         tempGridData._type = 'gbd';
     
         Object.keys(colInfo).forEach(key => {
-            if (['header', 'footer', 'rowMerge', 'colMerge', 'filterValue', 'index'].indexOf(key) < 0) {
+            if (['header', 'footer', 'filterValue', 'filterValues', 'colIndex'].indexOf(key) < 0) {
                 (tempGridData as any)[key] = key in data ? data[key] : colInfo[key as keyof ColInfo];
             }
         });
