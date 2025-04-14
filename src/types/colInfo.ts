@@ -11,7 +11,7 @@ export interface ColInfo {
     /**
      * The column's sequence number. For maintenance purposes, it is recommended to use an ID rather than a default value.
      */
-    index: number | null;
+    colIndex: number;
     /**
      * The name of the column. If null, the grid Id is inserted.
      */
@@ -19,7 +19,7 @@ export interface ColInfo {
     /**
      * Header text value. Use ';' as the delimiter. Empty values are automatically merged.
      */
-    header: string[] | null;
+    header: string;
     /**
      * Insert the footer using ';' as the delimiter. General text: Insert the string as text in the footer.
      * $$MAX: Calculate and display the maximum value in the footer.
@@ -27,7 +27,7 @@ export interface ColInfo {
      * $$SUM: Calculate and display the sum in the footer.
      * $$AVG: Calculate and display the average in the footer (excluding null).
      */
-    footer: any;
+    footer: any[] | null;
     /**
      * If untarget is true, the cells in this column cannot be selected.
      */
@@ -190,15 +190,15 @@ export interface ColInfo {
     /**
      * An array of values ​​that the filter has. Automatically changes.
      */
-    filterValues?: Set<string> | null;
+    filterValues: Set<string> | null;
     /**
      * The currently specified filter value.
      */
-    filterValue?: string | null;
+    filterValue: string | null;
     /**
      * Whether a filter has been applied.
      */
-    filter?: boolean | null;
+    filter: boolean | null;
     /**
      * If visible is false, this row is hidden.
      */
@@ -211,7 +211,7 @@ export interface ColInfo {
  */
 export interface DefaultColInfo extends Omit<ColInfo,
 'colId' |
-'index' |
+'colIndex' |
 'name' |
 'header' |
 'footer' |
