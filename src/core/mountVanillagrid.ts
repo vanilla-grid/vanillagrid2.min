@@ -5,7 +5,7 @@ import type { Cell } from "../types/cell";
 import type { Handler } from "../types/handler";
 import { alignUnit, enumWidthUnit, selectionPolicyUnit, verticalAlignUnit } from "../types/enum";
 import { setColorSet, setGridCssStyle, setInvertColor } from "../utils/setGridStyle";
-import { extractNumberAndUnit, getAttributeOnlyBoolean, getAttributeOnlyNumber, getAttributeOnlyNumberInteger, getAttributeOnlyNumberIntegerOrZero, getAttributeWithCheckRequired, getColorFromColorSet, isIncludeEnum, nvl, toLowerCase } from "../utils/utils";
+import { extractNumberAndUnit, getAttributeOnlyBoolean, getAttributeOnlyNumber, getAttributeOnlyNumberInteger, getAttributeOnlyNumberIntegerOrZero, getAttributeWithCheckRequired, getColorFromColorSet, getHeaderString, isIncludeEnum, nvl, toLowerCase } from "../utils/utils";
 import { getGridMethod } from "./getGridMethod";
 import { GridCssInfo, GridInfo } from "../types/gridInfo";
 import { GridMethods } from "../types/gridMethods";
@@ -149,9 +149,9 @@ const getColInfo = (vg: Vanillagrid, vanillagridBox: HTMLElement, gridInfo: Grid
 
     let colInfo: ColInfo ={
         colId : 'v-g-rownum',
-        index : 1,
+        colIndex : 1,
         name : 'rownum',
-        header : new Array(headerRowCount),
+        header : getHeaderString(headerRowCount, ''),
         untarget : false,
         rowMerge : false,
         colMerge : false,
@@ -190,14 +190,13 @@ const getColInfo = (vg: Vanillagrid, vanillagridBox: HTMLElement, gridInfo: Grid
         fontUnderline : false,
         footer: null,
     };
-    colInfo.header![0] = '',
     colInfos.push(colInfo);
 
     colInfo = {
         colId : 'v-g-status',
-        index : 2,
+        colIndex : 2,
         name : 'status',
-        header : new Array(headerRowCount),
+        header : getHeaderString(headerRowCount, 'status'),
         untarget : true,
         rowMerge : false,
         colMerge : false,
@@ -236,19 +235,20 @@ const getColInfo = (vg: Vanillagrid, vanillagridBox: HTMLElement, gridInfo: Grid
         fontUnderline : false,
         footer: null,
     };
-    colInfo.header![0] = 'status';
     colInfos.push(colInfo);
 
     colCount = 2;
     Array.from(vanillagridBox.querySelectorAll('[data-col]') as NodeListOf<HTMLElement>).forEach(col => {
         colCount++;
+        const colId = col.getAttribute('id')!;
         if (!col.getAttribute('id')) throw new Error('Column ID is required.');
-        if (colInfos.some(colInfo => colInfo.colId === col.getAttribute('id'))) throw new Error('Column ID is primary key.');
+        if (colInfos.some(colInfo => colInfo.colId === colId)) throw new Error('Column ID is primary key.');
         colInfo = {
-            colId : col.getAttribute('id')!,
-            index : colCount,
-            name : null,
-            header : null,
+            colId : colId,
+            colIndex : colCount,
+            name : nvl(col.getAttribute('name'), colId),
+            header : getHeaderString(headerRowCount, nvl(col.getAttribute('header'), colId)),
+            footer: null,
             untarget : null,
             rowMerge : null,
             colMerge : null,
@@ -285,21 +285,7 @@ const getColInfo = (vg: Vanillagrid, vanillagridBox: HTMLElement, gridInfo: Grid
             fontItalic : null,
             fontThruline : null,
             fontUnderline : null,
-            footer: null,
         };
-        colInfo.name = nvl(toLowerCase(col.getAttribute('name')), colInfo.colId);
-
-        if (col.getAttribute('header')) {
-            colInfo.header = col.getAttribute('header')!.split(';');
-            for(let i = colInfo.header.length; i < headerRowCount; i++) {
-                colInfo.header.push('');
-            }
-        }
-        else {
-            colInfo.header = new Array(headerRowCount);
-            colInfo.header[0] = colInfo.colId;
-        }
-        
         if (col.getAttribute('footer')) {
             colInfo.footer = col.getAttribute('footer')!.split(';');
             for(let i = colInfo.footer.length; i < footerRowCount; i++) {
@@ -472,13 +458,13 @@ export const mountVanillagrid = (vg: Vanillagrid, gridList: Record<string, Grid>
             else {
                 return;
             }
-            if(grid.events.onBeforeDblClickHeader(headerCell._row, headerCell.colId) === false) {
+            if(grid.events.onBeforeDblClickHeader(headerCell.rowIndex, headerCell.colId) === false) {
                 e.stopPropagation();
                 e.preventDefault();
                 return;
             }
-            if (e.target.dataType === 'checkbox' && grid.data.gridInfo.allCheckable && headerCell._isLastCell) {
-                grid.methods.setColSameValue(e.target.index, !handler.getCheckboxCellTrueOrFalse(handler._getCell(grid.data.id, 1, e.target.index)!), true);
+            if (headerCell.dataType === 'checkbox' && grid.data.gridInfo.allCheckable && headerCell._isLastCell) {
+                grid.methods.setColSameValue(headerCell.colIndex!, !handler.getCheckboxCellTrueOrFalse(handler._getCell(grid.data.id, 1, headerCell.colIndex!)!), true);
                 return;
             }
 
@@ -522,22 +508,22 @@ export const mountVanillagrid = (vg: Vanillagrid, gridList: Record<string, Grid>
             sortSpan.classList.add(grid.data.variables.sortToggle[headerCell.colId] ? headerCell._gridId + '_ascSpan' : headerCell._gridId + '_descSpan');
             headerCell.append(sortSpan);
 
-            grid.events.onAfterDblClickHeader(headerCell._row, headerCell.colId);
+            grid.events.onAfterDblClickHeader(headerCell.rowIndex, headerCell.colId);
         });
         gridHeader.addEventListener('click', function (e: any) {
             let headerCell: Cell;
             if (e.target._type === 'ghd') {
                 headerCell = e.target;
-                if(grid.events.onBeforeClickHeader(headerCell._row, headerCell.colId) === false) {
+                if(grid.events.onBeforeClickHeader(headerCell.rowIndex, headerCell.colId) === false) {
                     e.stopPropagation();
                     e.preventDefault();
                     return;
                 }
-                grid.events.onAfterClickHeader(headerCell._row, headerCell.colId);
+                grid.events.onAfterClickHeader(headerCell.rowIndex, headerCell.colId);
             }
             else if (e.target._type === 'filter'){
                 headerCell = e.target.parentNode;
-                if(grid.events.onClickFilter(headerCell._row, headerCell.colId, e.target) === false) {
+                if(grid.events.onClickFilter(headerCell.rowIndex, headerCell.colId, e.target) === false) {
                     e.stopPropagation();
                     e.preventDefault();
                     return;
@@ -595,10 +581,10 @@ export const mountVanillagrid = (vg: Vanillagrid, gridList: Record<string, Grid>
                 cell = e.target;
             }
             if (cell._type !== 'gbd') return;
-            if(grid.events.onBeforeDblClickCell(cell._row, cell.colId) === false) return;
+            if(grid.events.onBeforeDblClickCell(cell.rowIndex, cell.colId) === false) return;
             if (['select','checkbox','button','link'].indexOf(cell.dataType!) >= 0) return;
             handler.createGridEditor(cell);
-            grid.events.onAfterDblClickCell(cell._row, cell.colId);
+            grid.events.onAfterDblClickCell(cell.rowIndex, cell.colId);
         });
         gridElement.addEventListener('click', function (e: any) {
             if (!e.target._type) return;
@@ -614,7 +600,7 @@ export const mountVanillagrid = (vg: Vanillagrid, gridList: Record<string, Grid>
                 return;
             }
             if(cell.firstChild && (cell.firstChild as any).nType !== 'select') {
-                if(grid.events.onBeforeClickCell(cell._row, cell.colId) === false) {
+                if(grid.events.onBeforeClickCell(cell.rowIndex, cell.colId) === false) {
                     e.stopPropagation();
                     e.preventDefault();
                     return;
@@ -623,7 +609,7 @@ export const mountVanillagrid = (vg: Vanillagrid, gridList: Record<string, Grid>
             if (e.target.nType) {
                 switch (e.target.nType) {
                     case 'checkbox':
-                        if(grid.events.onClickCheckbox(cell._row, cell.colId, e.target) === false) {
+                        if(grid.events.onClickCheckbox(cell.rowIndex, cell.colId, e.target) === false) {
                             e.stopPropagation();
                             e.preventDefault();
                             return;
@@ -631,14 +617,14 @@ export const mountVanillagrid = (vg: Vanillagrid, gridList: Record<string, Grid>
                         vg._status.editOldValue = e.target.parentNode.value;
                         break;
                     case 'button':
-                        if(grid.events.onClickButton(cell._row, cell.colId, e.target) === false) {
+                        if(grid.events.onClickButton(cell.rowIndex, cell.colId, e.target) === false) {
                             e.stopPropagation();
                             e.preventDefault();
                             return;
                         }
                         break;
                     case 'link':
-                        if(grid.events.onClickLink(cell._row, cell.colId, e.target) === false) {
+                        if(grid.events.onClickLink(cell.rowIndex, cell.colId, e.target) === false) {
                             e.stopPropagation();
                             e.preventDefault();
                             return;
@@ -658,7 +644,7 @@ export const mountVanillagrid = (vg: Vanillagrid, gridList: Record<string, Grid>
                     }
                 }
             });
-            grid.events.onAfterClickCell(cell._row, cell.colId);
+            grid.events.onAfterClickCell(cell.rowIndex, cell.colId);
         })
         gridElement.addEventListener('mousedown', function (e: any) {
             if (!e.target._type) return;
@@ -675,12 +661,12 @@ export const mountVanillagrid = (vg: Vanillagrid, gridList: Record<string, Grid>
             if (e.target.nType) {
                 switch (e.target.nType) {
                     case 'select':
-                        if(grid.events.onBeforeClickCell(cell._row, cell.colId) === false) {
+                        if(grid.events.onBeforeClickCell(cell.rowIndex, cell.colId) === false) {
                             e.stopPropagation();
                             e.preventDefault();
                             return;
                         }
-                        if(grid.events.onClickSelect(cell._row, cell.colId, e.target) === false) {
+                        if(grid.events.onClickSelect(cell.rowIndex, cell.colId, e.target) === false) {
                             e.stopPropagation();
                             e.preventDefault();
                             return;
