@@ -73,6 +73,7 @@ export interface Handler {
     ___getDatasWithoutExceptedProperty(gridId: string, exceptedProperty?: string[]): CellData[][];
     _doFilter(gridId: string): void;
     __gridCellReConnectedWithControlSpan(cell: Cell): void;
+    __getCellData(colInfo: ColInfo, rowIndex: number): CellData;
     __getData(cell: Cell, exceptedProperty?: string[]): CellData;
     __setCellData(gridId: string, row: number, colIndexOrColId: number | string, cellData: CellData, isImmutableColCheck?: boolean): boolean;
     _getDataTypeStyle(): any;
