@@ -231,8 +231,8 @@ const setGrid1Data = () => {
     $(grid2, 'setColInfo', colInfo);
 };
 const setGrid2Data = () => {
-    $(grid2, 'setFooterValue', 3, 'status', 'CHECK_COUNT');
-    $(grid2, 'removeCol', 'test1');
+    //$(grid2, 'clearFilterValue');
+    $(grid2, 'addCol', 3, {colId: 'test', header: 'test;test;test'});
 };
 
 onMounted(()=>{
