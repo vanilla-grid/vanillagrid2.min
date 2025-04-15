@@ -1,7 +1,8 @@
 <template>
   <div ref="gridWrap">
     <button @click="setGrid1Data">getGridData 1</button>
-    <button @click="setGrid2Data">setGridData 3</button>
+    <button @click="setGrid2Data">setGridData 2</button>
+    <button @click="setGrid3Data">setGridData 3</button>
     <div data-vanillagrid data-id="grid1" height="200px">
         <div data-col id="col1" header="header" data-type="text" width="600"></div>
     </div>
@@ -15,11 +16,13 @@
         <div data-col id="salary" required="true" header="sort2(number);;salary" data-type="number" format="$ #,###.0" width="150" align="right" footer="$$MAX;$$MIN;$$AVG;$$SUM"></div>
         <div data-col id="status" required="true" header="Please double click;checkbox;status" data-type="checkbox" width="80" align="center" footer="CHECK_COUNT"></div>
     </div>
+    <br>
+    <p>test</p>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { Vanillagrid, GridMethods } from 'vanillagrid2';
+import { type Vanillagrid, type GridMethods, VerticalAlign, ColorSet, SelectionPolicy } from 'vanillagrid2';
 import { ref } from 'vue';
 import { getCurrentInstance, onMounted, onBeforeUnmount } from 'vue';
 
@@ -219,21 +222,78 @@ const data2 = [
 ];
 
 const $ = (grid: GridMethods, key: string, ...param: any) => {
-    console.log(grid.getGridName(), key, ' : ', grid[key](...param));
+    console.log(grid.getGridName(), key, ' : ', (grid as any)[key](...param));
 }
-
+/**
+ * 
+setGridDateFormat
+getGridDateFormat
+setGridMonthFormat
+getGridMonthFormat
+setGridAlterRow
+setGridFrozenColCount
+getGridFrozenColCount
+setGridFrozenRowCount
+getGridFrozenRowCount
+setGridSortable
+isGridSortalbe
+setGridFilterable
+isGridFilterable
+setGridAllCheckable
+isGridAllCheckable
+setGridCheckedValue
+getGridCheckedValue
+setGridUncheckedValue
+getGridUncheckedValue
+ */
 const setGrid1Data = () => {
-    const colInfo: any = grid1.getDefualtColInfo();
-    colInfo.colId = 'dept';
-    colInfo.header = 'test1;test1;';
-    colInfo.align = 'right';
-    colInfo.footer = ['11','22'];
-    $(grid2, 'setColInfo', colInfo);
+    $(grid2, 'addRow', 1);
 };
 const setGrid2Data = () => {
-    //$(grid2, 'clearFilterValue');
-    $(grid2, 'sort', 'dept', false);
+    const keyValue = {
+        dept : "AAA01",
+        f_nm : "James",
+        l_nm : "Smith",
+        d_o_j : "201603",
+        e_id : "7",
+        salary : 100000,
+        status : "Y",
+    };
+    $(grid2, 'addRow', 1, keyValue);
 };
+const setGrid3Data = () => {
+    const data = [
+        {
+            colId : "dept",
+            value : "AAA07" 
+        },
+        {
+            colId : "f_nm",
+            value : "Smith" 
+        },
+        {
+            colId : "l_nm",
+            value : "Smith" 
+        },
+        {
+            colId : "d_o_j",
+            value : "202503" 
+        },
+        {
+            colId : "e_id",
+            value : "99" 
+        },
+        {
+            colId : "salary",
+            value : "100" 
+        },
+        {
+            colId : "status",
+            value : "N" 
+        },
+    ];
+    $(grid2, 'addRow', 1, data);
+}
 
 onMounted(()=>{
     if(!gridWrap.value) return;

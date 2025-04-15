@@ -500,6 +500,7 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
             return grid.data.gridInfo.statusLockedColor!;
         },
         setGridSelectionPolicy(selectionPolicy: SelectionPolicy.range | SelectionPolicy.single | SelectionPolicy.none) {
+            //!!!!!!!!!!! selection 변경 시 현재 선택 셀 초기화
             if (!isIncludeEnum(selectionPolicyUnit, selectionPolicy)) throw new Error('Please insert the correct selectionPolicy properties. (single, range, none)');
             grid.data.gridInfo.selectionPolicy = selectionPolicy;
             return true
@@ -508,6 +509,8 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
             return grid.data.gridInfo.selectionPolicy!;
         },
         setGridNullValue(nullValue: any) {
+            //!!!!!!!!!!! nullValue지정 시 기존 null값도 변경 필요!!!!!!
+            // colNullValue 변경시에도
             grid.data.gridInfo.nullValue = nullValue;
             handler.__gridBodyCellsReConnected(grid.data.id);
             return true;
@@ -1417,6 +1420,7 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
             return colInfo.fontUnderline!;
         },
         addRow (rowOrValuesOrDatas?: number | Record<string, any> | Record<string, any>[], valuesOrDatas?: Record<string, any> | Record<string, any>[]) {
+            //!!!!!!!!!!!!!!! keyValue형태로 삽입됐을 때 오류!!!!!!!!!!
             let row, addKeyValueOrDatas;
     
             if (rowOrValuesOrDatas === 0) rowOrValuesOrDatas = 1

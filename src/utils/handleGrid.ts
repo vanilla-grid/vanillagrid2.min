@@ -255,6 +255,7 @@ export const setHandleGrid = (vg: Vanillagrid, gridList: Record<string, Grid>, h
         return childNode;
     };
     handler.__loadHeader = (gridId: string) => {
+        //!!!!!!!!!!! 헤더 재 로드할 때 간격 초기화 막기!!!!!!!!!
         const grid = gridList[gridId];
         handler.__setGridColSize(gridId);
         removeAllChild(grid.elements.gridHeader!);
