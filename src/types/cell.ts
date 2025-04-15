@@ -15,6 +15,7 @@ export interface Cell extends CellData, HTMLElement{
     _frozenCol?: boolean;
     _frozenRow?: boolean;
     _isLastCell?: boolean;
+    _filterSelector?: HTMLSelectElement & { _gridId: string; colId: string };
 }
 
 
@@ -26,6 +27,11 @@ export interface CellData extends Omit<ColInfo, 'header' | 'footer' | 'filterVal
      * The value that the cell has
      */
     value: any;
+    rowIndex: number;
+    /**
+     * Whether a filter has been applied.
+     */
+    filter: boolean | null;
     text?: string;
     /**
      * How many rows span a cell in a grid
@@ -43,7 +49,10 @@ export interface CellData extends Omit<ColInfo, 'header' | 'footer' | 'filterVal
      * Whether the cell uses the col Merge feature.
      */
     isColMerge?: boolean;
-    rowIndex: number;
+    /**
+     * If visible is false, this row is hidden.
+     */
+    rowVisible?: boolean | null;
 }
 
 /**
