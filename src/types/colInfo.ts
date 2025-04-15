@@ -195,14 +195,6 @@ export interface ColInfo {
      * The currently specified filter value.
      */
     filterValue: string | null;
-    /**
-     * Whether a filter has been applied.
-     */
-    filter: boolean | null;
-    /**
-     * If visible is false, this row is hidden.
-     */
-    rowVisible?: boolean | null;
 }
 
 /**
@@ -216,8 +208,6 @@ export interface DefaultColInfo extends Omit<ColInfo,
 'header' |
 'footer' |
 'filterValues' |
-'filterValue' |
-'filter' |
-'rowVisible'
+'filterValue'
 >{
 }
