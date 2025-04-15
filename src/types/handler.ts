@@ -37,6 +37,7 @@ export interface Handler {
     setFilterOptions(select: any, options: any): void;
     reloadColFilterValue(gridId: string, colId: number | string): void;
     reloadFilter(gridId: string, colId: number | string): void;
+    getDatasWithClearFilterValue(gridId: string, datas: CellData[][]): CellData[][];
     reloadColForMerge(gridId: string, colIndex: number): void;
     reloadGridWithModifyCell(gridId: string, colIndex: number): void;
     reloadGridForMerge(gridId: string): void;
@@ -44,6 +45,8 @@ export interface Handler {
     setGridDataRowCol(el: Cell, row: number, col: number): void;
     setGridDataPosition(el: Cell): void;
     getGridCell(gridId: string, colInfo: ColInfo, valueOrData: any, rowCount: number, colCount: number): Cell;
+    setCellDataFromColInfo(cellDataOrCell: CellData | Cell, colInfo: ColInfo): void;
+    getSortSpan(gridId: string, colId: string): any;
     /** ////////////////////////
      * handleGrid
      *//////////////////////////
