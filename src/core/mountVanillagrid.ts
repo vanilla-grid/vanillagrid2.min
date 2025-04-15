@@ -156,7 +156,6 @@ const getColInfo = (vg: Vanillagrid, vanillagridBox: HTMLElement, gridInfo: Grid
         rowMerge : false,
         colMerge : false,
         colVisible : gridInfo.rownumVisible,
-        rowVisible : true,
         required : false,
         resizable : false,
         sortable : false,
@@ -176,7 +175,6 @@ const getColInfo = (vg: Vanillagrid, vanillagridBox: HTMLElement, gridInfo: Grid
         roundNumber : null,
         filterValues : null,
         filterValue : null,
-        filter : false,
         align : 'center',
         verticalAlign : null,
         overflowWrap : null,
@@ -201,7 +199,6 @@ const getColInfo = (vg: Vanillagrid, vanillagridBox: HTMLElement, gridInfo: Grid
         rowMerge : false,
         colMerge : false,
         colVisible : gridInfo.statusVisible,
-        rowVisible : true,
         required : false,
         resizable : false,
         sortable : false,
@@ -221,7 +218,6 @@ const getColInfo = (vg: Vanillagrid, vanillagridBox: HTMLElement, gridInfo: Grid
         roundNumber : null,
         filterValues : null,
         filterValue : null,
-        filter : false,
         align : 'center',
         verticalAlign : null,
         overflowWrap : null,
@@ -253,7 +249,6 @@ const getColInfo = (vg: Vanillagrid, vanillagridBox: HTMLElement, gridInfo: Grid
             rowMerge : null,
             colMerge : null,
             colVisible : null,
-            rowVisible : null,
             required : null,
             resizable : null,
             sortable : null,
@@ -273,7 +268,6 @@ const getColInfo = (vg: Vanillagrid, vanillagridBox: HTMLElement, gridInfo: Grid
             roundNumber : null,
             filterValues : null,
             filterValue : null,
-            filter : null,
             align : null,
             verticalAlign : null,
             overflowWrap : null,
@@ -300,7 +294,6 @@ const getColInfo = (vg: Vanillagrid, vanillagridBox: HTMLElement, gridInfo: Grid
         colInfo.rowMerge = nvl(getAttributeOnlyBoolean('row-merge', col), vg.attributes.defaultColInfo.rowMerge);
         colInfo.colMerge = nvl(getAttributeOnlyBoolean('col-merge', col), vg.attributes.defaultColInfo.colMerge);
         colInfo.colVisible = nvl(getAttributeOnlyBoolean('visible', col), vg.attributes.defaultColInfo.colVisible);
-        colInfo.rowVisible = true;
         colInfo.required = nvl(getAttributeOnlyBoolean('required', col), vg.attributes.defaultColInfo.required);
         colInfo.resizable = nvl(getAttributeOnlyBoolean('resizable', col), vg.attributes.defaultColInfo.resizable);
         colInfo.sortable = nvl(getAttributeOnlyBoolean('sortable', col), vg.attributes.defaultColInfo.sortable);
@@ -325,7 +318,6 @@ const getColInfo = (vg: Vanillagrid, vanillagridBox: HTMLElement, gridInfo: Grid
 
         colInfo.filterValues = new Set();
         colInfo.filterValue = colInfo.filterable ? '$$ALL' : null;
-        colInfo.filter = false;
 
         colInfo.align = nvl((isIncludeEnum(alignUnit, toLowerCase(col.getAttribute('align'))) ? toLowerCase(col.getAttribute('align')) : ''), vg.attributes.defaultColInfo.align);
         colInfo.verticalAlign = nvl((isIncludeEnum(verticalAlignUnit, toLowerCase(col.getAttribute('vertical-align'))) ? toLowerCase(col.getAttribute('vertical-align')) : ''), vg.attributes.defaultColInfo.verticalAlign);
@@ -478,34 +470,7 @@ export const mountVanillagrid = (vg: Vanillagrid, gridList: Record<string, Grid>
             removeSpans.forEach((el: any) => {
                 el.parentNode.removeChild(el);
             });
-            let sortSpan: any;
-            if(grid.data.variables.sortToggle[headerCell.colId]) {
-                if(vg.elements.sortAscSpan && vg.elements.sortAscSpan instanceof HTMLElement && vg.elements.sortAscSpan.nodeType === 1) {
-                    sortSpan = vg.elements.sortAscSpan.cloneNode(true);
-                }
-                else {
-                    sortSpan = document.createElement('span');
-                    sortSpan.style.fontSize = '0.5em';
-                    sortSpan.style.paddingLeft = '5px';
-                    sortSpan.innerText = '▲';
-                }
-            }
-            else {
-                if(vg.elements.sortDescSpan && vg.elements.sortDescSpan instanceof HTMLElement && vg.elements.sortDescSpan.nodeType === 1) {
-                    sortSpan = vg.elements.sortDescSpan.cloneNode(true);
-                }
-                else {
-                    sortSpan = document.createElement('span');
-                    sortSpan.style.fontSize = '0.5em';
-                    sortSpan.style.paddingLeft = '5px';
-                    sortSpan.innerText = '▼';
-                }
-            }
-            sortSpan._gridId = headerCell._gridId;
-            sortSpan.isChild = true;
-            sortSpan._type = 'sort';
-            sortSpan.classList.add(headerCell._gridId + '_sortSpan');
-            sortSpan.classList.add(grid.data.variables.sortToggle[headerCell.colId] ? headerCell._gridId + '_ascSpan' : headerCell._gridId + '_descSpan');
+            const sortSpan = handler.getSortSpan(grid.data.id, headerCell.colId);
             headerCell.append(sortSpan);
 
             grid.events.onAfterDblClickHeader(headerCell.rowIndex, headerCell.colId);
