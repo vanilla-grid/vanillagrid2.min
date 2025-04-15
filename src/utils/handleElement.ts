@@ -218,6 +218,7 @@ export const setHandleElement = (vg: Vanillagrid, gridList: Record<string, Grid>
                 return isAsc !== false ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
             }
         });
+        grid.data.variables.sortToggle = {};
         grid.data.variables.sortToggle[id] = isAsc;
         return copiedArr;
     };

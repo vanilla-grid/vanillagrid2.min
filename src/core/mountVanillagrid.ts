@@ -465,14 +465,6 @@ export const mountVanillagrid = (vg: Vanillagrid, gridList: Record<string, Grid>
             if (!headerCell._isLastCell) return;
             
             grid.methods.sort(headerCell.colId, !grid.data.variables.sortToggle[headerCell.colId]);
-            
-            const removeSpans = headerCell.parentNode!.querySelectorAll('.' + headerCell._gridId + '_sortSpan');
-            removeSpans.forEach((el: any) => {
-                el.parentNode.removeChild(el);
-            });
-            const sortSpan = handler.getSortSpan(grid.data.id, headerCell.colId);
-            headerCell.append(sortSpan);
-
             grid.events.onAfterDblClickHeader(headerCell.rowIndex, headerCell.colId);
         });
         gridHeader.addEventListener('click', function (e: any) {

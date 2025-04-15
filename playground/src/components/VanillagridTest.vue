@@ -232,7 +232,7 @@ const setGrid1Data = () => {
 };
 const setGrid2Data = () => {
     //$(grid2, 'clearFilterValue');
-    $(grid2, 'addCol', 3, {colId: 'test', header: 'test;test;test'});
+    $(grid2, 'sort', 'dept', false);
 };
 
 onMounted(()=>{

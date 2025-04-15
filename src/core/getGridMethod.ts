@@ -275,9 +275,8 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
         sort(colId: string, isAsc = true, isNumSort = false) {
             const datas = grid.methods.getDatas();
             const sortDatas = handler.sort(grid.data.id, datas, colId, isAsc, isNumSort);
-            const sortToggle = grid.data.variables.sortToggle[colId];
+            handler.__loadHeader(grid.data.id);
             grid.methods.load(sortDatas);
-            grid.data.variables.sortToggle[colId] = sortToggle;
             return true;
         },
         checkRequired<T>(func?: (data: CellData) => T) {

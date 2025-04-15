@@ -259,8 +259,9 @@ export const setHandleGrid = (vg: Vanillagrid, gridList: Record<string, Grid>, h
         handler.__setGridColSize(gridId);
         removeAllChild(grid.elements.gridHeader!);
         grid.elements.gridHeader._gridHeaderCells.length = 0;
+        const headerRowCount = grid.methods.getHeaderRowCount();
     
-        for(let rowCount = 1; rowCount <= grid.methods.getHeaderRowCount(); rowCount++) {
+        for(let rowCount = 1; rowCount <= headerRowCount; rowCount++) {
             const tempRows = [];
             let colCount = 1;
             for(const colInfo of grid.data.colInfos) {
@@ -367,17 +368,21 @@ export const setHandleGrid = (vg: Vanillagrid, gridList: Record<string, Grid>, h
             }
         }
         
-        console.log('grid.data.variables.sortToggle',grid.data.variables.sortToggle);
-
-
         const headerCellRows = grid.elements.gridHeader._gridHeaderCells;
         headerCellRows.forEach((headerCells)=>{
-            headerCells.forEach((headerCell)=>{
+            headerCells.forEach((headerCell, colIndex)=>{
                 //sort
-                if(grid.data.gridInfo.sortable && Object.keys(grid.data.variables.sortToggle).length > 0) {
-                    if()
-                    const sortSpan = handler.getSortSpan(grid.data.id, headerCell.colId);
-                    headerCell.append(sortSpan);
+                if(grid.data.gridInfo.sortable && Object.keys(grid.data.variables.sortToggle).length > 0 && headerRowCount === headerCell.rowIndex) {
+                    for(let r = headerRowCount; r  > 0; r--) {
+                        const sortSpanTargetCell = headerCellRows[r - 1][colIndex];
+                        if(!sortSpanTargetCell.isRowMerge && !sortSpanTargetCell.isColMerge) {
+                            if(grid.data.variables.sortToggle[sortSpanTargetCell.colId] !== undefined) {
+                                const sortSpan = handler.getSortSpan(grid.data.id, sortSpanTargetCell.colId);
+                                sortSpanTargetCell.append(sortSpan);
+                                break;
+                            }
+                        }
+                    }
                 }
 
                 //filter
