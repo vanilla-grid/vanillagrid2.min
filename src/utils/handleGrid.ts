@@ -58,8 +58,6 @@ export const setHandleGrid = (vg: Vanillagrid, gridList: Record<string, Grid>, h
             
             filterValues : new Set(),
             filterValue : null,
-            filter : false,
-            rowVisible : true,
         };
         resultnewColInfo.filterValue = resultnewColInfo.filterable ? '$$ALL' : null;
         
@@ -269,11 +267,9 @@ export const setHandleGrid = (vg: Vanillagrid, gridList: Record<string, Grid>, h
                 const tempGridData = document.createElement('div') as Cell;
                 tempGridData._gridId = gridId;
                 tempGridData._type = 'ghd';
-                Object.keys(colInfo).forEach(key => {
-                    if (['header', 'footer', 'filterValue', 'filterValues', 'colIndex'].indexOf(key) < 0) {
-                        (tempGridData as any)[key] = colInfo[key as keyof ColInfo];
-                    }
-                });
+                tempGridData.rowVisible = true;
+                tempGridData.filter = false;
+                handler.setCellDataFromColInfo(tempGridData, colInfo);
                 const headerArr = colInfo.header.split(';');
                 tempGridData.value = headerArr[rowCount - 1] ? headerArr[rowCount - 1].replaceAll('\\n','\n') : '';
                 handler.setGridDataRowCol(tempGridData, rowCount, colCount);
@@ -370,6 +366,37 @@ export const setHandleGrid = (vg: Vanillagrid, gridList: Record<string, Grid>, h
                 handler.connectedGridData(cell);
             }
         }
+        
+        console.log('grid.data.variables.sortToggle',grid.data.variables.sortToggle);
+
+
+        const headerCellRows = grid.elements.gridHeader._gridHeaderCells;
+        headerCellRows.forEach((headerCells)=>{
+            headerCells.forEach((headerCell)=>{
+                //sort
+                if(grid.data.gridInfo.sortable && Object.keys(grid.data.variables.sortToggle).length > 0) {
+                    if()
+                    const sortSpan = handler.getSortSpan(grid.data.id, headerCell.colId);
+                    headerCell.append(sortSpan);
+                }
+
+                //filter
+                if(grid.data.gridInfo.filterable && grid.data.variables.filters.length > 0) {
+                    if(headerCell.filterable && headerCell._filterSelector) {
+                        grid.data.variables.filters.forEach((filter) => {
+                            if(headerCell.colId === filter.colId) {
+                                headerCell._filterSelector!.style.display = 'block';
+                                requestAnimationFrame(() => {
+                                    if(Array.from(headerCell._filterSelector!.options).some(o => o.value === filter.value)) {
+                                        headerCell._filterSelector!.value = filter.value;
+                                    }
+                                });
+                            }
+                        });
+                    }
+                }
+            });
+        });
     };
     handler._getHeaderRow = (gridId: string, rowIndex: number): Cell[] => {
         return getArrayElementWithBoundCheck(gridList[gridId].elements.gridHeader._gridHeaderCells, rowIndex - 1);
@@ -416,11 +443,9 @@ export const setHandleGrid = (vg: Vanillagrid, gridList: Record<string, Grid>, h
                 const tempGridData = document.createElement('div') as Cell ;
                 tempGridData._gridId = gridId;
                 tempGridData._type = 'gfd';
-                Object.keys(colInfo).forEach(key => {
-                    if (['header', 'footer', 'filterValue', 'filterValues', 'colIndex'].indexOf(key) < 0) {
-                        (tempGridData as any)[key] = colInfo[key as keyof ColInfo];
-                    }
-                });                
+                tempGridData.rowVisible = true;
+                tempGridData.filter = false;
+                handler.setCellDataFromColInfo(tempGridData, colInfo);
                 handler.setGridDataRowCol(tempGridData, rowCount, colCount);
                 tempRows.push(tempGridData);
                 colCount++;
@@ -604,47 +629,13 @@ export const setHandleGrid = (vg: Vanillagrid, gridList: Record<string, Grid>, h
         }
     };
     handler.__getCellData = (colInfo: ColInfo, rowIndex: number): CellData => {
-        const cellData: CellData = {
-            value : null,
-            colId : colInfo.colId,
-            rowIndex : rowIndex,
-            colIndex : colInfo.colIndex,
-            name : colInfo.name,
-            untarget : colInfo.untarget,
-            rowMerge : colInfo.rowMerge,
-            colMerge : colInfo.colMerge,
-            colVisible : colInfo.colVisible,
-            required : colInfo.required,
-            resizable : colInfo.resizable,
-            sortable : colInfo.sortable,
-            filterable : colInfo.filterable,
-            originWidth : colInfo.originWidth,
-            dataType : colInfo.dataType,
-            selectSize : colInfo.selectSize,
-            locked : colInfo.locked,
-            lockedColor : colInfo.lockedColor,
-            format : colInfo.format,
-            codes : deepCopy(colInfo.codes),
-            defaultCode : colInfo.defaultCode,
-            maxLength : colInfo.maxLength,
-            maxByte : colInfo.maxByte,
-            maxNumber : colInfo.maxNumber,
-            minNumber : colInfo.minNumber,
-            roundNumber : colInfo.roundNumber,
-            align : colInfo.align,
-            verticalAlign : colInfo.verticalAlign,
-            overflowWrap : colInfo.overflowWrap,
-            wordBreak : colInfo.wordBreak,
-            whiteSpace : colInfo.whiteSpace,
-            backColor : colInfo.backColor,
-            fontColor : colInfo.fontColor,
-            fontBold : colInfo.fontBold,
-            fontItalic : colInfo.fontItalic,
-            fontThruline : colInfo.fontThruline,
-            fontUnderline : colInfo.fontUnderline,
-            filter : colInfo.filter,
-        };
-        if(colInfo.rowVisible) cellData.rowVisible = colInfo.rowVisible;
+        const cellData = {} as CellData;
+        handler.setCellDataFromColInfo(cellData, colInfo);
+        cellData.value = null;
+        cellData.rowIndex = rowIndex;
+        cellData.filter = false;
+        cellData.rowVisible = true;
+
         return cellData;
     };
     handler.__getData = (cell: Cell, exceptedProperty: string[] = []): CellData => {
