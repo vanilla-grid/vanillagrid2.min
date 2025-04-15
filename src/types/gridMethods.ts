@@ -144,6 +144,8 @@ export interface GridMethods {
      * @returns `true` if the operation is successful.
      */
     reloadColFilter(colIndexOrColId: number | string): boolean;
+    /** */
+    clearFilterValue(): void;
     /**
      * Returns the number of footer rows in the grid.
      * 
