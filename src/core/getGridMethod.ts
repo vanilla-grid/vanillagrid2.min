@@ -140,6 +140,13 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
             handler.reloadColFilterValue(grid.data.id, colIndexOrColId);
             return true;
         },
+        clearFilterValue() {
+            const datas = handler.getDatasWithClearFilterValue(grid.data.id, grid.methods.getDatas());
+            handler.__loadHeader(grid.data.id);
+            grid.methods.load(datas);
+            handler.__loadFooter(grid.data.id);
+            return true;
+        },
         getFooterRowCount() {
             let count = 0;
             for(const colInfo of grid.data.colInfos) {
@@ -638,7 +645,7 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
             if (!colIndex || colIndex > grid.methods.getColCount()) colIndex = grid.methods.getColCount();
     
             const newColInfo = handler.__getDefaultColInfo(grid.data.id, colInfo, true);
-            const datas = grid.methods.getDatas();
+            let datas = grid.methods.getDatas();
             
             grid.data.colInfos.splice(colIndex, 0, newColInfo);
             grid.data.colInfos.forEach((colInfo, idx) => {
@@ -648,7 +655,7 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
                 const newCellData = handler.__getCellData(grid.data.colInfos[colIndex], r);
                 datas[r - 1].splice(colIndex, 0, newCellData);
             }
-
+            datas = handler.getDatasWithClearFilterValue(grid.data.id, datas);
             handler.__loadHeader(grid.data.id);
             grid.methods.load(datas);
             handler.__loadFooter(grid.data.id);
@@ -681,15 +688,13 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
             
             const colIndex = handler.__getColIndex(grid.data.id, colIndexOrColId, true)!;
             if (colIndex <= 2) throw new Error('The row number or status columns are immutable.');
-
-            console.log("#### 1", grid.data.colInfos[colIndex - 1]);
     
             const newColInfo = grid.data.colInfos[colIndex - 1];
-            Object.keys(newColInfo).forEach((key)=>{
-                if(['filterValue', 'filterValues', 'colIndex'].indexOf(key) === -1) {
+            Object.keys(colInfo).forEach((key) => {
+                if(Object.prototype.hasOwnProperty.call(newColInfo, key) && (colInfo as any)[key] !== undefined) {
                     (newColInfo as any)[key] = (colInfo as any)[key];
                 }
-            });
+            })
             if(!newColInfo.name) newColInfo.name = newColInfo.colId;
             if(!newColInfo.header) newColInfo.header = getHeaderString(grid.methods.getHeaderRowCount(), newColInfo.colId);
     
@@ -697,17 +702,10 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
             datas.forEach((row: CellData[]) => {
                 for(const data of row) {
                     if (data.colId === newColInfo.colId) {
-                        Object.keys(data).forEach(key => {
-                            if (['header', 'footer', 'filterValue', 'filterValues', 'colIndex'].indexOf(key) < 0) {
-                                (data as any)[key] = (newColInfo as any)[key];
-                            }
-                        });
+                        handler.setCellDataFromColInfo(data, newColInfo);
                     }
                 }
             })
-
-            console.log("#### 2", grid.data.colInfos[colIndex - 1]);
-            console.log("#### datas", datas);
     
             handler.__loadHeader(grid.data.id);
             grid.methods.load(datas);
@@ -757,8 +755,6 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
                 filterable : colInfo.filterable,
                 filterValues : deepCopy(colInfo.filterValues),
                 filterValue : deepCopy(colInfo.filterValue),
-                filter : colInfo.filter,
-                rowVisible : colInfo.rowVisible,
             };
             return info;
         },
@@ -1581,7 +1577,6 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
             handler.reloadGridForMerge(grid.data.id);
             
             grid.methods.reloadFilterValue();
-            
             grid.methods.reloadFooterValue();
             return true;
         },
