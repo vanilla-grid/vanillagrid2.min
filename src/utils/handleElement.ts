@@ -302,6 +302,15 @@ export const setHandleElement = (vg: Vanillagrid, gridList: Record<string, Grid>
             colInfo!.filterValue = selectedValue;
         }
     };
+    handler.getDatasWithClearFilterValue = (gridId: string, datas: CellData[][]) => {
+        datas.forEach((row) => {
+            row.forEach((cellData) => {
+                cellData.filter = false;
+            });
+        });
+        gridList[gridId].data.variables.filters = [];
+        return datas;
+    };
     handler.reloadColForMerge = (gridId: string, colIndex: number) => {
         const colInfo = handler.__getColInfo(gridId, colIndex);
         if(!colInfo) return;
@@ -452,12 +461,9 @@ export const setHandleElement = (vg: Vanillagrid, gridList: Record<string, Grid>
         const tempGridData = document.createElement('div') as Cell;
         tempGridData._gridId = gridId;
         tempGridData._type = 'gbd';
-    
-        Object.keys(colInfo).forEach(key => {
-            if (['header', 'footer', 'filterValue', 'filterValues', 'colIndex'].indexOf(key) < 0) {
-                (tempGridData as any)[key] = key in data ? data[key] : colInfo[key as keyof ColInfo];
-            }
-        });
+        tempGridData.rowVisible = data.rowVisible !== undefined ? data.rowVisible : true;
+        tempGridData.filter = data.filter !== undefined ? data.filter : false;
+        handler.setCellDataFromColInfo(tempGridData, colInfo);
         switch (tempGridData.colId) {
             case 'v-g-rownum':
                 tempGridData.value = rowCount;
@@ -473,4 +479,72 @@ export const setHandleElement = (vg: Vanillagrid, gridList: Record<string, Grid>
         handler.setGridDataRowCol(tempGridData, rowCount, colCount);
         return tempGridData as Cell;
     };
+    handler.setCellDataFromColInfo = (cellDataOrCell: CellData | Cell, colInfo: ColInfo) => {
+        cellDataOrCell.colId = colInfo.colId;
+        cellDataOrCell.colIndex = colInfo.colIndex;
+        cellDataOrCell.name = colInfo.name;
+        cellDataOrCell.untarget = colInfo.untarget;
+        cellDataOrCell.rowMerge = colInfo.rowMerge;
+        cellDataOrCell.colMerge = colInfo.colMerge;
+        cellDataOrCell.colVisible = colInfo.colVisible;
+        cellDataOrCell.required = colInfo.required;
+        cellDataOrCell.resizable = colInfo.resizable;
+        cellDataOrCell.sortable = colInfo.sortable;
+        cellDataOrCell.filterable = colInfo.filterable;
+        cellDataOrCell.originWidth = colInfo.originWidth;
+        cellDataOrCell.dataType = colInfo.dataType;
+        cellDataOrCell.selectSize = colInfo.selectSize;
+        cellDataOrCell.locked = colInfo.locked;
+        cellDataOrCell.lockedColor = colInfo.lockedColor;
+        cellDataOrCell.format = colInfo.format;
+        cellDataOrCell.codes = deepCopy(colInfo.codes);
+        cellDataOrCell.defaultCode = colInfo.defaultCode;
+        cellDataOrCell.maxLength = colInfo.maxLength;
+        cellDataOrCell.maxByte = colInfo.maxByte;
+        cellDataOrCell.maxNumber = colInfo.maxNumber;
+        cellDataOrCell.minNumber = colInfo.minNumber;
+        cellDataOrCell.roundNumber = colInfo.roundNumber;
+        cellDataOrCell.align = colInfo.align;
+        cellDataOrCell.verticalAlign = colInfo.verticalAlign;
+        cellDataOrCell.overflowWrap = colInfo.overflowWrap;
+        cellDataOrCell.wordBreak = colInfo.wordBreak;
+        cellDataOrCell.whiteSpace = colInfo.whiteSpace;
+        cellDataOrCell.backColor = colInfo.backColor;
+        cellDataOrCell.fontColor = colInfo.fontColor;
+        cellDataOrCell.fontBold = colInfo.fontBold;
+        cellDataOrCell.fontItalic = colInfo.fontItalic;
+        cellDataOrCell.fontThruline = colInfo.fontThruline;
+        cellDataOrCell.fontUnderline = colInfo.fontUnderline;
+    }
+    handler.getSortSpan = (gridId: string, colId: string) => {
+        let sortSpan: any;
+        if(gridList[gridId].data.variables.sortToggle[colId]) {
+            if(vg.elements.sortAscSpan && vg.elements.sortAscSpan instanceof HTMLElement && vg.elements.sortAscSpan.nodeType === 1) {
+                sortSpan = vg.elements.sortAscSpan.cloneNode(true);
+            }
+            else {
+                sortSpan = document.createElement('span');
+                sortSpan.style.fontSize = '0.5em';
+                sortSpan.style.paddingLeft = '5px';
+                sortSpan.innerText = '▲';
+            }
+        }
+        else {
+            if(vg.elements.sortDescSpan && vg.elements.sortDescSpan instanceof HTMLElement && vg.elements.sortDescSpan.nodeType === 1) {
+                sortSpan = vg.elements.sortDescSpan.cloneNode(true);
+            }
+            else {
+                sortSpan = document.createElement('span');
+                sortSpan.style.fontSize = '0.5em';
+                sortSpan.style.paddingLeft = '5px';
+                sortSpan.innerText = '▼';
+            }
+        }
+        sortSpan._gridId = gridId;
+        sortSpan.isChild = true;
+        sortSpan._type = 'sort';
+        sortSpan.classList.add(gridId + '_sortSpan');
+        sortSpan.classList.add(gridList[gridId].data.variables.sortToggle[colId] ? gridId + '_ascSpan' : gridId + '_descSpan');
+        return sortSpan
+    }
 }
