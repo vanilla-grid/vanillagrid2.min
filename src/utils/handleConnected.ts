@@ -188,7 +188,10 @@ export const setElementConnected = (gridList: Record<string, Grid>, handler: Han
                             if (targetCell.rowSpan) break;
                         }
                     }
-                    if (targetCell) targetCell.insertBefore(filterSpan, targetCell.firstChild);  
+                    if (targetCell) {
+                        targetCell.insertBefore(filterSpan, targetCell.firstChild);
+                        targetCell._filterSelector = filterSelect;
+                    }
                 }
 
                 cell.classList.add(cell._gridId + '_h-v-g-d');
