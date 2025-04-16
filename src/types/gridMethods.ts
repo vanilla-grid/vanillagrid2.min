@@ -47,15 +47,15 @@ export interface GridMethods {
     setOnClickLink(func: (row: number, colId: string, linkNode: HTMLElement) => boolean): void;
     setOnBeforeDblClickCell(func: (row: number, colId: string) => boolean): void;
     setOnAfterDblClickCell(func: (row: number, colId: string) => void): void;
-    setOnBeforeClickHeader(func: (row: number, colId: string) => boolean): void;
-    setOnAfterClickHeader(func: (row: number, colId: string) => void): void;
-    setOnBeforeDblClickHeader(func: (row: number, colId: string) => boolean): void;
-    setOnAfterDblClickHeader(func: (row: number, colId: string) => void): void;
+    setOnBeforeClickHeader(func: (headerRow: number, colId: string) => boolean): void;
+    setOnAfterClickHeader(func: (headerRow: number, colId: string) => void): void;
+    setOnBeforeDblClickHeader(func: (headerRow: number, colId: string) => boolean): void;
+    setOnAfterDblClickHeader(func: (headerRow: number, colId: string) => void): void;
     setOnBeforeEditEnter(func: (row: number, colId: string, editorNode: HTMLElement) => boolean): void;
     setOnAfterEditEnter(func: (row: number, colId: string, editorNode: HTMLElement) => void): void;
     setOnEditEnding(func: (row: number, colId: string, oldValue: any, newValue: any) => boolean): void;
-    setOnClickFilter(func: (row: number, colId: string, filterNode: HTMLElement) => boolean): void;
-    setOnChooseFilter(func: (row: number, colId: string, oldValue: any, newValue: any) => boolean): void;
+    setOnClickFilter(func: (headerRow: number, colId: string, filterNode: HTMLElement) => boolean): void;
+    setOnChooseFilter(func: (headerRow: number, colId: string, oldValue: any, newValue: any) => boolean): void;
     setOnPaste(func: (startRow: number, startColId: string, clipboardText: string) => boolean): void;
     setOnCopy(func: (startRow: number, startColId: string, endRow: number, endColId: string, copyText: string) => boolean): void;
     setOnResize(func: (colId: string) => boolean): void;
@@ -430,7 +430,7 @@ export interface GridMethods {
      * ### Example usage:
      * ```typescript
      * grid.checkRequired(function(cellData) {
-     *     alert('Please enter the information for ' + cellData.row + ' row, ' + cellData.name + ' column.')
+     *     alert('Please enter the information for ' + cellData.rowIndex + ' row, ' + cellData.name + ' column.')
      * });
      * ```
      * 
@@ -3109,7 +3109,7 @@ export interface GridMethods {
      * grid.setCellRequired(1, 'colId1', true);
      * //And, If the value of the 'colId1' column in row 1 is blank,
      * grid.checkRequired(function(cellData) {
-     *     alert('Please enter the information for ' + cellData.row + ' row, ' + cellData.name + ' column.')
+     *     alert('Please enter the information for ' + cellData.rowIndex + ' row, ' + cellData.name + ' column.')
      * });
      * // An alert called 'Please enter the information for first row, colName column.' occurred.
      * ```
@@ -3632,7 +3632,7 @@ export interface GridMethods {
      * @returns `true` if values are set successfully.
      * @throws An error if `isVisible` is not a boolean.
      */
-    setCellVisible(row: number, colIndexOrColId: number | string, isVisible: boolean): boolean;
+    //setCellVisible(row: number, colIndexOrColId: number | string, isVisible: boolean): boolean;
     /**
      * Returns the visible of the cell in the colId or colIndex column in the row-th row
      * Specifically, it returns the visible of the child node of the cell.
