@@ -3,7 +3,7 @@ import type { Grid } from "../types/grid";
 import type { ColInfo } from "../types/colInfo";
 import type { Cell } from "../types/cell";
 import type { Handler } from "../types/handler";
-import { alignUnit, enumWidthUnit, selectionPolicyUnit, verticalAlignUnit } from "../types/enum";
+import { alignUnit, basicDataType, enumWidthUnit, selectionPolicyUnit, verticalAlignUnit } from "../types/enum";
 import { setColorSet, setGridCssStyle, setInvertColor } from "../utils/setGridStyle";
 import { extractNumberAndUnit, getAttributeOnlyBoolean, getAttributeOnlyNumber, getAttributeOnlyNumberInteger, getAttributeOnlyNumberIntegerOrZero, getAttributeWithCheckRequired, getColorFromColorSet, getHeaderString, isIncludeEnum, nvl, toLowerCase } from "../utils/utils";
 import { getGridMethod } from "./getGridMethod";
@@ -289,6 +289,7 @@ const getColInfo = (vg: Vanillagrid, vanillagridBox: HTMLElement, gridInfo: Grid
         
         let dataType = toLowerCase(col.getAttribute('data-type'));
         if (!dataType) dataType = vg.attributes.defaultColInfo.dataType!;
+        if (![...Object.keys(basicDataType), ...Object.keys(vg.dataType)].includes(dataType)) throw new Error('Please insert a valid dataType.');
         colInfo.dataType = dataType;
         colInfo.untarget = nvl(getAttributeOnlyBoolean('untarget', col), gridInfo.selectionPolicy === 'none');
         colInfo.rowMerge = nvl(getAttributeOnlyBoolean('row-merge', col), vg.attributes.defaultColInfo.rowMerge);
