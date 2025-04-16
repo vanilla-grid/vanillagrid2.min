@@ -4,6 +4,7 @@ import type { ColInfo } from "../types/colInfo";
 import type { Cell, CellData, CellRecord } from "../types/cell";
 import type { Handler } from "../types/handler";
 import { deepCopy, extractNumberAndUnit, nvl, removeAllChild } from "./utils";
+import { basicDataType } from "../types/enum";
 
 export const setHandleElement = (vg: Vanillagrid, gridList: Record<string, Grid>, handler: Handler) => {
     handler.modifyColSize = (targetCell: Cell, modifySize: number) => {
@@ -462,9 +463,49 @@ export const setHandleElement = (vg: Vanillagrid, gridList: Record<string, Grid>
         const tempGridData = document.createElement('div') as Cell;
         tempGridData._gridId = gridId;
         tempGridData._type = 'gbd';
+        handler.setCellDataFromColInfo(tempGridData, colInfo);
         tempGridData.rowVisible = data.rowVisible !== undefined ? data.rowVisible : true;
         tempGridData.filter = data.filter !== undefined ? data.filter : false;
-        handler.setCellDataFromColInfo(tempGridData, colInfo);
+        
+        if(data.colId !== undefined) tempGridData.colId = data.colId;
+        if(data.colIndex !== undefined) tempGridData.colIndex = data.colIndex;
+        if(data.name !== undefined) tempGridData.name = data.name;
+        if(data.untarget !== undefined) tempGridData.untarget = data.untarget;
+        if(data.rowMerge !== undefined) tempGridData.rowMerge = data.rowMerge;
+        if(data.colMerge !== undefined) tempGridData.colMerge = data.colMerge;
+        if(data.colVisible !== undefined) tempGridData.colVisible = data.colVisible;
+        if(data.required !== undefined) tempGridData.required = data.required;
+        if(data.resizable !== undefined) tempGridData.resizable = data.resizable;
+        if(data.sortable !== undefined) tempGridData.sortable = data.sortable;
+        if(data.filterable !== undefined) tempGridData.filterable = data.filterable;
+        if(data.originWidth !== undefined) tempGridData.originWidth = data.originWidth;
+        if(data.dataType !== undefined) {
+            tempGridData.dataType = data.dataType;
+            if (![...Object.keys(basicDataType), ...Object.keys(vg.dataType)].includes(tempGridData.dataType!)) throw new Error('Please insert a valid dataType.');
+        }
+        if(data.selectSize !== undefined) tempGridData.selectSize = data.selectSize;
+        if(data.locked !== undefined) tempGridData.locked = data.locked;
+        if(data.lockedColor !== undefined) tempGridData.lockedColor = data.lockedColor;
+        if(data.format !== undefined) tempGridData.format = data.format;
+        if(data.codes !== undefined) tempGridData.codes = deepCopy(data.codes);
+        if(data.defaultCode !== undefined) tempGridData.defaultCode = data.defaultCode;
+        if(data.maxLength !== undefined) tempGridData.maxLength = data.maxLength;
+        if(data.maxByte !== undefined) tempGridData.maxByte = data.maxByte;
+        if(data.maxNumber !== undefined) tempGridData.maxNumber = data.maxNumber;
+        if(data.minNumber !== undefined) tempGridData.minNumber = data.minNumber;
+        if(data.roundNumber !== undefined) tempGridData.roundNumber = data.roundNumber;
+        if(data.align !== undefined) tempGridData.align = data.align;
+        if(data.verticalAlign !== undefined) tempGridData.verticalAlign = data.verticalAlign;
+        if(data.overflowWrap !== undefined) tempGridData.overflowWrap = data.overflowWrap;
+        if(data.wordBreak !== undefined) tempGridData.wordBreak = data.wordBreak;
+        if(data.whiteSpace !== undefined) tempGridData.whiteSpace = data.whiteSpace;
+        if(data.backColor !== undefined) tempGridData.backColor = data.backColor;
+        if(data.fontColor !== undefined) tempGridData.fontColor = data.fontColor;
+        if(data.fontBold !== undefined) tempGridData.fontBold = data.fontBold;
+        if(data.fontItalic !== undefined) tempGridData.fontItalic = data.fontItalic;
+        if(data.fontThruline !== undefined) tempGridData.fontThruline = data.fontThruline;
+        if(data.fontUnderline !== undefined) tempGridData.fontUnderline = data.fontUnderline;
+
         switch (tempGridData.colId) {
             case 'v-g-rownum':
                 tempGridData.value = rowCount;
@@ -494,6 +535,7 @@ export const setHandleElement = (vg: Vanillagrid, gridList: Record<string, Grid>
         cellDataOrCell.filterable = colInfo.filterable;
         cellDataOrCell.originWidth = colInfo.originWidth;
         cellDataOrCell.dataType = colInfo.dataType;
+        if (![...Object.keys(basicDataType), ...Object.keys(vg.dataType)].includes(cellDataOrCell.dataType!)) throw new Error('Please insert a valid dataType.');
         cellDataOrCell.selectSize = colInfo.selectSize;
         cellDataOrCell.locked = colInfo.locked;
         cellDataOrCell.lockedColor = colInfo.lockedColor;
