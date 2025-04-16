@@ -26,6 +26,59 @@ export const enum ColorSet {
     brown = "brown",
     black = "black"
 }
+export const enum DateFormat {
+    "yyyy-mm-dd" = "yyyy-mm-dd",
+    "yyyy/mm/dd" = "yyyy/mm/dd",
+    "yyyy. mm. dd" = "yyyy. mm. dd",
+    "yyyymmdd" = "yyyymmdd",
+    "mm-dd-yyyy" = "mm-dd-yyyy",
+    "mm/dd/yyyy" = "mm/dd/yyyy",
+    "mm. dd. yyyy" = "mm. dd. yyyy",
+    "mmddyyyy" = "mmddyyyy",
+    "dd-mm-yyyy" = "dd-mm-yyyy",
+    "dd/mm/yyyy" = "dd/mm/yyyy",
+    "dd. mm. yyyy" = "dd. mm. yyyy",
+    "ddmmyyyy" = "ddmmyyyy",
+}
+export const enum MonthFormat {
+    "yyyymm" = "yyyymm",
+    "yyyy-mm" = "yyyy-mm",
+    "yyyy/mm" = "yyyy/mm",
+    "yyyy. mm" = "yyyy. mm",
+    "mmyyyy" = "mmyyyy",
+    "mm-yyyy" = "mm-yyyy",
+    "mm/yyyy" = "mm/yyyy",
+    "mm. yyyy" = "mm. yyyy",
+}
+export const enum BasicDataType {
+    text = "text",
+    number = "number",
+    date = "date",
+    month = "month",
+    mask = "mask",
+    select = "select",
+    checkbox = "checkbox",
+    button = "button",
+    link = "link",
+    code = "code",
+}
+export const enum RowStatus {
+    create ='C',
+    update ='U',
+    delete ='D',
+}
+export const basicDataType = Object.freeze({
+    text : "text",
+    number : "number",
+    date : "date",
+    month : "month",
+    mask : "mask",
+    select : "select",
+    checkbox : "checkbox",
+    button : "button",
+    link : "link",
+    code : "code",
+});
 export const enumWidthUnit = Object.freeze({
     pixel: 'px',
     percent: '%',
@@ -56,4 +109,3 @@ export const selectionPolicyUnit = Object.freeze({
     range: 'range',
     none: 'none',
 });
-//!!!!!!!!!!! date, month 포맷도 enum으로??????
