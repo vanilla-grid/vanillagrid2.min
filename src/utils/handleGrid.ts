@@ -4,6 +4,7 @@ import type { ColInfo } from "../types/colInfo";
 import type { Cell, CellData } from "../types/cell";
 import type { Handler } from "../types/handler";
 import { deepCopy, getArrayElementWithBoundCheck, getHeaderString, removeAllChild, validatePositiveIntegerAndZero } from "./utils";
+import { basicDataType } from "../types/enum";
 
 export const setHandleGrid = (vg: Vanillagrid, gridList: Record<string, Grid>, handler: Handler) => {
     handler.__getDefaultColInfo = (gridId: string, newColInfo: ColInfo, isAdd = false) => {
@@ -255,7 +256,6 @@ export const setHandleGrid = (vg: Vanillagrid, gridList: Record<string, Grid>, h
         return childNode;
     };
     handler.__loadHeader = (gridId: string) => {
-        //!!!!!!!!!!! 헤더 재 로드할 때 간격 초기화 막기!!!!!!!!!
         const grid = gridList[gridId];
         handler.__setGridColSize(gridId);
         removeAllChild(grid.elements.gridHeader!);
@@ -734,7 +734,10 @@ export const setHandleGrid = (vg: Vanillagrid, gridList: Record<string, Grid>, h
         }
         const cell = handler._getCell(gridId, row, colIndex);
         if (cellData.untarget) cell!.untarget = cellData.untarget;
-        if (cellData.dataType) cell!.dataType = cellData.dataType;
+        if (cellData.dataType) {
+            if (![...Object.keys(basicDataType), ...Object.keys(vg.dataType)].includes(cellData.dataType)) throw new Error('Please insert a valid dataType.');
+            cell!.dataType = cellData.dataType;
+        }
         if (cellData.selectSize) cell!.selectSize = cellData.selectSize;
         if (cellData.locked) cell!.locked = cellData.locked;
         if (cellData.lockedColor) cell!.lockedColor = cellData.lockedColor;
