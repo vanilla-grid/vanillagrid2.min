@@ -1,35 +1,33 @@
 <template>
-  <div ref="gridWrap">
-    <button @click="setGrid1Data">getGridData 1</button>
-    <button @click="setGrid2Data">setGridData 2</button>
-    <button @click="setGrid3Data">setGridData 3</button>
-    <div data-vanillagrid data-id="grid1" height="200px">
-        <div data-col id="col1" header="header" data-type="text" width="600"></div>
+    <div ref="gridWrap">
+      <button @click="setGrid1Data">getGridData 1</button>
+      <button @click="setGrid2Data">setGridData 2</button>
+      <button @click="setGrid3Data">setGridData 3</button>
+      <div data-vanillagrid data-id="grid1" height="200px">
+          <div data-col id="col1" header="header" data-type="text" width="600"></div>
+      </div>
+      <br>
+      <div data-vanillagrid data-id="grid2" locked-color="true" height="400px" size-level="3">
+          <div data-col id="dept" header="Click the Sigma button to the left of the header;filter1(mask);dept " data-type="mask" format="AAA99" width="100"  row-merge="true"></div>
+          <div data-col id="f_nm" header=";filter2(text);first name" data-type="text" width="120" align="center" locked="true"></div>
+          <div data-col id="l_nm" header=";filter3(text);last name" data-type="text" width="120" align="center" locked="true" col-merge="true"></div>
+          <div data-col id="d_o_j" header=";filter4(month);DOJ" data-type="month" format="yyyy/mm" width="120" align="center" locked="true"></div>
+          <div data-col id="e_id" required="true" header="sort1(text);;" data-type="number" width="120" align="center" locked="true" footer="MAX;MIN;AVG;SUM" round-number="-1"></div>
+          <div data-col id="salary" required="true" header="sort2(number);;salary" data-type="number" format="$ #,###.#####" width="150" align="right" footer="$$MAX;$$MIN;$$AVG;$$SUM"></div>
+          <div data-col id="status" required="true" header="Please double click;checkbox;status" data-type="checkbox" width="80" align="center" footer="CHECK_COUNT"></div>
+      </div>
+      <br>
+      <p>test</p>
     </div>
-    <br>
-    <div data-vanillagrid data-id="grid2" locked-color="true" height="400px" size-level="3">
-        <div data-col id="dept" header="Click the Sigma button to the left of the header;filter1(mask);dept " data-type="mask" format="AAA99" width="100"  row-merge="true"></div>
-        <div data-col id="f_nm" header=";filter2(text);first name" data-type="text" width="120" align="center" locked="true"></div>
-        <div data-col id="l_nm" header=";filter3(text);last name" data-type="text" width="120" align="center" locked="true" col-merge="true"></div>
-        <div data-col id="d_o_j" header=";filter4(month);DOJ" data-type="month" format="yyyy/mm" width="120" align="center" locked="true"></div>
-        <div data-col id="e_id" required="true" header="sort1(text);;" data-type="number" width="120" align="center" locked="true" footer="MAX;MIN;AVG;SUM" round-number="-1"></div>
-        <div data-col id="salary" required="true" header="sort2(number);;salary" data-type="number" format="$ #,###.0" width="150" align="right" footer="$$MAX;$$MIN;$$AVG;$$SUM"></div>
-        <div data-col id="status" required="true" header="Please double click;checkbox;status" data-type="checkbox" width="80" align="center" footer="CHECK_COUNT"></div>
-    </div>
-    <br>
-    <p>test</p>
-  </div>
 </template>
-
+  
 <script setup lang="ts">
-import { type Vanillagrid, type GridMethods, VerticalAlign, ColorSet, SelectionPolicy } from 'vanillagrid2';
+import { type Vanillagrid, type GridMethods, VerticalAlign, ColorSet, SelectionPolicy, MonthFormat, Align, RowStatus, CellData } from 'vanillagrid2';
 import { ref } from 'vue';
 import { getCurrentInstance, onMounted, onBeforeUnmount } from 'vue';
-
 const { proxy } = getCurrentInstance()!;
 const vg: Vanillagrid = (proxy as any)!.$vg;
 const gridWrap = ref<HTMLElement | null>(null);
-
 let grid1: GridMethods, grid2: GridMethods;
 
 const data1 = [
@@ -224,76 +222,35 @@ const data2 = [
 const $ = (grid: GridMethods, key: string, ...param: any) => {
     console.log(grid.getGridName(), key, ' : ', (grid as any)[key](...param));
 }
-/**
- * 
-setGridDateFormat
-getGridDateFormat
-setGridMonthFormat
-getGridMonthFormat
-setGridAlterRow
-setGridFrozenColCount
-getGridFrozenColCount
-setGridFrozenRowCount
-getGridFrozenRowCount
-setGridSortable
-isGridSortalbe
-setGridFilterable
-isGridFilterable
-setGridAllCheckable
-isGridAllCheckable
-setGridCheckedValue
-getGridCheckedValue
-setGridUncheckedValue
-getGridUncheckedValue
- */
+/*  
+
+    setOnPaste(func: (startRow: number, startColId: string, clipboardText: string) => boolean): void;
+    setOnCopy(func: (startRow: number, startColId: string, endRow: number, endColId: string, copyText: string) => boolean): void;
+    setOnResize(func: (colId: string) => boolean): void;
+    setOnKeydownEditor(func: (event: KeyboardEvent) => boolean): void;
+    setOnInputEditor(func: (event: InputEvent) => boolean): void;
+    setOnKeydownGrid(func: (event: KeyboardEvent) => boolean): void;
+*/
+
+//dept, f_nm, l_nm, d_o_j, e_id, salary, status
 const setGrid1Data = () => {
-    $(grid2, 'addRow', 1);
+    grid2.setOnClickFilter((row: number, colId: string, filterNode: HTMLElement) => {
+        console.log('setOnClickFilter', row, colId, filterNode);
+        return true;
+    });
 };
 const setGrid2Data = () => {
-    const keyValue = {
-        dept : "AAA01",
-        f_nm : "James",
-        l_nm : "Smith",
-        d_o_j : "201603",
-        e_id : "7",
-        salary : 100000,
-        status : "Y",
-    };
-    $(grid2, 'addRow', 1, keyValue);
+    grid2.setOnChooseFilter((row: number, colId: string, oldValue: any, newValue: any) => {
+        console.log('setOnChooseFilter', row, colId, oldValue, newValue);
+        return true;
+    });
 };
 const setGrid3Data = () => {
-    const data = [
-        {
-            colId : "dept",
-            value : "AAA07" 
-        },
-        {
-            colId : "f_nm",
-            value : "Smith" 
-        },
-        {
-            colId : "l_nm",
-            value : "Smith" 
-        },
-        {
-            colId : "d_o_j",
-            value : "202503" 
-        },
-        {
-            colId : "e_id",
-            value : "99" 
-        },
-        {
-            colId : "salary",
-            value : "100" 
-        },
-        {
-            colId : "status",
-            value : "N" 
-        },
-    ];
-    $(grid2, 'addRow', 1, data);
-}
+    grid2.setOnEditEnding((row: number, colId: string, editorNode: HTMLElement) => {
+        console.log('setOnEditEnding', row, colId, editorNode);
+        return false;
+    });
+};
 
 onMounted(()=>{
     if(!gridWrap.value) return;
