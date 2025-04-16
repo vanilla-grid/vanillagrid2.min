@@ -168,7 +168,7 @@ export const setElementConnected = (gridList: Record<string, Grid>, handler: Han
                     filterSelect.addEventListener('change', function (e: any) {
                         const filterNewValue = e.target.value;
                         const gridId = e.target._gridId;
-                        if(gridList[gridId].events.onChooseFilter(e.target.parentNode.parentNode.row, e.target.parentNode.parentNode.colId, e.target.filterOldValue, filterNewValue) === false) {
+                        if(gridList[gridId].events.onChooseFilter(e.target.parentNode.parentNode.rowIndex, e.target.parentNode.parentNode.colId, e.target.filterOldValue, filterNewValue) === false) {
                             e.stopPropagation();
                             e.preventDefault();
                             return;
@@ -529,11 +529,11 @@ export const setElementConnected = (gridList: Record<string, Grid>, handler: Han
                 if (cell.wordBreak) cell.style.wordBreak = cell.wordBreak;
                 if (cell.whiteSpace) cell.style.whiteSpace = cell.whiteSpace;
                 if (cell.backColor) cell.style.backgroundColor = cell.backColor;
-                if (cell.fontColor) (cell.firstChild as any).style.colIndexor = cell.fontColor;
-                if (cell.fontBold) (cell.firstChild as any).fontWeight = 'bold';
-                if (cell.fontItalic) (cell.firstChild as any).fontStyle = 'italic';
-                if (cell.fontThruline) (cell.firstChild as any).textDecoration = 'line-through';
-                if (cell.fontUnderline) (cell.firstChild as any).textDecoration = 'underline';
+                if (cell.fontColor) (cell.firstChild as any).style.color = cell.fontColor;
+                if (cell.fontBold) (cell.firstChild as any).style.fontWeight = 'bold';
+                if (cell.fontItalic) (cell.firstChild as any).style.fontStyle = 'italic';
+                if (cell.fontThruline) (cell.firstChild as any).style.textDecoration = 'line-through';
+                if (cell.fontUnderline) (cell.firstChild as any).style.textDecoration = 'underline';
                 if (!cell.colVisible || !cell.rowVisible) {
                     cell.style.display = 'none';
                 }
