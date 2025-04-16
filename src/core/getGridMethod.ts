@@ -3,7 +3,7 @@ import type { Grid } from "../types/grid";
 import type { ColInfo } from "../types/colInfo";
 import type { CellData } from "../types/cell";
 import type { Handler } from "../types/handler";
-import { Align, alignUnit, enumWidthUnit, SelectionPolicy, selectionPolicyUnit, statusUnit, VerticalAlign, verticalAlignUnit } from "../types/enum";
+import { Align, alignUnit, basicDataType, enumWidthUnit, SelectionPolicy, selectionPolicyUnit, statusUnit, VerticalAlign, verticalAlignUnit } from "../types/enum";
 import { checkIsValueOrData, deepCopy, extractNumberAndUnit, getArrayElementWithBoundCheck, getColorFromColorSet, getHeaderString, getHexColorFromColorName, getOnlyNumberWithNaNToNull, getVerticalAlign, isIncludeEnum, removeAllChild, validateIntegerAndZero, validateNumber, validatePositiveIntegerAndZero } from "../utils/utils";
 import { setColorSet, setGridCssStyle, setInvertColor } from "../utils/setGridStyle";
 
@@ -67,16 +67,16 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
         setOnAfterDblClickCell(func: (row: number, colId: string) => void) {
             grid.events.onAfterDblClickCell = func;
         },
-        setOnBeforeClickHeader(func: (row: number, colId: string) => boolean) {
+        setOnBeforeClickHeader(func: (headerRow: number, colId: string) => boolean) {
             grid.events.onBeforeClickHeader = func;
         },
-        setOnAfterClickHeader(func: (row: number, colId: string) => void) {
+        setOnAfterClickHeader(func: (headerRow: number, colId: string) => void) {
             grid.events.onAfterClickHeader = func;
         },
-        setOnBeforeDblClickHeader(func: (row: number, colId: string) => boolean) {
+        setOnBeforeDblClickHeader(func: (headerRow: number, colId: string) => boolean) {
             grid.events.onBeforeDblClickHeader = func;
         },
-        setOnAfterDblClickHeader(func: (row: number, colId: string) => void) {
+        setOnAfterDblClickHeader(func: (headerRow: number, colId: string) => void) {
             grid.events.onAfterDblClickHeader = func;
         },
         setOnBeforeEditEnter(func: (row: number, colId: string, editorNode: HTMLElement) => boolean) {
@@ -88,10 +88,10 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
         setOnEditEnding(func: (row: number, colId: string, oldValue: any, newValue: any) => boolean) {
             grid.events.onEditEnding = func;
         },
-        setOnClickFilter(func: (row: number, colId: string, filterNode: HTMLElement) => boolean) {
+        setOnClickFilter(func: (headerRow: number, colId: string, filterNode: HTMLElement) => boolean) {
             grid.events.onClickFilter = func;
         },
-        setOnChooseFilter(func: (row: number, colId: string, oldValue: any, newValue: any) => boolean) {
+        setOnChooseFilter(func: (headerRow: number, colId: string, oldValue: any, newValue: any) => boolean) {
             grid.events.onChooseFilter = func;
         },
         setOnPaste(func: (startRow: number, startColId: string, clipboardText: string) => boolean) {
@@ -500,17 +500,15 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
             return grid.data.gridInfo.statusLockedColor!;
         },
         setGridSelectionPolicy(selectionPolicy: SelectionPolicy.range | SelectionPolicy.single | SelectionPolicy.none) {
-            //!!!!!!!!!!! selection 변경 시 현재 선택 셀 초기화
             if (!isIncludeEnum(selectionPolicyUnit, selectionPolicy)) throw new Error('Please insert the correct selectionPolicy properties. (single, range, none)');
             grid.data.gridInfo.selectionPolicy = selectionPolicy;
+            handler.resetSelection(grid.data.id);
             return true
         },
         getGridSelectionPolicy() {
             return grid.data.gridInfo.selectionPolicy!;
         },
         setGridNullValue(nullValue: any) {
-            //!!!!!!!!!!! nullValue지정 시 기존 null값도 변경 필요!!!!!!
-            // colNullValue 변경시에도
             grid.data.gridInfo.nullValue = nullValue;
             handler.__gridBodyCellsReConnected(grid.data.id);
             return true;
@@ -893,6 +891,7 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
             for(let row = 1; row <= grid.methods.getRowCount(); row++) {
                 handler._getCell(grid.data.id, row, colIndex)!.untarget = isUntarget;
             }
+            handler.resetSelection(grid.data.id);
             return true;
         },
         setColRowMerge(colIndexOrColId: number | string, isRowMerge: boolean) {
@@ -1015,7 +1014,7 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
         setColDataType(colIndexOrColId: number | string, dataType: string) {
             handler.__checkColRownumOrStatus(colIndexOrColId);
             const colIndex = handler.__getColIndex(grid.data.id, colIndexOrColId, true)!;
-            if (!Object.keys(vg.dataType).includes(dataType)) throw new Error('Please insert a valid dataType.');
+            if (![...Object.keys(basicDataType), ...Object.keys(vg.dataType)].includes(dataType)) throw new Error('Please insert a valid dataType.');
             const colInfo: ColInfo = handler.__getColInfo(grid.data.id, colIndex)!;
             colInfo.dataType = dataType;
             for(let row = 1; row <= grid.methods.getRowCount(); row++) {
@@ -1395,6 +1394,7 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
             for(let row = 1; row <= grid.methods.getRowCount(); row++) {
                 const cell = handler._getCell(grid.data.id, row, colIndex)!;
                 cell.fontThruline = isFontThruline;
+                if (cell.fontThruline) cell.fontUnderline = false;
                 handler.__gridCellReConnectedWithControlSpan(cell);
             }
             return true;
@@ -1411,6 +1411,7 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
             for(let row = 1; row <= grid.methods.getRowCount(); row++) {
                 const cell = handler._getCell(grid.data.id, row, colIndex)!;
                 cell.fontUnderline = isFontUnderline;
+                if (cell.fontUnderline) cell.fontThruline = false;
                 handler.__gridCellReConnectedWithControlSpan(cell);
             }
             return true;
@@ -1420,7 +1421,6 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
             return colInfo.fontUnderline!;
         },
         addRow (rowOrValuesOrDatas?: number | Record<string, any> | Record<string, any>[], valuesOrDatas?: Record<string, any> | Record<string, any>[]) {
-            //!!!!!!!!!!!!!!! keyValue형태로 삽입됐을 때 오류!!!!!!!!!!
             let row, addKeyValueOrDatas;
     
             if (rowOrValuesOrDatas === 0) rowOrValuesOrDatas = 1
@@ -1446,13 +1446,13 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
             for(const keyValueOrData of addKeyValueOrDatas) {
                 if (isKeyValue) {
                     const tempRow: any = [];
-                    let tempCol;
+                    let tempColData;
                     for (const key in keyValueOrData) {
-                        tempCol = {
-                            id : key,
+                        tempColData = {
+                            colId : key,
                             value : (keyValueOrData as any)[key],
                         };
-                        tempRow.push(tempCol);
+                        tempRow.push(tempColData);
                     }
                     datas.splice(row + cnt, 0, tempRow);
                 }
@@ -1562,6 +1562,7 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
                 cell.rowVisible = isVisible;
                 handler.__gridCellReConnectedWithControlSpan(cell);
             }
+            handler.reloadGridForMerge(grid.data.id);
             return true;
         },
         isRowVisible(row: number) {
@@ -1571,7 +1572,7 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
         },
         setRowDataType(row: number, dataType: string) {
             handler.__checkRowIndex(grid.data.id, row);
-            if (!Object.keys(vg.dataType).includes(dataType)) throw new Error('Please insert a valid dataType.');
+            if (![...Object.keys(basicDataType), ...Object.keys(vg.dataType)].includes(dataType)) throw new Error('Please insert a valid dataType.');
             for(const cell of grid.elements.gridBody._gridBodyCells[row - 1]) {
                 if (cell.colId === 'v-g-rownum' || cell.colId === 'v-g-status') continue;
                 cell.dataType = dataType;
@@ -1591,6 +1592,7 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
                 cell.locked = isRowLocked;
                 handler.__gridCellReConnectedWithControlSpan(cell);
             }
+            handler.reloadGridForMerge(grid.data.id);
             return true;
         },
         setRowLockedColor(row: number, isRowLockedColor: boolean) {
@@ -1601,6 +1603,7 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
                 cell.lockedColor = isRowLockedColor;
                 handler.__gridCellReConnectedWithControlSpan(cell);
             }
+            handler.reloadGridForMerge(grid.data.id);
             return true;
         },
         setRowAlign(row: number, align: Align.left | Align.center | Align.right) {
@@ -1611,6 +1614,7 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
                 cell.align = align;
                 handler.__gridCellReConnectedWithControlSpan(cell);
             }
+            handler.reloadGridForMerge(grid.data.id);
             return true;
         },
         setRowVerticalAlign(row: number, verticalAlign: VerticalAlign.top | VerticalAlign.center | VerticalAlign.bottom) {
@@ -1621,6 +1625,7 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
                 cell.verticalAlign = verticalAlign;
                 handler.__gridCellReConnectedWithControlSpan(cell);
             }
+            handler.reloadGridForMerge(grid.data.id);
             return true;
         },
         setRowBackColor(row: number, hexadecimalBackColor: string) {
@@ -1631,6 +1636,7 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
                 cell.backColor = hexadecimalBackColor;
                 handler.__gridCellReConnectedWithControlSpan(cell);
             }
+            handler.reloadGridForMerge(grid.data.id);
             return true;
         },
         setRowFontColor(row: number, hexadecimalFontColor: string) {
@@ -1641,6 +1647,7 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
                 cell.fontColor = hexadecimalFontColor;
                 handler.__gridCellReConnectedWithControlSpan(cell);
             }
+            handler.reloadGridForMerge(grid.data.id);
             return true;
         },
         setRowFontBold(row: number, isRowFontBold: boolean) {
@@ -1651,6 +1658,7 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
                 cell.fontBold = isRowFontBold;
                 handler.__gridCellReConnectedWithControlSpan(cell);
             }
+            handler.reloadGridForMerge(grid.data.id);
             return true;
         },
         setRowFontItalic(row: number, isRowFontItalic: boolean) {
@@ -1661,6 +1669,7 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
                 cell.fontItalic = isRowFontItalic;
                 handler.__gridCellReConnectedWithControlSpan(cell);
             }
+            handler.reloadGridForMerge(grid.data.id);
             return true;
         },
         setRowFontThruline(row: number, isRowFontThruline: boolean) {
@@ -1669,8 +1678,10 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
             for(const cell of grid.elements.gridBody._gridBodyCells[row - 1]) {
                 if (cell.colId === 'v-g-rownum' || cell.colId === 'v-g-status') continue;
                 cell.fontThruline = isRowFontThruline;
+                if (cell.fontThruline) cell.fontUnderline = false;
                 handler.__gridCellReConnectedWithControlSpan(cell);
             }
+            handler.reloadGridForMerge(grid.data.id);
             return true;
         },
         setRowFontUnderline(row: number, isRowFontUnderline: boolean) {
@@ -1679,8 +1690,10 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
             for(const cell of grid.elements.gridBody._gridBodyCells[row - 1]) {
                 if (cell.colId === 'v-g-rownum' || cell.colId === 'v-g-status') continue;
                 cell.fontUnderline = isRowFontUnderline;
+                if (cell.fontUnderline) cell.fontThruline = false;
                 handler.__gridCellReConnectedWithControlSpan(cell);
             }
+            handler.reloadGridForMerge(grid.data.id);
             return true;
         },
         searchRowsWithMatched(matches: Record<string, any>) {
@@ -1808,7 +1821,7 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
             const colIndex = handler.__getColIndex(grid.data.id, colIndexOrColId, true)!;
             handler.__checkColIndex(grid.data.id, colIndex);
             handler.__checkColRownumOrStatus(colIndex);
-            if (!Object.keys(vg.dataType).includes(dataType)) throw new Error('Please insert a valid dataType.');
+            if (![...Object.keys(basicDataType), ...Object.keys(vg.dataType)].includes(dataType)) throw new Error('Please insert a valid dataType.');
             const cell = handler._getCell(grid.data.id, row, colIndex)!;
             cell.dataType = dataType;
             handler.reConnectedCallbackElement(cell);
@@ -2101,6 +2114,7 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
             handler.__checkColIndex(grid.data.id, colIndex);
             return handler._getCell(grid.data.id, row, colIndex)!.whiteSpace;
         },
+        /*
         setCellVisible(row: number, colIndexOrColId: number | string, isVisible: boolean) {
             handler.__checkRowIndex(grid.data.id, row);
             const colIndex = handler.__getColIndex(grid.data.id, colIndexOrColId, true)!;
@@ -2117,13 +2131,13 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
             handler.__gridCellReConnectedWithControlSpan(cell);
             return true;
         },
+        */
         isCellVisible(row: number, colIndexOrColId: number | string) {
             handler.__checkRowIndex(grid.data.id, row);
             const colIndex = handler.__getColIndex(grid.data.id, colIndexOrColId, true)!;
             handler.__checkColIndex(grid.data.id, colIndex);
             const cell = handler._getCell(grid.data.id, row, colIndex)!;
-            if(cell.firstChild) (cell.firstChild as any).style.display !== 'none';
-            return false;
+            return cell.style.display !== 'none';
         },
         setCellBackColor(row: number, colIndexOrColId: number | string, hexadecimalBackColor: string) {
             handler.__checkRowIndex(grid.data.id, row);
@@ -2196,6 +2210,7 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
             if (typeof isFontThruline !== 'boolean') throw new Error('Please insert a boolean type.');
             const cell = handler._getCell(grid.data.id, row, colIndex)!;
             cell.fontThruline = isFontThruline;
+            if (cell.fontThruline) cell.fontUnderline = false;
             handler.__gridCellReConnectedWithControlSpan(cell);
             return true;
         },
@@ -2212,6 +2227,7 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
             if (typeof isFontUnderline !== 'boolean') throw new Error('Please insert a boolean type.');
             const cell = handler._getCell(grid.data.id, row, colIndex)!;
             cell.fontUnderline = isFontUnderline;
+            if (cell.fontUnderline) cell.fontThruline = false;
             handler.__gridCellReConnectedWithControlSpan(cell);
             return true;
         },
