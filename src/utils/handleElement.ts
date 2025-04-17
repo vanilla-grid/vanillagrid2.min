@@ -100,7 +100,7 @@ export const setHandleElement = (vg: Vanillagrid, gridList: Record<string, Grid>
             if(cell.dataType === key) {
                 if(vg.dataType[key].getEditedValue) {
                     if(typeof vg.dataType[key].getEditedValue !== 'function') throw new Error('getEditedValue must be a function.');
-                    vg._status.editNewValue = vg.dataType[key].getEditedValue(vg._status.activeGridEditor!, handler.__getData(cell));
+                    vg._status.editNewValue = vg.dataType[key].getEditedValue(vg._status.activeGridEditor!, cell._gridId, handler.__getData(cell));
                 }
                 else {
                     vg._status.editNewValue = vg._status.editOldValue;
@@ -174,7 +174,7 @@ export const setHandleElement = (vg: Vanillagrid, gridList: Record<string, Grid>
                     if(aDataType === key) {
                         if(vg.dataType[key].getSortValue) {
                             if(typeof vg.dataType[key].getSortValue !== 'function') throw new Error('getSortValue must be a function.');
-                            aValue = vg.dataType[key].getSortValue(aValue);
+                            aValue = vg.dataType[key].getSortValue(gridId, aValue);
                         }
                         else {
                             aValue = aItem!.text
@@ -183,7 +183,7 @@ export const setHandleElement = (vg: Vanillagrid, gridList: Record<string, Grid>
                     if(bDataType === key) {
                         if(vg.dataType[key].getSortValue) {
                             if(typeof vg.dataType[key].getSortValue !== 'function') throw new Error('getSortValue must be a function.');
-                            bValue = vg.dataType[key].getSortValue(bValue);
+                            bValue = vg.dataType[key].getSortValue(gridId, bValue);
                         }
                         else {
                             bValue = bItem!.text
@@ -253,7 +253,7 @@ export const setHandleElement = (vg: Vanillagrid, gridList: Record<string, Grid>
                 if(tempCell.dataType === key) {
                     if(vg.dataType[key].getFilterValue) {
                         if(typeof vg.dataType[key].getFilterValue !== 'function') throw new Error('getFilterValue must be a function.');
-                        filterValue = vg.dataType[key].getFilterValue(tempCell.value);
+                        filterValue = vg.dataType[key].getFilterValue(gridId, tempCell.value);
                     }
                 }
             });
