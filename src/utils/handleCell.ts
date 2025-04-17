@@ -206,7 +206,7 @@ export const setHandleCell = (vg: Vanillagrid, gridList: Record<string, Grid>, h
                             const call_modify = () => {
                                 handler.modifyCell(vg);
                             }
-                            gridEditor = vg.dataType[key].getEditor(cell, handler.__getData(cell), () => {call_modify()}, () => {call_endEdit()});
+                            gridEditor = vg.dataType[key].getEditor(cell, cell._gridId, handler.__getData(cell), () => {call_modify()}, () => {call_endEdit()});
                             if(gridEditor) {
                                 if(!(gridEditor instanceof HTMLElement) || gridEditor.nodeType !== 1)  throw new Error('getEditor must return an html element.');
                                 (gridEditor as any)._gridId = cell._gridId;
@@ -298,7 +298,7 @@ export const setHandleCell = (vg: Vanillagrid, gridList: Record<string, Grid>, h
                         if(cell.dataType === key) {
                             if(vg.dataType[key].getValue) {
                                 if(typeof vg.dataType[key].getValue !== 'function') throw new Error('getValue must be a function.');
-                                value = vg.dataType[key].getValue(value);
+                                value = vg.dataType[key].getValue(cell._gridId, value);
                             }
                         }
                     });
@@ -342,7 +342,7 @@ export const setHandleCell = (vg: Vanillagrid, gridList: Record<string, Grid>, h
                         if(cell.dataType === key) {
                             if(vg.dataType[key].getText) {
                                 if(typeof vg.dataType[key].getText !== 'function') throw new Error('getText must be a function.');
-                                cellText = vg.dataType[key].getText(cellText);
+                                cellText = vg.dataType[key].getText(cell._gridId, cellText);
                             }
                         }
                     });
