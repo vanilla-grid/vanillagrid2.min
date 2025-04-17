@@ -231,7 +231,7 @@ export const setHandleGrid = (vg: Vanillagrid, gridList: Record<string, Grid>, h
                         if(key === cell.dataType) {
                             if(vg.dataType[key].getChildNode) {
                                 if(typeof vg.dataType[key].getChildNode !== 'function') throw new Error('getChildNode must be a function.');
-                                childNode = vg.dataType[key].getChildNode(handler.__getData(cell));
+                                childNode = vg.dataType[key].getChildNode(gridId, handler.__getData(cell));
                                 if(childNode) {
                                     if(!(childNode instanceof HTMLElement) || childNode.nodeType !== 1)  throw new Error('getChildNode must return an html element.');
                                 }
@@ -604,7 +604,7 @@ export const setHandleGrid = (vg: Vanillagrid, gridList: Record<string, Grid>, h
                                 if(cell.dataType === key) {
                                     if(vg.dataType[key].getFilterValue) {
                                         if(typeof vg.dataType[key].getFilterValue !== 'function') throw new Error('getFilterValue must be a function.');
-                                        cellValue = vg.dataType[key].getFilterValue(cell.value);
+                                        cellValue = vg.dataType[key].getFilterValue(gridId, cell.value);
                                     }
                                 }
                             });
