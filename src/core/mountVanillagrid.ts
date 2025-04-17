@@ -427,19 +427,32 @@ export const mountVanillagrid = (vg: Vanillagrid, gridList: Record<string, Grid>
                 },
             },
             events: getEvent(),
+            hendler: {
+                gridHeader_dblclick(e: any) {},
+                gridHeader_click(e: any) {},
+                gridBody_mousemove(e: any) {},
+                gridBody_mouseleave(e: any) {},
+                gridBody_mouseenter(e: any) {},
+                gridBody_dblclick(e: any) {},
+                gridElement_click(e: any) {},
+                gridElement_mousedown(e: any) {},
+                gridElement_mousemove(e: any) {},
+                gridElement_mouseleave(e: any) {},
+            },
             methods: {} as GridMethods,
             elements: {
                 grid: gridElement,
                 gridHeader: gridHeader,
                 gridBody: gridBody,
                 gridFooter: gridFooter,
-            }
+            },
+            _isMounted: false
         };
         gridList[gId] = grid;
         grid.methods = getGridMethod(vg, grid, handler);
         setGridCssStyle(grid);
-                
-        gridHeader.addEventListener('dblclick', function (e: any) {
+
+        grid.hendler.gridHeader_dblclick = (e: any) => {
             if (vg._status.onHeaderDragging) return;
             let headerCell: Cell;
             if (e.target._type === 'ghd') {
@@ -467,8 +480,10 @@ export const mountVanillagrid = (vg: Vanillagrid, gridList: Record<string, Grid>
             
             grid.methods.sort(headerCell.colId, !grid.data.variables.sortToggle[headerCell.colId]);
             grid.events.onAfterDblClickHeader(headerCell.rowIndex, headerCell.colId);
-        });
-        gridHeader.addEventListener('click', function (e: any) {
+        }
+        gridHeader.addEventListener('dblclick', grid.hendler.gridHeader_dblclick);
+
+        grid.hendler.gridHeader_click = (e: any) => {
             let headerCell: Cell;
             if (e.target._type === 'ghd') {
                 headerCell = e.target;
@@ -498,14 +513,18 @@ export const mountVanillagrid = (vg: Vanillagrid, gridList: Record<string, Grid>
                     filterSelect.style.display = 'none';
                 }
             }
-        });
-        gridBody.addEventListener('mousemove', function (e: any) {
+        };
+        gridHeader.addEventListener('click', grid.hendler.gridHeader_click);
+        
+        grid.hendler.gridBody_mousemove = (e: any) => {
             if (vg._status.isDragging) {
                 vg._status.mouseX = e.clientX;
                 vg._status.mouseY = e.clientY;
             }
-        });
-        gridBody.addEventListener('mouseleave',function (e: any) {
+        };
+        gridBody.addEventListener('mousemove', grid.hendler.gridBody_mousemove);
+        
+        grid.hendler.gridBody_mouseleave = (e: any) => {
             if (vg._status.isDragging) {
                 const mouseX = e.clientX;
                 const mouseY = e.clientY;
@@ -524,13 +543,17 @@ export const mountVanillagrid = (vg: Vanillagrid, gridList: Record<string, Grid>
                 }
                 handler.startScrolling(grid.data.id, direction);
             }
-        });
-        gridBody.addEventListener('mouseenter', function (e: any) {
+        };
+        gridBody.addEventListener('mouseleave', grid.hendler.gridBody_mouseleave);
+        
+        grid.hendler.gridBody_mouseenter = (e: any) => {
             if (vg._status.scrollInterval) {
                 handler.stopScrolling(vg);
             }
-        });
-        gridBody.addEventListener('dblclick', function (e: any) {
+        };
+        gridBody.addEventListener('mouseenter', grid.hendler.gridBody_mouseenter);
+        
+        grid.hendler.gridBody_dblclick = (e: any) => {
             let cell: Cell;
             if (e.target._type === 'gbdv') {
                 cell = e.target.parentNode;
@@ -543,8 +566,10 @@ export const mountVanillagrid = (vg: Vanillagrid, gridList: Record<string, Grid>
             if (['select','checkbox','button','link'].indexOf(cell.dataType!) >= 0) return;
             handler.createGridEditor(cell);
             grid.events.onAfterDblClickCell(cell.rowIndex, cell.colId);
-        });
-        gridElement.addEventListener('click', function (e: any) {
+        };
+        gridBody.addEventListener('dblclick', grid.hendler.gridBody_dblclick);
+        
+        grid.hendler.gridElement_click = (e: any) => {
             if (!e.target._type) return;
             let cell: Cell
             if (e.target._type === 'gbdv') {
@@ -596,15 +621,17 @@ export const mountVanillagrid = (vg: Vanillagrid, gridList: Record<string, Grid>
                 if(cell.dataType === key) {
                     if(vg.dataType[key].onClick) {
                         if(typeof vg.dataType[key].onClick !== 'function') throw new Error('onClick must be a function.');
-                        if((vg.dataType as any)[key].onClick(e, handler.__getData(cell)) === false) {
+                        if((vg.dataType as any)[key].onClick(e, cell._gridId, handler.__getData(cell)) === false) {
                             return;
                         }
                     }
                 }
             });
             grid.events.onAfterClickCell(cell.rowIndex, cell.colId);
-        })
-        gridElement.addEventListener('mousedown', function (e: any) {
+        };
+        gridElement.addEventListener('click', grid.hendler.gridElement_click);
+        
+        grid.hendler.gridElement_mousedown = (e: any) => {
             if (!e.target._type) return;
             let cell: Cell;
             if (e.target._type === 'gbdv') {
@@ -639,7 +666,7 @@ export const mountVanillagrid = (vg: Vanillagrid, gridList: Record<string, Grid>
                 if(cell.dataType === key) {
                     if(vg.dataType[key].onMousedown) {
                         if(typeof vg.dataType[key].onMousedown !== 'function') throw new Error('onMousedown must be a function.');
-                        if((vg.dataType as any)[key].onMousedown(e, handler.__getData(cell)) === false) {
+                        if((vg.dataType as any)[key].onMousedown(e, cell._gridId, handler.__getData(cell)) === false) {
                             return;
                         }
                     }
@@ -654,8 +681,10 @@ export const mountVanillagrid = (vg: Vanillagrid, gridList: Record<string, Grid>
             else {
                 handler.selectCell(cell);
             }
-        });
-        gridElement.addEventListener('mousemove', function (e: any) {
+        };
+        gridElement.addEventListener('mousedown', grid.hendler.gridElement_mousedown);
+        
+        grid.hendler.gridElement_mousemove = (e: any) => {
             let cell;
             if (e.target._type === 'gbdv') {
                 cell = e.target.parentNode;
@@ -673,15 +702,18 @@ export const mountVanillagrid = (vg: Vanillagrid, gridList: Record<string, Grid>
                 handler. unselectCells(grid.data.id);
                 handler.selectCells(grid.data.variables.targetCell, cell);
             }
-        });
-        gridElement.addEventListener('mouseleave', function (e: any) {
+        };
+        gridElement.addEventListener('mousemove', grid.hendler.gridElement_mousemove);
+        
+        grid.hendler.gridElement_mouseleave = (e: any) => {
             if (grid.data.gridInfo.selectionPolicy !== 'range') return;
             vg._status.mouseoverCell = null;
 
             if (vg._status.isDragging) {
                 vg._status.isDragging = false;
             }
-        });
+        };
+        gridElement.addEventListener('mouseleave', grid.hendler.gridElement_mouseleave);
 
         gridElement.append(gridHeader);
         gridElement.append(gridBody);
@@ -694,5 +726,7 @@ export const mountVanillagrid = (vg: Vanillagrid, gridList: Record<string, Grid>
                
         handler.__loadHeader(grid.data.id);
         handler.__loadFooter(grid.data.id);
+
+        grid._isMounted = true;
     }
-}
+};
