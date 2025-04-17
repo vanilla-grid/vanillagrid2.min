@@ -1,18 +1,30 @@
+/**
+ * Enum for horizontal alignment
+ */
 export const enum Align {
     left = "left",
     center = "center",
     right = "right"
 }
+/**
+ * Enum for vertical alignment
+ */
 export const enum VerticalAlign {
     top = "top",
     center = "center",
     bottom = "bottom"
 }
+/**
+ * Enum property values ​​for grid policy for cell selection
+ */
 export const enum SelectionPolicy {
     single = "single",
     range = "range",
     none = "none"
 }
+/**
+ * Attribute of ColorSet
+ */
 export const enum ColorSet {
     skyblue = "skyblue",
     blue = "blue",
@@ -26,6 +38,9 @@ export const enum ColorSet {
     brown = "brown",
     black = "black"
 }
+/**
+ * Enum for date format
+ */
 export const enum DateFormat {
     "yyyy-mm-dd" = "yyyy-mm-dd",
     "yyyy/mm/dd" = "yyyy/mm/dd",
@@ -40,6 +55,9 @@ export const enum DateFormat {
     "dd. mm. yyyy" = "dd. mm. yyyy",
     "ddmmyyyy" = "ddmmyyyy",
 }
+/**
+ * Enum for month format
+ */
 export const enum MonthFormat {
     "yyyymm" = "yyyymm",
     "yyyy-mm" = "yyyy-mm",
@@ -50,6 +68,9 @@ export const enum MonthFormat {
     "mm/yyyy" = "mm/yyyy",
     "mm. yyyy" = "mm. yyyy",
 }
+/**
+ * enum for default data types
+ */
 export const enum BasicDataType {
     text = "text",
     number = "number",
@@ -62,6 +83,9 @@ export const enum BasicDataType {
     link = "link",
     code = "code",
 }
+/**
+ * Enum for row creation, deletion, and modification status
+ */
 export const enum RowStatus {
     create ='C',
     update ='U',
