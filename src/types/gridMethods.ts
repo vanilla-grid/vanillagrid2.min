@@ -8,7 +8,7 @@ import { Align, ColorSet, SelectionPolicy, VerticalAlign } from "./enum";
  * 
  * - This interface includes over 200 methods for handling grid structure, data,
  *   filtering, sorting, appearance, and user interactions.
- * - A `GridMethods` instance can be retrieved using `vg.get(gridId)`.
+ * - A `GridMethods` instance can be retrieved using `vg.getGrid({gridId})`.
  * - It allows users to dynamically modify grid properties, update cell values,
  *   and customize the grid's behavior through predefined methods.
  * 
@@ -21,46 +21,296 @@ import { Align, ColorSet, SelectionPolicy, VerticalAlign } from "./enum";
  * 
  * ### Example usage:
  * ```typescript
- * const grid = vg.get('gridId');
+ * const grid = vg.getGrid('gridId');
  * grid.setHeaderText('col1', 'New Header');
  * grid.setCellValue(1, 'col1', 'Updated Value');
  * ```
  */
 export interface GridMethods {
+    /**
+     * Retrieves the global default settings (`DefaultGridInfo`) for grid instances.
+     *
+     * These defaults control grid behaviors like selection, sorting, filtering, and styling.
+     *
+     * @returns The default grid configuration.
+     */
     getDefualtGridInfo(): DefaultGridInfo;
+    /**
+     * Retrieves the global default CSS configuration (`DefaultGridCssInfo`) for grid instances.
+     *
+     * These defaults control the visual style and layout of grids, including dimensions, fonts, colors, and spacing.
+     *
+     * @returns The default CSS settings for grids.
+     */
     getDefualtGridCssInfo(): DefaultGridCssInfo;
+    /**
+     * Retrieves the global default configuration (`DefaultColInfo`) for grid columns.
+     *
+     * These defaults specify properties like visibility, sorting, filtering, data types, and styling for columns.
+     *
+     * @returns The default column configuration.
+     */
     getDefualtColInfo(): DefaultColInfo;
     
+    /**
+     * Sets the event handler triggered when a single cell becomes active.
+     *
+     * - Called when a cell is selected or focused.
+     * - If the callback returns `false`, the default activation behavior is canceled.
+     *
+     * @param func - A function receiving the activated cell's row number and column ID.
+     */
     setOnActiveCell(func: (row: number, colId: string) => boolean): void;
+    /**
+     * Sets the event handler triggered when a range of cells becomes active.
+     *
+     * - Called when multiple cells are selected as a range.
+     * - If the callback returns `false`, the default range selection behavior is canceled.
+     *
+     * @param func - A function receiving the start and end positions of the activated range (row numbers and column IDs).
+     */
     setOnActiveCells(func: (startRow: number, startColId: string, endRow: number, endColId: string) => boolean): void;
+    /**
+     * Sets the event handler triggered when a row becomes active.
+     *
+     * - Called when a single row is selected or focused.
+     * - If the callback returns `false`, the default row activation behavior is canceled.
+     *
+     * @param func - A function receiving the activated row number.
+     */
     setOnActiveRow(func: (row: number) => boolean): void;
+    /**
+     * Sets the event handler triggered when a range of rows becomes active.
+     *
+     * - Called when multiple rows are selected as a range.
+     * - If the callback returns `false`, the default range activation behavior is canceled.
+     *
+     * @param func - A function receiving the start and end row numbers of the activated range.
+     */
     setOnActiveRows(func: (startRow: number, endRow: number) => boolean): void;
+    /**
+     * Sets the event handler triggered when a column becomes active.
+     *
+     * - Called when a single column is selected or focused.
+     * - If the callback returns `false`, the default column activation behavior is canceled.
+     *
+     * @param func - A function receiving the activated column ID.
+     */
     setOnActiveCol(func: (colId: string) => boolean): void;
+    /**
+     * Sets the event handler triggered when a range of columns becomes active.
+     *
+     * - Called when multiple columns are selected as a range.
+     * - If the callback returns `false`, the default range activation behavior is canceled.
+     *
+     * @param func - A function receiving the start and end column IDs of the activated range.
+     */
     setOnActiveCols(func: (startColId: string, endColId: string) => boolean): void;
+    /**
+     * Sets the event handler triggered before a cell value changes.
+     *
+     * - Called right before the cell value is updated.
+     * - If the callback returns `false`, the value change is canceled.
+     *
+     * @param func - A function receiving the row number, column ID, old value, and new value.
+     */
     setOnBeforeChange(func: (row: number, colId: string, oldValue: any, newValue: any) => boolean): void;
+    /**
+     * Sets the event handler triggered after a cell value changes.
+     *
+     * - Called immediately after the cell value has been updated.
+     *
+     * @param func - A function receiving the row number, column ID, old value, and new value.
+     */
     setOnAfterChange(func: (row: number, colId: string, oldValue: any, newValue: any) => void): void;
+    /**
+     * Sets the event handler triggered before a cell is clicked.
+     *
+     * - Called when a cell is about to be clicked.
+     * - If the callback returns `false`, the default click behavior is canceled.
+     *
+     * @param func - A function receiving the row number and column ID of the clicked cell.
+     */
     setOnBeforeClickCell(func: (row: number, colId: string) => boolean): void;
+    /**
+     * Sets the event handler triggered after a cell is clicked.
+     *
+     * - Called immediately after a cell click event is completed.
+     *
+     * @param func - A function receiving the row number and column ID of the clicked cell.
+     */
     setOnAfterClickCell(func: (row: number, colId: string) => void): void;
+    /**
+     * Sets the event handler triggered when a select element inside a cell is clicked.
+     *
+     * - If the callback returns `false`, the default select click behavior is canceled.
+     *
+     * @param func - A function receiving the row number, column ID, and the select HTML element.
+     */
     setOnClickSelect(func: (row: number, colId: string, selectNode: HTMLElement) => boolean): void;
+
+    /**
+     * Sets the event handler triggered when a checkbox inside a cell is clicked.
+     *
+     * - If the callback returns `false`, the default checkbox click behavior is canceled.
+     *
+     * @param func - A function receiving the row number, column ID, and the checkbox HTML element.
+     */
     setOnClickCheckbox(func: (row: number, colId: string, checkboxNode: HTMLElement) => boolean): void;
+
+    /**
+     * Sets the event handler triggered when a button inside a cell is clicked.
+     *
+     * - If the callback returns `false`, the default button click behavior is canceled.
+     *
+     * @param func - A function receiving the row number, column ID, and the button HTML element.
+     */
     setOnClickButton(func: (row: number, colId: string, buttonNude: HTMLElement) => boolean): void;
+
+    /**
+     * Sets the event handler triggered when a link inside a cell is clicked.
+     *
+     * - If the callback returns `false`, the default link click behavior is canceled.
+     *
+     * @param func - A function receiving the row number, column ID, and the link HTML element.
+     */
     setOnClickLink(func: (row: number, colId: string, linkNode: HTMLElement) => boolean): void;
+    /**
+     * Sets the event handler triggered before a cell is double-clicked.
+     *
+     * - If the callback returns `false`, the default double-click behavior is canceled.
+     *
+     * @param func - A function receiving the row number and column ID of the double-clicked cell.
+     */
     setOnBeforeDblClickCell(func: (row: number, colId: string) => boolean): void;
+    /**
+     * Sets the event handler triggered after a cell is double-clicked.
+     *
+     * - Called immediately after the double-click action on a cell is completed.
+     *
+     * @param func - A function receiving the row number and column ID of the double-clicked cell.
+     */
     setOnAfterDblClickCell(func: (row: number, colId: string) => void): void;
+    /**
+     * Sets the event handler triggered before a header cell is clicked.
+     *
+     * - If the callback returns `false`, the default header click behavior is canceled.
+     *
+     * @param func - A function receiving the header row number and column ID.
+     */
     setOnBeforeClickHeader(func: (headerRow: number, colId: string) => boolean): void;
+    /**
+     * Sets the event handler triggered after a header cell is clicked.
+     *
+     * - Called immediately after the header click action is completed.
+     *
+     * @param func - A function receiving the header row number and column ID.
+     */
     setOnAfterClickHeader(func: (headerRow: number, colId: string) => void): void;
+    /**
+     * Sets the event handler triggered before a header cell is double-clicked.
+     *
+     * - If the callback returns `false`, the default header double-click behavior is canceled.
+     *
+     * @param func - A function receiving the header row number and column ID.
+     */
     setOnBeforeDblClickHeader(func: (headerRow: number, colId: string) => boolean): void;
+    /**
+     * Sets the event handler triggered after a header cell is double-clicked.
+     *
+     * - Called immediately after the header double-click action is completed.
+     *
+     * @param func - A function receiving the header row number and column ID.
+     */
     setOnAfterDblClickHeader(func: (headerRow: number, colId: string) => void): void;
+    /**
+     * Sets the event handler triggered before entering edit mode for a cell.
+     *
+     * - If the callback returns `false`, the editor will not open.
+     *
+     * @param func - A function receiving the row number, column ID, and editor HTML element.
+     */
     setOnBeforeEditEnter(func: (row: number, colId: string, editorNode: HTMLElement) => boolean): void;
+    /**
+     * Sets the event handler triggered after entering edit mode for a cell.
+     *
+     * - Called immediately after the editor is created and displayed.
+     *
+     * @param func - A function receiving the row number, column ID, and editor HTML element.
+     */
     setOnAfterEditEnter(func: (row: number, colId: string, editorNode: HTMLElement) => void): void;
+    /**
+     * Sets the event handler triggered when editing of a cell is ending.
+     *
+     * - If the callback returns `false`, the value update will be canceled.
+     *
+     * @param func - A function receiving the row number, column ID, old value, and new value.
+     */
     setOnEditEnding(func: (row: number, colId: string, oldValue: any, newValue: any) => boolean): void;
+    /**
+     * Sets the event handler triggered when the filter button in a header cell is clicked.
+     *
+     * - If the callback returns `false`, the default filter UI toggle behavior is canceled.
+     *
+     * @param func - A function receiving the header row number, column ID, and the filter HTML element.
+     */
     setOnClickFilter(func: (headerRow: number, colId: string, filterNode: HTMLElement) => boolean): void;
+    /**
+     * Sets the event handler triggered when a filter option is selected.
+     *
+     * - If the callback returns `false`, the default filter application is canceled.
+     *
+     * @param func - A function receiving the header row number, column ID, old filter value, and new filter value.
+     */
     setOnChooseFilter(func: (headerRow: number, colId: string, oldValue: any, newValue: any) => boolean): void;
+    /**
+     * Sets the event handler triggered when pasting data into the grid.
+     *
+     * - If the callback returns `false`, the default paste behavior is canceled.
+     *
+     * @param func - A function receiving the start row number, start column ID, and clipboard text.
+     */
     setOnPaste(func: (startRow: number, startColId: string, clipboardText: string) => boolean): void;
+    /**
+     * Sets the event handler triggered when copying data from the grid.
+     *
+     * - If the callback returns `false`, the default copy behavior is canceled.
+     *
+     * @param func - A function receiving the start row, start column ID, end row, end column ID, and copied text.
+     */
     setOnCopy(func: (startRow: number, startColId: string, endRow: number, endColId: string, copyText: string) => boolean): void;
+    /**
+     * Sets the event handler triggered when resizing a column in the grid.
+     *
+     * - Called when a column's width is adjusted.
+     * - If the callback returns `false`, the default resize behavior is canceled.
+     *
+     * @param func - A function receiving the column ID of the resized column.
+     */
     setOnResize(func: (colId: string) => boolean): void;
+    /**
+     * Sets the event handler triggered when a key is pressed inside a cell editor.
+     *
+     * - If the callback returns `false`, the default keydown behavior in the editor is canceled.
+     *
+     * @param func - A function receiving the keyboard event.
+     */
     setOnKeydownEditor(func: (event: KeyboardEvent) => boolean): void;
+    /**
+     * Sets the event handler triggered when text input occurs inside a cell editor.
+     *
+     * - If the callback returns `false`, the default input behavior in the editor is canceled.
+     *
+     * @param func - A function receiving the input event.
+     */
     setOnInputEditor(func: (event: InputEvent) => boolean): void;
+    /**
+     * Sets the event handler triggered when a key is pressed on the grid.
+     *
+     * - If the callback returns `false`, the default grid keydown behavior is canceled.
+     *
+     * @param func - A function receiving the keyboard event.
+     */
     setOnKeydownGrid(func: (event: KeyboardEvent) => boolean): void;
     /**
      * Returns the number of header rows in the grid.
@@ -144,7 +394,9 @@ export interface GridMethods {
      * @returns `true` if the operation is successful.
      */
     reloadColFilter(colIndexOrColId: number | string): boolean;
-    /** */
+    /**
+     * Reset the filter.
+     */
     clearFilterValue(): void;
     /**
      * Returns the number of footer rows in the grid.
@@ -294,8 +546,8 @@ export interface GridMethods {
      * 
      * // Datas format
      * grid.load([
-     *     [{ id: 'col1', value: 'value1-1' }, { id: 'col2', value: 'value1-2' }],
-     *     [{ id: 'col1', value: 'value2-1' }, { id: 'col2', value: 'value2-2' }]
+     *     [{ colId : 'col1', value : 'value1-1' }, { colId : 'col2', value : 'value1-2' }],
+     *     [{ colId : 'col1', value : 'value2-1' }, { colId : 'col2', value : 'value2-2' }]
      * ]);
      * ```
      * 
@@ -392,8 +644,8 @@ export interface GridMethods {
      * console.log(datas);
      * // Output:
      * // [
-     * //   [{ id: 'col1', value: 'value1-1' }, { id: 'col2', value: 'value1-2' }],
-     * //   [{ id: 'col1', value: 'value2-1' }, { id: 'col2', value: 'value2-2' }]
+     * //   [{ colId : 'col1', value : 'value1-1' }, { colId : 'col2', value : 'value1-2' }],
+     * //   [{ colId : 'col1', value : 'value2-1' }, { colId : 'col2', value : 'value2-2' }]
      * // ]
      * ```
      * 
@@ -1383,7 +1635,7 @@ export interface GridMethods {
      * 
      * ### Example usage:
      * ```typescript
-     * grid.addCol(2, { id: 'dept', header: '부서', name: '부서', dataType: 'mask', format: 'AAA99' });
+     * grid.addCol(2, { colId : 'dept', header: '부서', name: '부서', dataType: 'mask', format: 'AAA99' });
      * ```
      * 
      * @param colIndexOrColId The column index or column ID where the new column will be inserted.
@@ -1421,7 +1673,7 @@ export interface GridMethods {
      * 
      * ### Example usage:
      * ```typescript
-     * grid.setColInfo({ id: 'dept', header: '부서', name: '부서', dataType: 'text', format: 'AAA99' });
+     * grid.setColInfo({ colId : 'dept', header: '부서', name: '부서', dataType: 'text', format: 'AAA99' });
      * ```
      * 
      * @param colInfo An object containing the new column information.
@@ -2670,7 +2922,7 @@ export interface GridMethods {
      *
      * ### Example:
      * ```typescript
-     * grid.addRow(1, [{ id: 'A001', name: 'Item A' }]);
+     * grid.addRow(1, [{ colId : 'A001', name: 'Item A' }]);
      * ```
      *
      * @param rowOrValuesOrDatas - Row index, key-value pairs, or data arrays.
@@ -2720,7 +2972,7 @@ export interface GridMethods {
      *
      * ### Example usage:
      * ```typescript
-     * grid.setRowDatas(2, [{id:'colId1', value:'value1'}, {id:'colId2', value:'value2'}, {id:'colId3', value:'value3'}]);
+     * grid.setRowDatas(2, [{colId :'colId1', value:'value1'}, {colId :'colId2', value:'value2'}, {colId :'colId3', value:'value3'}]);
      * ```
      *
      * @param row - Row index.
@@ -2734,7 +2986,7 @@ export interface GridMethods {
      * ### Example usage:
      * ```typescript
      * const rowDatas = grid.getRowDatas(1);
-     * //[{id:'colId1', value:'value1'...}, {id:'colId2', value:'value2'...}, {id:'colId3', value:'value3'...}]
+     * //[{colId :'colId1', value:'value1'...}, {colId :'colId2', value:'value2'...}, {colId :'colId3', value:'value3'...}]
      * ```
      *
      * @param row - Row index.
@@ -3033,11 +3285,11 @@ export interface GridMethods {
     searchRowValuesWithFunction(func: (rowDatas: CellData[]) => boolean): Record<string, any>[];
     /**
      * Changes the information of the cell in the colId or colIndex column in the row-th row.
-     * cellData is an object in the form {id:'colId', value:'value'...}. Returns true if it operates normally.
+     * cellData is an object in the form {colId :'colId', value:'value'...}. Returns true if it operates normally.
      *
      * ### Example usage:
      * ```typescript
-     * grid.setCellData(1, 'colId1', {id:'colId', value:'value'...});
+     * grid.setCellData(1, 'colId1', {colId :'colId', value:'value'...});
      * ```
      *
      * @param row - Row index.
@@ -3047,11 +3299,11 @@ export interface GridMethods {
      */
     setCellData(row: number, colIndexOrColId: number | string, cellData: CellData): boolean;
     /**
-     * Returns the information of the cell in the colId or colIndex column in the row-th row. cellData is an object in the form {id:'colId', value:'value'..}.
+     * Returns the information of the cell in the colId or colIndex column in the row-th row. cellData is an object in the form {colId :'colId', value:'value'..}.
      *
      * ### Example usage:
      * ```typescript
-     * grid.getCellData(1, 'colId1'); // e.g. {id:'colId', value:'value'...}
+     * grid.getCellData(1, 'colId1'); // e.g. {colId :'colId', value:'value'...}
      * ```
      *
      * @param row - Row index.
