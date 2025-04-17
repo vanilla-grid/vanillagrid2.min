@@ -6,6 +6,18 @@ import type { Cell, CellRecord } from "./cell";
 export interface Grid{
     data: GridData;
     events: GridEvents;
+    hendler: {
+        gridHeader_dblclick(e: any): void;
+        gridHeader_click(e: any): void;
+        gridBody_mousemove(e: any): void;
+        gridBody_mouseleave(e: any): void;
+        gridBody_mouseenter(e: any): void;
+        gridBody_dblclick(e: any): void;
+        gridElement_click(e: any): void;
+        gridElement_mousedown(e: any): void;
+        gridElement_mousemove(e: any): void;
+        gridElement_mouseleave(e: any): void;
+    }
     methods: GridMethods;
     elements: {
         grid: GridElements;
@@ -13,6 +25,7 @@ export interface Grid{
         gridBody: GridBody;
         gridFooter: GridFooter;
     }
+    _isMounted: boolean;
 }
 export interface GridData{
     id: string;
