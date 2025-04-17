@@ -73,7 +73,7 @@ export const setHandleActive = (vg: Vanillagrid, gridList: Record<string, Grid>,
                     if(cell.dataType === key) {
                         if(vg.dataType[key].onUnselected) {
                             if(typeof vg.dataType[key].onUnselected !== 'function') throw new Error('onSelected must be a function.');
-                            vg.dataType[key].onUnselected(cell, handler.__getData(cell));
+                            vg.dataType[key].onUnselected(cell, gridId, handler.__getData(cell));
                         }
                     }
                 });
@@ -125,7 +125,7 @@ export const setHandleActive = (vg: Vanillagrid, gridList: Record<string, Grid>,
                             if(tempCell.dataType === key) {
                                 if(vg.dataType[key].onSelected) {
                                     if(typeof vg.dataType[key].onSelected !== 'function') throw new Error('onSelected must be a function.');
-                                    vg.dataType[key].onSelected(tempCell, handler.__getData(tempCell));
+                                    vg.dataType[key].onSelected(tempCell, gridId, handler.__getData(tempCell));
                                 }
                             }
                         });
@@ -211,7 +211,7 @@ export const setHandleActive = (vg: Vanillagrid, gridList: Record<string, Grid>,
                 if(cell.dataType === key) {
                     if(vg.dataType[key].getCopyValue) {
                         if(typeof vg.dataType[key].getCopyValue !== 'function') throw new Error('getCopyValue must be a function.');
-                        cellText = vg.dataType[key].getCopyValue(cell.value);
+                        cellText = vg.dataType[key].getCopyValue(cell._gridId, cell.value);
                     }
                 }
             });
@@ -334,7 +334,7 @@ export const setHandleActive = (vg: Vanillagrid, gridList: Record<string, Grid>,
                         if(cell.dataType === key) {
                             if(vg.dataType[key].getPasteValue) {
                                 if(typeof vg.dataType[key].getPasteValue !== 'function') throw new Error('getPasteValue must be a function.');
-                                colText = vg.dataType[key].getPasteValue(handler.__getData(cell), colText);
+                                colText = vg.dataType[key].getPasteValue(cell._gridId, handler.__getData(cell), colText);
                             }
                             else {
                                 doPaste = false;
