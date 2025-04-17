@@ -12,9 +12,10 @@
           <div data-col id="f_nm" header=";filter2(text);first name" data-type="text" width="120" align="center" locked="true"></div>
           <div data-col id="l_nm" header=";filter3(text);last name" data-type="text" width="120" align="center" locked="true" col-merge="true"></div>
           <div data-col id="d_o_j" header=";filter4(month);DOJ" data-type="month" format="yyyy/mm" width="120" align="center" locked="true"></div>
-          <div data-col id="e_id" required="true" header="sort1(text);;" data-type="number" width="120" align="center" locked="true" footer="MAX;MIN;AVG;SUM" round-number="-1"></div>
-          <div data-col id="salary" required="true" header="sort2(number);;salary" data-type="number" format="$ #,###.#####" width="150" align="right" footer="$$MAX;$$MIN;$$AVG;$$SUM"></div>
-          <div data-col id="status" required="true" header="Please double click;checkbox;status" data-type="checkbox" width="80" align="center" footer="CHECK_COUNT"></div>
+          <div data-col id="e_id" header="sort1(text);;" data-type="number" width="120" align="center" locked="true" footer="MAX;MIN;AVG;SUM" round-number="-1"></div>
+          <div data-col id="salary" header="sort2(number);;salary" data-type="number" format="$ #,###.#####" width="150" align="right" footer="$$MAX;$$MIN;$$AVG;$$SUM"></div>
+          <div data-col id="status" header="Please double click;checkbox;status" data-type="checkbox" width="80" align="center" footer="CHECK_COUNT"></div>
+          <div data-col id="radio" header="radio" data-type="radio" width="80" align="center" footer="CHECK_COUNT"></div>
       </div>
       <br>
       <p>test</p>
@@ -22,7 +23,7 @@
 </template>
   
 <script setup lang="ts">
-import { type Vanillagrid, type GridMethods, VerticalAlign, ColorSet, SelectionPolicy, MonthFormat, Align, RowStatus, CellData } from 'vanillagrid2';
+import type { Vanillagrid, GridMethods } from 'vanillagrid2';
 import { ref } from 'vue';
 import { getCurrentInstance, onMounted, onBeforeUnmount } from 'vue';
 const { proxy } = getCurrentInstance()!;
@@ -246,10 +247,10 @@ const setGrid2Data = () => {
     });
 };
 const setGrid3Data = () => {
-    grid2.setOnEditEnding((row: number, colId: string, editorNode: HTMLElement) => {
-        console.log('setOnEditEnding', row, colId, editorNode);
-        return false;
-    });
+    grid2.setColSameValue('salary', 12345, true);
+    grid2.setCellValue(2, 'salary', 11111, true);
+    grid2.setColSameValue('radio', "N", true);
+    grid2.setCellValue(2, 'radio', "Y", true);
 };
 
 onMounted(()=>{
