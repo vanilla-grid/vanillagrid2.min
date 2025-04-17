@@ -12,9 +12,21 @@ export interface Cell extends CellData, HTMLElement{
      * The string 'ghd' | 'gbd' | 'gfd' ('grid-header-data', 'grid-body-data', 'grid-footer-data') are a constant.
      */
     _type: string;
+    /**
+     * Whether the column in that cell is frozen
+     */
     _frozenCol?: boolean;
+    /**
+     * Whether the row of the cell in question is frozen
+     */
     _frozenRow?: boolean;
+    /**
+     * Whether the cell is the last cell in the sequence
+     */
     _isLastCell?: boolean;
+    /**
+     * Used only in header cells. Memory address of the filter selector.
+     */
     _filterSelector?: HTMLSelectElement & { _gridId: string; colId: string };
 }
 
@@ -27,12 +39,18 @@ export interface CellData extends Omit<ColInfo, 'header' | 'footer' | 'filterVal
      * The value that the cell has
      */
     value: any;
+    /**
+     * The text value of the surface area of ​​the cell
+     */
+    text?: string;
+    /**
+     * Row number of the cell
+     */
     rowIndex: number;
     /**
      * Whether a filter has been applied.
      */
     filter: boolean | null;
-    text?: string;
     /**
      * How many rows span a cell in a grid
      */
