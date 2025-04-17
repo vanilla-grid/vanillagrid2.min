@@ -118,6 +118,40 @@ const handler = {
      connectedGridData(cell: Cell) {},
 } as Handler;
 
+/**
+ * Initializes and returns the singleton instance of Vanillagrid.
+ *
+ * `getVanillagrid` is the entry point for creating and managing a Vanillagrid system.
+ * It ensures that only one Vanillagrid instance exists across the entire application (Singleton pattern).
+ *
+ * - If a Vanillagrid instance already exists, it simply returns the existing instance.
+ * - If no instance exists, it creates a new instance based on the provided `VanillagridConfig`.
+ * - If no `config` is provided, it automatically generates a default configuration using `getVanillagridConfig()`.
+ *
+ * ### Key Responsibilities:
+ * - Registers default visual elements such as sort icons and filter icons.
+ * - Registers global grid behaviors and appearance settings (attributes, CSS, column defaults).
+ * - Initializes document-level event handlers (mousedown, mouseup, keydown, copy, paste).
+ * - Prepares essential lifecycle methods: `init()`, `mountGrid()`, `unmountGrid()`, and `destroy()`.
+ * - Manages internal state variables (_status) for grid interactions like dragging and active selection.
+ *
+ * ### Important:
+ * - Must call `vg.init()` after retrieving the instance to properly set up the environment (e.g., document events, styles).
+ * - The created Vanillagrid instance should be properly destroyed via `vg.destroy()` if needed (for example, during SPA page transitions).
+ *
+ * ### Example usage:
+ * ```typescript
+ * import { getVanillagrid, getVanillagridConfig } from 'vanillagrid2';
+ *
+ * const config = getVanillagridConfig();
+ * const vg = getVanillagrid(config);
+ * vg.init();
+ * vg.mountGrid(); // Mount grids declared in the document
+ * ```
+ *
+ * @param config - (Optional) A custom `VanillagridConfig` object to override the default grid settings.
+ * @returns The singleton `Vanillagrid` instance ready for grid operations.
+ */
 export const getVanillagrid = (config?: VanillagridConfig): Vanillagrid => {
     if(singletonVanillagrid) return singletonVanillagrid;
 
@@ -174,6 +208,39 @@ export const getVanillagrid = (config?: VanillagridConfig): Vanillagrid => {
     return singletonVanillagrid;
 }
 
+/**
+ * Generates and returns the default configuration (`VanillagridConfig`) for Vanillagrid.
+ *
+ * This method provides a base configuration containing all necessary default values
+ * for grid functionality, appearance, column properties, and byte-size validation.
+ * It is primarily used when no custom configuration is supplied to `getVanillagrid()`.
+ *
+ * ### Key Components:
+ * - **elements**: Default HTML elements for sort and filter icons.
+ * - **footerFormula**: Empty object to define footer calculations per column.
+ * - **dataType**: Empty object for user-defined custom data types.
+ * - **attributes**:
+ *   - `defaultGridInfo`: Default functional behaviors of the grid, such as locking, sorting, filtering, and selection policy.
+ *   - `defaultGridCssInfo`: Default visual styles, including dimensions, fonts, and colors.
+ *   - `defaultColInfo`: Default behaviors and styles for columns, such as visibility, merging, and data formatting.
+ * - **checkByte**: Default byte size rules for character encoding validation (e.g., UTF-8 multi-byte handling).
+ *
+ * ### Important:
+ * - Developers can modify the returned object before passing it to `getVanillagrid(config)` to customize grid behavior globally.
+ * - This promotes reusability and consistency across multiple grids without redefining settings individually.
+ *
+ * ### Example usage:
+ * ```typescript
+ * import { getVanillagrid, getVanillagridConfig } from 'vanillagrid2';
+ *
+ * const config = getVanillagridConfig();
+ * config.attributes.defaultGridInfo.dateFormat = 'dd-mm-yyyy';
+ * const vg = getVanillagrid(config);
+ * vg.init();
+ * ```
+ *
+ * @returns A complete `VanillagridConfig` object with predefined defaults.
+ */
 export const getVanillagridConfig = (): VanillagridConfig => {
     const defaultGridInfo: DefaultGridInfo = {
         locked : false,
@@ -391,7 +458,7 @@ const initVanillagrid = () => {
                 if(grid!.data.variables.targetCell!.dataType === key) {
                     if(vg.dataType[key].onSelectedAndKeyDown) {
                         if(typeof vg.dataType[key].onSelectedAndKeyDown !== 'function') throw new Error('onSelectedAndKeyDown must be a function.');
-                        if(vg.dataType[key].onSelectedAndKeyDown(e, handler.__getData(grid!.data.variables.targetCell!)!) === false) {
+                        if(vg.dataType[key].onSelectedAndKeyDown(e, grid.data.id, handler.__getData(grid!.data.variables.targetCell!)!) === false) {
                             return;
                         }
                     }
