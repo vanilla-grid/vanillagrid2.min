@@ -148,11 +148,11 @@ export interface GridCssInfo {
      */
     verticalAlign: VerticalAlign.top | VerticalAlign.center | VerticalAlign.bottom | string | null;
     /**
-     * Specifies the default font-size of the grid cell. Enter a positive integer. The unit is px.
+     * Specifies the default font-size of the grid cell. Enter a css text. The unit is px.
      */
     cellFontSize: string | null;
     /**
-     * Specifies the default min-height of the grid cell. Enter a positive integer. The unit is px.
+     * Specifies the default min-height of the grid cell. Enter a css text. The unit is px.
      */
     cellMinHeight: string | null;
     /**
@@ -365,6 +365,12 @@ export interface GridCssInfo {
  * Facilitates consistent UI across multiple grid instances.
  */
 export interface DefaultGridCssInfo extends Omit<GridCssInfo, 'cellFontSize' |'cellMinHeight'>{
+    /**
+     * Specifies the default font-size of the grid cell. Enter a positive integer. The unit is px.
+     */
     cellFontSize: number | null;
+    /**
+     * Specifies the default min-height of the grid cell. Enter a positive integer. The unit is px.
+     */
     cellMinHeight: number | null;
 }
