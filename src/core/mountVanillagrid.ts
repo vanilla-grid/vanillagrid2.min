@@ -719,6 +719,8 @@ export const mountVanillagrid = (vg: Vanillagrid, gridList: Record<string, Grid>
         gridElement.append(gridBody);
         gridElement.append(gridFooter);
         vanillagridBox.append(gridElement);
+
+        handler.__setGridColSize(gId);
         
         handler.connectedGridHeader(gId);
         handler.connectedGridBody(gId);
