@@ -3,8 +3,11 @@
       <button @click="setGrid1Data">getGridData 1</button>
       <button @click="setGrid2Data">setGridData 2</button>
       <button @click="setGrid3Data">setGridData 3</button>
-      <div data-vanillagrid data-id="grid1" height="200px">
-          <div data-col id="col1" header="header" data-type="text" width="600"></div>
+      <div data-vanillagrid data-id="grid1" height="200px" rownum-visible="false" status-visible="false">
+          <div data-col id="col1" header="header" data-type="text" width="25%"></div>
+          <div data-col id="col2" header="header" data-type="text" width="25%"></div>
+          <div data-col id="col3" header="header" data-type="text" width="25%"></div>
+          <div data-col id="col4" header="header" data-type="text" width="25%"></div>
       </div>
       <br>
       <div data-vanillagrid data-id="grid2" locked-color="true" height="400px" size-level="3">
@@ -34,6 +37,9 @@ let grid1: GridMethods, grid2: GridMethods;
 const data1 = [
     {
         col1 : 'This is a text dataType.\nDouble-click to create an editor.\nPress F2 to create an editor.\nWhen you press the enter key, editor focus.\nTry it!',
+        col2 : 'This is a text dataType.\nDouble-click to create an editor.\nPress F2 to create an editor.\nWhen you press the enter key, editor focus.\nTry it!',
+        col3 : 'This is a text dataType.\nDouble-click to create an editor.\nPress F2 to create an editor.\nWhen you press the enter key, editor focus.\nTry it!',
+        col4 : 'This is a text dataType.\nDouble-click to create an editor.\nPress F2 to create an editor.\nWhen you press the enter key, editor focus.\nTry it!',
     },
 ];
 
