@@ -8,7 +8,7 @@
         "preview": "vite preview"
     },
     "dependencies": {
-        "vanillagrid2": "^1.0.0",
+        "vanillagrid2": "^1.0.2",
         "vue": "^3.4.0",
         "vue-router": "^4.5.0"
     },
