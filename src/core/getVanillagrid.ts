@@ -384,6 +384,8 @@ export const getVanillagridConfig = (): VanillagridConfig => {
 
 const initVanillagrid = () => {
     const vg: Vanillagrid = singletonVanillagrid!;
+    if(vg._initialized) return;
+    
     setHandleActive(vg, gridList, handler);
     setHandleElement(vg, gridList, handler);
     setHandleGrid(vg, gridList, handler);
