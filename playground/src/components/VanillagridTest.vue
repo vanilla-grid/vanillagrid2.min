@@ -5,9 +5,9 @@
       <button @click="setGrid3Data">setGridData 3</button>
       <div data-vanillagrid data-id="grid1" height="200px" rownum-visible="false" status-visible="false">
           <div data-col id="col1" header="header" data-type="text" width="25%"></div>
-          <div data-col id="col2" header="header" data-type="text" width="25%"></div>
-          <div data-col id="col3" header="header" data-type="text" width="25%"></div>
-          <div data-col id="col4" header="header" data-type="text" width="25%"></div>
+          <div data-col id="col2" header="header" data-type="number" width="25%"></div>
+          <div data-col id="col3" header="header" data-type="button" width="25%"></div>
+          <div data-col id="col4" header="header" data-type="button" width="25%"></div>
       </div>
       <br>
       <div data-vanillagrid data-id="grid2" locked-color="true" height="400px" size-level="3">
@@ -16,7 +16,7 @@
           <div data-col id="l_nm" header=";filter3(text);last name" data-type="text" width="120" align="center" locked="true" col-merge="true"></div>
           <div data-col id="d_o_j" header=";filter4(month);DOJ" data-type="month" format="yyyy/mm" width="120" align="center" locked="true"></div>
           <div data-col id="e_id" header="sort1(text);;" data-type="number" width="120" align="center" locked="true" footer="MAX;MIN;AVG;SUM" round-number="-1"></div>
-          <div data-col id="salary" header="sort2(number);;salary" data-type="number" format="$ #,###.#####" width="150" align="right" footer="$$MAX;$$MIN;$$AVG;$$SUM"></div>
+          <div data-col id="salary" header="sort2(number);;salary" data-type="number" format="$ #,###.#####" width="150" footer="$$MAX;$$MIN;$$AVG;$$SUM"></div>
           <div data-col id="status" header="Please double click;checkbox;status" data-type="checkbox" width="80" align="center" footer="CHECK_COUNT"></div>
           <div data-col id="radio" header="radio" data-type="radio" width="80" align="center" footer="CHECK_COUNT"></div>
       </div>
@@ -37,9 +37,9 @@ let grid1: GridMethods, grid2: GridMethods;
 const data1 = [
     {
         col1 : 'This is a text dataType.\nDouble-click to create an editor.\nPress F2 to create an editor.\nWhen you press the enter key, editor focus.\nTry it!',
-        col2 : 'This is a text dataType.\nDouble-click to create an editor.\nPress F2 to create an editor.\nWhen you press the enter key, editor focus.\nTry it!',
-        col3 : 'This is a text dataType.\nDouble-click to create an editor.\nPress F2 to create an editor.\nWhen you press the enter key, editor focus.\nTry it!',
-        col4 : 'This is a text dataType.\nDouble-click to create an editor.\nPress F2 to create an editor.\nWhen you press the enter key, editor focus.\nTry it!',
+        col2 : 12345,
+        col3 : 'Try it!',
+        col4 : 'When you press the enter key, editor focus.\nTry it!',
     },
 ];
 
