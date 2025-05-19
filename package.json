@@ -1,6 +1,6 @@
 {
   "name": "vanillagrid2",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "A Simple and Powerful Grid Library, Upgraded for Modern Applications.",
   "main": "dist/Vanillagrid2.bundle.js",
   "module": "dist/Vanillagrid2.bundle.js",
