@@ -4,7 +4,7 @@ import type { ColInfo } from "../types/colInfo";
 import type { Cell, CellData } from "../types/cell";
 import type { Handler } from "../types/handler";
 import { deepCopy, getArrayElementWithBoundCheck, getHeaderString, removeAllChild, validatePositiveIntegerAndZero } from "./utils";
-import { basicDataType } from "../types/enum";
+import { Align, basicDataType } from "../types/enum";
 
 export const setHandleGrid = (vg: Vanillagrid, gridList: Record<string, Grid>, handler: Handler) => {
     handler.__getDefaultColInfo = (gridId: string, newColInfo: ColInfo, isAdd = false) => {
@@ -15,7 +15,8 @@ export const setHandleGrid = (vg: Vanillagrid, gridList: Record<string, Grid>, h
                 if (newColInfo.colId === colInfo.colId)  throw new Error('Column ID is primary key. (colId)');
             }
         }
-   
+        
+        const defaultAlign = handler._getColDefaultAlign(newColInfo.dataType ?  newColInfo.dataType : vg.attributes.defaultColInfo.dataType!);
         const resultnewColInfo: ColInfo = {
             colId: newColInfo.colId,
             name : newColInfo.name ? newColInfo.name : newColInfo.colId,
@@ -45,7 +46,7 @@ export const setHandleGrid = (vg: Vanillagrid, gridList: Record<string, Grid>, h
             minNumber : newColInfo.minNumber ?  newColInfo.minNumber : vg.attributes.defaultColInfo.minNumber,
             roundNumber : newColInfo.roundNumber ?  newColInfo.roundNumber : vg.attributes.defaultColInfo.roundNumber,
     
-            align : newColInfo.align ?  newColInfo.align : vg.attributes.defaultColInfo.align,
+            align : newColInfo.align ?  newColInfo.align : defaultAlign,
             verticalAlign : newColInfo.verticalAlign ?  newColInfo.verticalAlign : vg.attributes.defaultColInfo.verticalAlign,
             overflowWrap : newColInfo.overflowWrap ?  newColInfo.overflowWrap : vg.attributes.defaultColInfo.overflowWrap,
             wordBreak : newColInfo.wordBreak ?  newColInfo.wordBreak : vg.attributes.defaultColInfo.wordBreak,
@@ -780,4 +781,19 @@ export const setHandleGrid = (vg: Vanillagrid, gridList: Record<string, Grid>, h
     handler._getFooterFormula = () => {
         return deepCopy(vg.footerFormula);
     };
+    handler._getColDefaultAlign = (dataType: string) => {
+        switch (dataType) {
+            case "text": return Align.left
+            case "number": return Align.right
+            case "date": return Align.center
+            case "month": return Align.center
+            case "mask": return Align.left
+            case "select": return Align.center
+            case "checkbox": return Align.center
+            case "button": return Align.center
+            case "link": return Align.center
+            case "code": return Align.center
+            default: return vg.attributes.defaultColInfo.align as  keyof typeof Align
+        }
+    }
 }
