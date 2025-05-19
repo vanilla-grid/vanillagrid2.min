@@ -1,6 +1,7 @@
 import type { Vanillagrid } from "./vanillagrid";
 import type { ColInfo } from "./colInfo";
 import type { Cell, CellData, CellRecord } from "./cell";
+import { Align } from "./enum";
 
 export interface Handler {
     /** ////////////////////////
@@ -82,6 +83,7 @@ export interface Handler {
     _getDataTypeStyle(): any;
     _getFilterSpan(): HTMLElement | null;
     _getFooterFormula(): Record<string, Function> | null;
+    _getColDefaultAlign(dataType: string): keyof typeof Align | null;
     /** ////////////////////////
      * handleCell
      *//////////////////////////
@@ -116,7 +118,7 @@ export interface Handler {
         text: string;
     }[];
     /** ////////////////////////
-     * handleGrid
+     * elementConnected
      *//////////////////////////
     connectedGridHeader(gridId: string): void;
     connectedGridBody(gridId: string): void;
