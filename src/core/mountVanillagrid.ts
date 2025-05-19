@@ -121,7 +121,7 @@ const getGridCssInfo = (vg: Vanillagrid, vanillagridBox: HTMLElement) => {
     return gridCssInfo;
 };
 
-const getColInfo = (vg: Vanillagrid, vanillagridBox: HTMLElement, gridInfo: GridInfo) => {
+const getColInfo = (vg: Vanillagrid, vanillagridBox: HTMLElement, gridInfo: GridInfo, handler: Handler) => {
     const colInfos: ColInfo[] = [];
     let colCount = 0;
     let headerRowCount = 1;
@@ -320,7 +320,8 @@ const getColInfo = (vg: Vanillagrid, vanillagridBox: HTMLElement, gridInfo: Grid
         colInfo.filterValues = new Set();
         colInfo.filterValue = colInfo.filterable ? '$$ALL' : null;
 
-        colInfo.align = nvl((isIncludeEnum(alignUnit, toLowerCase(col.getAttribute('align'))) ? toLowerCase(col.getAttribute('align')) : ''), vg.attributes.defaultColInfo.align);
+        const defaultAlign = handler._getColDefaultAlign(colInfo.dataType);
+        colInfo.align = nvl((isIncludeEnum(alignUnit, toLowerCase(col.getAttribute('align'))) ? toLowerCase(col.getAttribute('align')) : ''), defaultAlign);
         colInfo.verticalAlign = nvl((isIncludeEnum(verticalAlignUnit, toLowerCase(col.getAttribute('vertical-align'))) ? toLowerCase(col.getAttribute('vertical-align')) : ''), vg.attributes.defaultColInfo.verticalAlign);
         colInfo.overflowWrap = nvl(col.getAttribute('overflow-wrap'), vg.attributes.defaultColInfo.overflowWrap);
         colInfo.wordBreak = nvl(col.getAttribute('word-break'), vg.attributes.defaultColInfo.wordBreak);
@@ -413,7 +414,7 @@ export const mountVanillagrid = (vg: Vanillagrid, gridList: Record<string, Grid>
                 id: gId,
                 gridInfo: gridInfo,
                 gridCssInfo: getGridCssInfo(vg, vanillagridBox),
-                colInfos: getColInfo(vg, vanillagridBox, gridInfo),
+                colInfos: getColInfo(vg, vanillagridBox, gridInfo, handler),
                 variables: {
                     activeRows : [],
                     activeCols : [],
