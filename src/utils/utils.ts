@@ -34,12 +34,19 @@ export const validatePositiveIntegerAndZero = (param: string | number) => {
 };
 export const extractNumberAndUnit = (val: string | null) => {
     if (val === null || val === undefined) return { number: 0, unit: '' };
-    val = '' + val.trim();
-    const regex = /^(\d+)(\D*)$/;
-    const match = val.match(regex);
-    if (match) {
-        const unit = match[2] === '' ? '' : match[2];
-        return { number: parseInt(match[1], 10), unit: unit };
+    val = val.trim();
+
+    const numberAndUnitRegex = /^([+-]?\d*\.?\d+)([a-zA-Z%]+)$/;
+    const numberOnlyRegex = /^[+-]?\d*\.?\d+$/;
+    const unitOnlyRegex = /^[a-zA-Z%]+$/;
+
+    if (numberAndUnitRegex.test(val)) {
+        const match = val.match(numberAndUnitRegex)!;
+        return { number: parseFloat(match[1]), unit: match[2] };
+    } else if (numberOnlyRegex.test(val)) {
+        return { number: parseFloat(val), unit: '' };
+    } else if (unitOnlyRegex.test(val)) {
+        return { number: 0, unit: val };
     } else {
         return { number: 0, unit: '' };
     }
