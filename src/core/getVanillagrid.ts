@@ -422,7 +422,8 @@ const initVanillagrid = () => {
     
     vg.documentEvent.keydown = function (e: any) {
         if (vg._status.activeGrid && !vg._status.activeGridEditor) {
-            const grid = vg._status.activeGrid; 
+            const grid = vg._status.activeGrid;
+            if (!grid) return;
             const gId = grid.data.id;
             
             if(grid.events.onKeydownGrid(e) === false) {
