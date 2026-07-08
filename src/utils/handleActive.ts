@@ -275,7 +275,7 @@ export const setHandleActive = (vg: Vanillagrid, gridList: Record<string, Grid>,
     
         let unvisibleRowCount = 0;
         let rowIndex = 0;
-        for(let r = 0; r < pasteRows.length; r++) {
+        for(let r = 0; rowIndex < pasteRows.length; r++) {
             const currentRowIndex = startRowIndex + rowIndex + unvisibleRowCount;
             
             if (currentRowIndex > maxRow) return;
@@ -301,7 +301,7 @@ export const setHandleActive = (vg: Vanillagrid, gridList: Record<string, Grid>,
             let unvisibleColCount = 0;
             let colIndex = 0;
             const pasteCols = pasteRows[rowIndex].split('\t');
-            for(let c = 0; c < pasteCols.length; c++) {
+            for(let c = 0; colIndex < pasteCols.length; c++) {
                 const currentColIndex = startColIndex + colIndex - 1 + unvisibleColCount;
                 
                 if (currentColIndex >= maxCol) break;
@@ -459,15 +459,15 @@ export const setHandleActive = (vg: Vanillagrid, gridList: Record<string, Grid>,
     };
     handler.redoundo = (gridId: string, isRedo?: boolean) => {
         if (!gridList[gridId].data.gridInfo.redoable) return false;
-        const _isRedo = isRedo === false ? false : true;
-        if (_isRedo && gridList[gridId].data.variables.recordseq <= 0) return false;
-        if (!_isRedo && gridList[gridId].data.variables.recordseq + 1 > gridList[gridId].data.variables.records.length) return false;
-        gridList[gridId].data.variables.recordseq = _isRedo ? gridList[gridId].data.variables.recordseq - 1 : gridList[gridId].data.variables.recordseq + 1
-        const redoCellDatas = _isRedo ? gridList[gridId].data.variables.records[gridList[gridId].data.variables.recordseq] : gridList[gridId].data.variables.records[gridList[gridId].data.variables.recordseq - 1];
+        const _isRedo = isRedo === true;
+        if (!_isRedo && gridList[gridId].data.variables.recordseq <= 0) return false;
+        if (_isRedo && gridList[gridId].data.variables.recordseq + 1 > gridList[gridId].data.variables.records.length) return false;
+        gridList[gridId].data.variables.recordseq = _isRedo ? gridList[gridId].data.variables.recordseq + 1 : gridList[gridId].data.variables.recordseq - 1
+        const redoCellDatas = _isRedo ? gridList[gridId].data.variables.records[gridList[gridId].data.variables.recordseq - 1] : gridList[gridId].data.variables.records[gridList[gridId].data.variables.recordseq];
         if (!redoCellDatas || !Array.isArray(redoCellDatas)) return false;
         handler.selectCell(redoCellDatas[0].cell);
         for(const redoCellData of redoCellDatas) {
-            redoCellData.cell.value = _isRedo ? redoCellData.oldValue : redoCellData.newValue;
+            redoCellData.cell.value = _isRedo ? redoCellData.newValue : redoCellData.oldValue;
             handler.reConnectedCallbackElement(redoCellData.cell);
             handler.reloadGridWithModifyCell(gridId, redoCellData.cell.colIndex!);
         }

@@ -107,7 +107,7 @@ export const setHandleElement = (vg: Vanillagrid, gridList: Record<string, Grid>
                 }
             }
         });
-        handler.removeGridEditor();
+        if (!handler.removeGridEditor()) return;
         if(gridList[cell._gridId].events.onBeforeChange(cell.rowIndex, cell.colId, vg._status.editOldValue, vg._status.editNewValue) === false) return;
         const value = vg._status.editNewValue;
         const records = handler.getRecordsWithModifyValue(cell, value);

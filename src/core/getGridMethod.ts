@@ -18,6 +18,15 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
         getDefualtColInfo() {
             return vg.attributes.defaultColInfo;
         },
+        getDefaultGridInfo() {
+            return vg.attributes.defaultGridInfo;
+        },
+        getDefaultGridCssInfo() {
+            return vg.attributes.defaultGridCssInfo;
+        },
+        getDefaultColInfo() {
+            return vg.attributes.defaultColInfo;
+        },
 
         setOnActiveCell(func: (row: number, colId: string) => boolean) {
             grid.events.onActiveCell = func;
@@ -691,6 +700,7 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
     
             const newColInfo = grid.data.colInfos[colIndex - 1];
             Object.keys(colInfo).forEach((key) => {
+                if(key === 'colId' || key === 'colIndex') return;
                 if(Object.prototype.hasOwnProperty.call(newColInfo, key) && (colInfo as any)[key] !== undefined) {
                     (newColInfo as any)[key] = (colInfo as any)[key];
                 }
@@ -713,7 +723,7 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
             return true;
         },
         getColInfo(colIndexOrColId: number | string) {
-            const colInfo = handler.__getColInfo(grid.data.id, colIndexOrColId)!;
+            const colInfo = handler.__getColInfo(grid.data.id, colIndexOrColId, true)!;
     
             const info: ColInfo = {
                 colId : colInfo.colId,
@@ -1504,7 +1514,6 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
             return rowDatas;
         },
         setRowValues(row: number, values: Record<string, any>, doRecord = false) {
-            row = 2;
             handler.__checkRowIndex(grid.data.id, row);
             if (!values || values.constructor !== Object) throw new Error('Please insert a valid value.');
             let value = null;
@@ -1515,9 +1524,8 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
                 let record
                 for(const colInfo of grid.data.colInfos) {
                     if (colInfo.colId === 'v-g-rownum' || colInfo.colId === 'v-g-status') continue;
-                    for(const key in values) {
-                        if (colInfo.colId === key) value = values[key];
-                    }
+                    if (!Object.prototype.hasOwnProperty.call(values, colInfo.colId)) continue;
+                    value = values[colInfo.colId];
                     cell = handler._getCell(grid.data.id, row, colInfo.colIndex!)!;
                     record = handler.getRecordsWithModifyValue(cell, value, true);
                     if (Array.isArray(record) && record.length > 0) records.push(record[0]);
@@ -1527,9 +1535,8 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
             else {
                 for(const colInfo of grid.data.colInfos) {
                     if (colInfo.colId === 'v-g-rownum' || colInfo.colId === 'v-g-status') continue;
-                    for(const key in values) {
-                        if (colInfo.colId === key) value = values[key];
-                    }
+                    if (!Object.prototype.hasOwnProperty.call(values, colInfo.colId)) continue;
+                    value = values[colInfo.colId];
                     cell = handler._getCell(grid.data.id, row, colInfo.colIndex!)!;
                     cell.value = handler.getValidValue(cell, value);
                     handler.reConnectedCallbackElement(cell);
@@ -2321,7 +2328,7 @@ export const getGridMethod = (vg: Vanillagrid, grid: Grid, handler: Handler) => 
             return true;
         },
         redo() {
-            return handler.redoundo(grid.data.id);
+            return handler.redoundo(grid.data.id, true);
         },
         undo() {
             return handler.redoundo(grid.data.id, false);

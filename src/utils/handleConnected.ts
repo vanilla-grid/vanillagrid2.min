@@ -11,7 +11,7 @@ export const setElementConnected = (gridList: Record<string, Grid>, handler: Han
         const header = gridList[gridId].elements.gridHeader;
         if (!header.style.gridTemplateColumns.includes('%')) {
             let totalWidth = 0;
-            for(let col = 1; col < grid.methods.getColCount(); col++) {
+            for(let col = 1; col <= grid.methods.getColCount(); col++) {
                 totalWidth += extractNumberAndUnit(grid.methods.getColOriginWidth(col))!.number;
             }
             header.style.width = totalWidth + 'px';
@@ -23,7 +23,7 @@ export const setElementConnected = (gridList: Record<string, Grid>, handler: Han
         const body = gridList[gridId].elements.gridBody;
         if (!body.style.gridTemplateColumns.includes('%')) {
             let totalWidth = 0;
-            for(let col = 1; col < grid.methods.getColCount(); col++) {
+            for(let col = 1; col <= grid.methods.getColCount(); col++) {
                 totalWidth += extractNumberAndUnit(grid.methods.getColOriginWidth(col))!.number;
             }
             body.style.width = totalWidth + 'px';
@@ -36,7 +36,7 @@ export const setElementConnected = (gridList: Record<string, Grid>, handler: Han
         if (!footer.style.gridTemplateColumns.includes('%')) {
             let totalWidth = 0;
             if(!handler._getFooterCells(gridId) || handler._getFooterCells(gridId).length <= 0) return;
-            for(let col = 1; col < grid.methods.getColCount(); col++) {
+            for(let col = 1; col <= grid.methods.getColCount(); col++) {
                 totalWidth += extractNumberAndUnit(grid.methods.getColOriginWidth(col))!.number;
             }
             footer.style.width = totalWidth + 'px';
@@ -45,7 +45,8 @@ export const setElementConnected = (gridList: Record<string, Grid>, handler: Han
     handler.connectedGridData = (cell: Cell) => {
         const gridId = cell._gridId;
         const grid = gridList[gridId];
-        const gridInfo = grid.methods.getGridInfo();
+        const gridInfo = grid.data.gridInfo;
+        const gridCssInfo = grid.data.gridCssInfo;
         
         cell.style.removeProperty('display');
         cell.style.removeProperty('align-items');
@@ -430,8 +431,8 @@ export const setElementConnected = (gridList: Record<string, Grid>, handler: Han
                     cell.style.position = 'sticky';
                     cell.style.zIndex = '200';
                     cell.style.top = headerOffsetHeight + topElementOffsetHeight + 'px';
-                    if (cell.rowIndex === gridInfo.frozenRowCount) cell.style.borderBottom = gridInfo.cssInfo.verticalBorderSize + 'px solid ' + gridInfo.cssInfo.headerCellBorderColor;
-                    cell._frozenCol = true;
+                    if (cell.rowIndex === gridInfo.frozenRowCount) cell.style.borderBottom = gridCssInfo.verticalBorderSize + 'px solid ' + gridCssInfo.headerCellBorderColor;
+                    cell._frozenRow = true;
                 }
                 
                 if (gridInfo.frozenRowCount! <= 0 && cell.colIndex <= gridInfo.frozenColCount!) {
@@ -462,9 +463,9 @@ export const setElementConnected = (gridList: Record<string, Grid>, handler: Han
                     }
                     cell.style.position = 'sticky';
                     cell.style.zIndex = '200';
-                    if (cell.colIndex === gridInfo.frozenColCount) cell.style.borderRight = gridInfo.cssInfo.verticalBorderSize + 'px solid ' + gridInfo.cssInfo.headerCellBorderColor;
+                    if (cell.colIndex === gridInfo.frozenColCount) cell.style.borderRight = gridCssInfo.verticalBorderSize + 'px solid ' + gridCssInfo.headerCellBorderColor;
                     cell.style.left = leftElementOffsetWidth + 'px';
-                    cell._frozenRow = true;
+                    cell._frozenCol = true;
                 }
                 
                 if (cell.isRowMerge) {
@@ -580,6 +581,8 @@ export const setElementConnected = (gridList: Record<string, Grid>, handler: Han
         }
         cell.classList.add(cell._gridId + '_v-g-d');
     
+        if ((cell as any)._hasBasicMouseEvents) return;
+        (cell as any)._hasBasicMouseEvents = true;
         cell.addEventListener('mouseover', function (e) {
             if (!cell.untarget && cell._type === 'gbd') {
                 cell.classList.add(cell._gridId + '_mouseover-cell');

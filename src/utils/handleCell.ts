@@ -13,11 +13,12 @@ export const setHandleCell = (vg: Vanillagrid, gridList: Record<string, Grid>, h
         const gridId = footerCell._gridId;
         let returnNumber;
         let tempCell;
-        for(let r = 1; r < gridList[gridId].methods.getRowCount(); r++ ) {
+        for(let r = 1; r <= gridList[gridId].methods.getRowCount(); r++ ) {
             tempCell = handler._getCell(gridId, r, footerCell.colIndex);
             if (!handler.isCellVisible(tempCell!)) continue;
+            if (tempCell!.value === null || tempCell!.value === undefined || tempCell!.value === '') continue;
             returnNumber = getOnlyNumberWithNaNToNull(tempCell!.value);
-            if (returnNumber) return returnNumber;
+            if (returnNumber !== null) return returnNumber;
         }
         return null;
     };
@@ -25,7 +26,7 @@ export const setHandleCell = (vg: Vanillagrid, gridList: Record<string, Grid>, h
         if (!vg._status.activeGridEditor) return false;
         const cell: Cell = (vg._status.activeGridEditor as any).targetCell;
         const gridId = cell._gridId;
-        gridList[gridId].events.onEditEnding(cell.rowIndex, cell.colId, vg._status.editOldValue, vg._status.editNewValue);
+        if (gridList[gridId].events.onEditEnding(cell.rowIndex, cell.colId, vg._status.editOldValue, vg._status.editNewValue) === false) return false;
         cell.style.padding = '';
         cell.style.fontSize = '';
         vg._status.activeGridEditor.parentNode!.removeChild(vg._status.activeGridEditor);
@@ -173,7 +174,7 @@ export const setHandleCell = (vg: Vanillagrid, gridList: Record<string, Grid>, h
         if (cell.locked || cell.untarget) return;
         if (['select','checkbox','button','link'].indexOf(cell.dataType!) >= 0) return;
         
-        handler.removeGridEditor();
+        if (vg._status.activeGridEditor && !handler.removeGridEditor()) return;
         let gridEditor: any;
         switch (cell.dataType) {
             case 'text':
@@ -394,7 +395,10 @@ export const setHandleCell = (vg: Vanillagrid, gridList: Record<string, Grid>, h
                     minimumFractionDigits: decimalFormat.lastIndexOf('0') + 1,
                     maximumFractionDigits: decimalFormat.length
                     });
-        if(decimal === '0') decimal = '';
+        if(decimal.charAt(0) === '1') {
+            integer = String(getToFloat(integer) + 1);
+        }
+        if(decimal === '0' || decimal === '1') decimal = '';
         else decimal = decimal.substring(1);
     
         switch (integerFormat) {

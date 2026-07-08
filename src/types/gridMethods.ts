@@ -34,6 +34,7 @@ export interface GridMethods {
      *
      * @returns The default grid configuration.
      */
+    /** @deprecated Typo — use `getDefaultGridInfo()` instead. Kept for backward compatibility. */
     getDefualtGridInfo(): DefaultGridInfo;
     /**
      * Retrieves the global default CSS configuration (`DefaultGridCssInfo`) for grid instances.
@@ -42,6 +43,7 @@ export interface GridMethods {
      *
      * @returns The default CSS settings for grids.
      */
+    /** @deprecated Typo — use `getDefaultGridCssInfo()` instead. Kept for backward compatibility. */
     getDefualtGridCssInfo(): DefaultGridCssInfo;
     /**
      * Retrieves the global default configuration (`DefaultColInfo`) for grid columns.
@@ -50,7 +52,23 @@ export interface GridMethods {
      *
      * @returns The default column configuration.
      */
+    /** @deprecated Typo — use `getDefaultColInfo()` instead. Kept for backward compatibility. */
     getDefualtColInfo(): DefaultColInfo;
+    /**
+     * Returns the default grid configuration (`DefaultGridInfo`) applied when no explicit settings are provided.
+     * (Correctly spelled alias of the deprecated `getDefualtGridInfo`.)
+     */
+    getDefaultGridInfo(): DefaultGridInfo;
+    /**
+     * Returns the default grid CSS configuration (`DefaultGridCssInfo`) applied when no explicit style settings are provided.
+     * (Correctly spelled alias of the deprecated `getDefualtGridCssInfo`.)
+     */
+    getDefaultGridCssInfo(): DefaultGridCssInfo;
+    /**
+     * Returns the default column configuration (`DefaultColInfo`) applied when no explicit column settings are provided.
+     * (Correctly spelled alias of the deprecated `getDefualtColInfo`.)
+     */
+    getDefaultColInfo(): DefaultColInfo;
     
     /**
      * Sets the event handler triggered when a single cell becomes active.

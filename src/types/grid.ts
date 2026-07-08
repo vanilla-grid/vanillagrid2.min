@@ -6,7 +6,7 @@ import type { Cell, CellRecord } from "./cell";
 export interface Grid{
     data: GridData;
     events: GridEvents;
-    hendler: {
+    handler: {
         gridHeader_dblclick(e: any): void;
         gridHeader_click(e: any): void;
         gridBody_mousemove(e: any): void;

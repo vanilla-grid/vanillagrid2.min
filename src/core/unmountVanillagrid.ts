@@ -8,20 +8,21 @@ export const unmountVanillagrid = (vg: Vanillagrid, gridList: Record<string, Gri
     const vanillagridBoxList: NodeListOf<HTMLElement> = targetEl.querySelectorAll('[data-vanillagrid]');
 
     vanillagridBoxList.forEach((vanillagridBox: any) => {
-        const grid = gridList[vanillagridBox._gridId];
-        if(grid._isMounted) {
-            grid.elements.gridHeader.removeEventListener('dblclick', grid.hendler.gridHeader_dblclick);
-            grid.elements.gridHeader.removeEventListener('click', grid.hendler.gridHeader_click);
-            grid.elements.gridBody.removeEventListener('mousemove', grid.hendler.gridBody_mousemove);
-            grid.elements.gridBody.removeEventListener('mouseleave', grid.hendler.gridBody_mouseleave);
-            grid.elements.gridBody.removeEventListener('mouseenter', grid.hendler.gridBody_mouseenter);
-            grid.elements.gridBody.removeEventListener('dblclick', grid.hendler.gridBody_dblclick);
-            grid.elements.grid.removeEventListener('click', grid.hendler.gridElement_click);
-            grid.elements.grid.removeEventListener('mousedown', grid.hendler.gridElement_mousedown);
-            grid.elements.grid.removeEventListener('mousemove', grid.hendler.gridElement_mousemove);
-            grid.elements.grid.removeEventListener('mouseleave', grid.hendler.gridElement_mouseleave);
+        const grid = vanillagridBox._gridId ? gridList[vanillagridBox._gridId] : null;
+        if(grid && grid._isMounted) {
+            grid.elements.gridHeader.removeEventListener('dblclick', grid.handler.gridHeader_dblclick);
+            grid.elements.gridHeader.removeEventListener('click', grid.handler.gridHeader_click);
+            grid.elements.gridBody.removeEventListener('mousemove', grid.handler.gridBody_mousemove);
+            grid.elements.gridBody.removeEventListener('mouseleave', grid.handler.gridBody_mouseleave);
+            grid.elements.gridBody.removeEventListener('mouseenter', grid.handler.gridBody_mouseenter);
+            grid.elements.gridBody.removeEventListener('dblclick', grid.handler.gridBody_dblclick);
+            grid.elements.grid.removeEventListener('click', grid.handler.gridElement_click);
+            grid.elements.grid.removeEventListener('mousedown', grid.handler.gridElement_mousedown);
+            grid.elements.grid.removeEventListener('mousemove', grid.handler.gridElement_mousemove);
+            grid.elements.grid.removeEventListener('mouseleave', grid.handler.gridElement_mouseleave);
             
             removeAllChild(vanillagridBox);
+            grid._isMounted = false;
             delete gridList[vanillagridBox._gridId];
         }
     });

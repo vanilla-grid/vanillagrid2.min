@@ -80,12 +80,13 @@ export const getCutByteLength = (str: string, cutByte: number, checkByte: CheckB
     let cutIndex = str.length;
 
     for (let i = 0; i < str.length; i++) {
-        const charCode = str.charCodeAt(i);
-        if (charCode <= 0x7F) {
+        const codePoint = str.codePointAt(i)!;
+        const charSize = codePoint > 0xFFFF ? 2 : 1;
+        if (codePoint <= 0x7F) {
             byteLength += 1;
-        } else if (charCode <= 0x7FF) {
+        } else if (codePoint <= 0x7FF) {
             byteLength += checkByte.lessoreq0x7ffByte;
-        } else if (charCode <= 0xFFFF) {
+        } else if (codePoint <= 0xFFFF) {
             byteLength += checkByte.lessoreq0xffffByte;
         } else {
             byteLength += checkByte.greater0xffffByte;
@@ -94,6 +95,7 @@ export const getCutByteLength = (str: string, cutByte: number, checkByte: CheckB
             cutIndex = i;
             break;
         }
+        i += charSize - 1;
     }
     return str.substring(0, cutIndex);
 };
@@ -418,7 +420,7 @@ export const getColorFromColorSet = (colorSet: ColorSet.black
 export const getHeaderString = (headerRowCount: number, header: string) => {
     const headerArr = header.split(';');
     if(headerRowCount > headerArr.length) {
-        for(let i = 0; i <= headerRowCount - headerArr.length; i++) {
+        for(let i = 0; i < headerRowCount - headerArr.length; i++) {
             headerArr.push('');
         }
     }

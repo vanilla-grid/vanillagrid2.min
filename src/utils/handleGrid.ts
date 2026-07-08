@@ -3,7 +3,7 @@ import type { Grid } from "../types/grid";
 import type { ColInfo } from "../types/colInfo";
 import type { Cell, CellData } from "../types/cell";
 import type { Handler } from "../types/handler";
-import { deepCopy, getArrayElementWithBoundCheck, getHeaderString, removeAllChild, validatePositiveIntegerAndZero } from "./utils";
+import { deepCopy, getArrayElementWithBoundCheck, getHeaderString, nvl, removeAllChild, validatePositiveIntegerAndZero } from "./utils";
 import { Align, basicDataType } from "../types/enum";
 
 export const setHandleGrid = (vg: Vanillagrid, gridList: Record<string, Grid>, handler: Handler) => {
@@ -24,39 +24,39 @@ export const setHandleGrid = (vg: Vanillagrid, gridList: Record<string, Grid>, h
             header : newColInfo.header ? getHeaderString(grid.methods.getHeaderRowCount(), newColInfo.header) : getHeaderString(grid.methods.getHeaderRowCount(), newColInfo.colId),
             footer : newColInfo.footer ? newColInfo.footer : null,
     
-            untarget : newColInfo.untarget ?  newColInfo.untarget : grid.data.gridInfo.selectionPolicy === 'none',
-            rowMerge : newColInfo.rowMerge ?  newColInfo.rowMerge : vg.attributes.defaultColInfo.rowMerge,
-            colMerge : newColInfo.colMerge ?  newColInfo.colMerge : vg.attributes.defaultColInfo.colMerge,
-            colVisible : newColInfo.colVisible ?  newColInfo.colVisible : vg.attributes.defaultColInfo.colVisible,
-            required : newColInfo.required ?  newColInfo.required : vg.attributes.defaultColInfo.required,
-            resizable : newColInfo.resizable ?  newColInfo.resizable : vg.attributes.defaultColInfo.resizable,
-            sortable : newColInfo.sortable ?  newColInfo.sortable : vg.attributes.defaultColInfo.sortable,
-            filterable : newColInfo.filterable ?  newColInfo.filterable : vg.attributes.defaultColInfo.filterable,
-            originWidth : newColInfo.originWidth ?  newColInfo.originWidth : vg.attributes.defaultColInfo.originWidth,
-            dataType : newColInfo.dataType ?  newColInfo.dataType : vg.attributes.defaultColInfo.dataType,
-            selectSize : newColInfo.selectSize ?  newColInfo.selectSize : vg.attributes.defaultColInfo.selectSize,
-            locked : newColInfo.locked ?  newColInfo.locked : grid.data.gridInfo.locked,
-            lockedColor : newColInfo.lockedColor ?  newColInfo.lockedColor : grid.data.gridInfo.lockedColor,
-            format : newColInfo.format ?  newColInfo.format : vg.attributes.defaultColInfo.format,
-            codes : newColInfo.codes ?  newColInfo.codes : vg.attributes.defaultColInfo.codes,
-            defaultCode : newColInfo.defaultCode ?  newColInfo.defaultCode : vg.attributes.defaultColInfo.defaultCode,
-            maxLength : newColInfo.maxLength ?  newColInfo.maxLength : vg.attributes.defaultColInfo.maxLength,
-            maxByte : newColInfo.maxByte ?  newColInfo.maxByte : vg.attributes.defaultColInfo.maxByte,
-            maxNumber : newColInfo.maxNumber ?  newColInfo.maxNumber : vg.attributes.defaultColInfo.maxNumber,
-            minNumber : newColInfo.minNumber ?  newColInfo.minNumber : vg.attributes.defaultColInfo.minNumber,
-            roundNumber : newColInfo.roundNumber ?  newColInfo.roundNumber : vg.attributes.defaultColInfo.roundNumber,
+            untarget : nvl(newColInfo.untarget, grid.data.gridInfo.selectionPolicy === 'none'),
+            rowMerge : nvl(newColInfo.rowMerge, vg.attributes.defaultColInfo.rowMerge),
+            colMerge : nvl(newColInfo.colMerge, vg.attributes.defaultColInfo.colMerge),
+            colVisible : nvl(newColInfo.colVisible, vg.attributes.defaultColInfo.colVisible),
+            required : nvl(newColInfo.required, vg.attributes.defaultColInfo.required),
+            resizable : nvl(newColInfo.resizable, vg.attributes.defaultColInfo.resizable),
+            sortable : nvl(newColInfo.sortable, vg.attributes.defaultColInfo.sortable),
+            filterable : nvl(newColInfo.filterable, vg.attributes.defaultColInfo.filterable),
+            originWidth : nvl(newColInfo.originWidth, vg.attributes.defaultColInfo.originWidth),
+            dataType : nvl(newColInfo.dataType, vg.attributes.defaultColInfo.dataType),
+            selectSize : nvl(newColInfo.selectSize, vg.attributes.defaultColInfo.selectSize),
+            locked : nvl(newColInfo.locked, grid.data.gridInfo.locked),
+            lockedColor : nvl(newColInfo.lockedColor, grid.data.gridInfo.lockedColor),
+            format : nvl(newColInfo.format, vg.attributes.defaultColInfo.format),
+            codes : nvl(newColInfo.codes, vg.attributes.defaultColInfo.codes),
+            defaultCode : nvl(newColInfo.defaultCode, vg.attributes.defaultColInfo.defaultCode),
+            maxLength : nvl(newColInfo.maxLength, vg.attributes.defaultColInfo.maxLength),
+            maxByte : nvl(newColInfo.maxByte, vg.attributes.defaultColInfo.maxByte),
+            maxNumber : nvl(newColInfo.maxNumber, vg.attributes.defaultColInfo.maxNumber),
+            minNumber : nvl(newColInfo.minNumber, vg.attributes.defaultColInfo.minNumber),
+            roundNumber : nvl(newColInfo.roundNumber, vg.attributes.defaultColInfo.roundNumber),
     
-            align : newColInfo.align ?  newColInfo.align : defaultAlign,
-            verticalAlign : newColInfo.verticalAlign ?  newColInfo.verticalAlign : vg.attributes.defaultColInfo.verticalAlign,
-            overflowWrap : newColInfo.overflowWrap ?  newColInfo.overflowWrap : vg.attributes.defaultColInfo.overflowWrap,
-            wordBreak : newColInfo.wordBreak ?  newColInfo.wordBreak : vg.attributes.defaultColInfo.wordBreak,
-            whiteSpace : newColInfo.whiteSpace ?  newColInfo.whiteSpace : vg.attributes.defaultColInfo.whiteSpace,
-            backColor : newColInfo.backColor ?  newColInfo.backColor : vg.attributes.defaultColInfo.backColor,
-            fontColor : newColInfo.fontColor ?  newColInfo.fontColor : vg.attributes.defaultColInfo.fontColor,
-            fontBold : newColInfo.fontBold ?  newColInfo.fontBold : vg.attributes.defaultColInfo.fontBold,
-            fontItalic : newColInfo.fontItalic ?  newColInfo.fontItalic : vg.attributes.defaultColInfo.fontItalic,
-            fontThruline : newColInfo.fontThruline ?  newColInfo.fontThruline : vg.attributes.defaultColInfo.fontThruline,
-            fontUnderline : newColInfo.fontUnderline ?  newColInfo.fontUnderline : vg.attributes.defaultColInfo.fontUnderline,
+            align : nvl(newColInfo.align, defaultAlign),
+            verticalAlign : nvl(newColInfo.verticalAlign, vg.attributes.defaultColInfo.verticalAlign),
+            overflowWrap : nvl(newColInfo.overflowWrap, vg.attributes.defaultColInfo.overflowWrap),
+            wordBreak : nvl(newColInfo.wordBreak, vg.attributes.defaultColInfo.wordBreak),
+            whiteSpace : nvl(newColInfo.whiteSpace, vg.attributes.defaultColInfo.whiteSpace),
+            backColor : nvl(newColInfo.backColor, vg.attributes.defaultColInfo.backColor),
+            fontColor : nvl(newColInfo.fontColor, vg.attributes.defaultColInfo.fontColor),
+            fontBold : nvl(newColInfo.fontBold, vg.attributes.defaultColInfo.fontBold),
+            fontItalic : nvl(newColInfo.fontItalic, vg.attributes.defaultColInfo.fontItalic),
+            fontThruline : nvl(newColInfo.fontThruline, vg.attributes.defaultColInfo.fontThruline),
+            fontUnderline : nvl(newColInfo.fontUnderline, vg.attributes.defaultColInfo.fontUnderline),
             
             filterValues : new Set(),
             filterValue : null,
@@ -734,34 +734,34 @@ export const setHandleGrid = (vg: Vanillagrid, gridList: Record<string, Grid>, h
             return false;
         }
         const cell = handler._getCell(gridId, row, colIndex);
-        if (cellData.untarget) cell!.untarget = cellData.untarget;
-        if (cellData.dataType) {
+        if (cellData.untarget !== undefined) cell!.untarget = cellData.untarget;
+        if (cellData.dataType !== undefined && cellData.dataType !== null) {
             if (![...Object.keys(basicDataType), ...Object.keys(vg.dataType)].includes(cellData.dataType)) throw new Error('Please insert a valid dataType.');
             cell!.dataType = cellData.dataType;
         }
-        if (cellData.selectSize) cell!.selectSize = cellData.selectSize;
-        if (cellData.locked) cell!.locked = cellData.locked;
-        if (cellData.lockedColor) cell!.lockedColor = cellData.lockedColor;
-        if (cellData.format) cell!.format = cellData.format;
-        if (cellData.codes) cell!.codes = cellData.codes;
-        if (cellData.defaultCode) cell!.defaultCode = cellData.defaultCode;
-        if (cellData.maxLength) cell!.maxLength = cellData.maxLength;
-        if (cellData.maxByte) cell!.maxByte = cellData.maxByte;
-        if (cellData.maxNumber) cell!.maxNumber = cellData.maxNumber;
-        if (cellData.minNumber) cell!.minNumber = cellData.minNumber;
-        if (cellData.roundNumber) cell!.roundNumber = cellData.roundNumber;
-        if (cellData.align) cell!.align = cellData.align;
-        if (cellData.verticalAlign) cell!.verticalAlign = cellData.verticalAlign;
-        if (cellData.overflowWrap) cell!.overflowWrap = cellData.overflowWrap;
-        if (cellData.wordBreak) cell!.wordBreak = cellData.wordBreak;
-        if (cellData.whiteSpace) cell!.whiteSpace = cellData.whiteSpace;
-        if (cellData.backColor) cell!.backColor = cellData.backColor;
-        if (cellData.fontColor) cell!.fontColor = cellData.fontColor;
-        if (cellData.fontBold) cell!.fontBold = cellData.fontBold;
-        if (cellData.fontItalic) cell!.fontItalic = cellData.fontItalic;
-        if (cellData.fontThruline) cell!.fontThruline = cellData.fontThruline;
-        if (cellData.fontUnderline) cell!.fontUnderline = cellData.fontUnderline;
-        if (cellData.value) cell!.value = cellData.value;
+        if (cellData.selectSize !== undefined) cell!.selectSize = cellData.selectSize;
+        if (cellData.locked !== undefined) cell!.locked = cellData.locked;
+        if (cellData.lockedColor !== undefined) cell!.lockedColor = cellData.lockedColor;
+        if (cellData.format !== undefined) cell!.format = cellData.format;
+        if (cellData.codes !== undefined) cell!.codes = cellData.codes;
+        if (cellData.defaultCode !== undefined) cell!.defaultCode = cellData.defaultCode;
+        if (cellData.maxLength !== undefined) cell!.maxLength = cellData.maxLength;
+        if (cellData.maxByte !== undefined) cell!.maxByte = cellData.maxByte;
+        if (cellData.maxNumber !== undefined) cell!.maxNumber = cellData.maxNumber;
+        if (cellData.minNumber !== undefined) cell!.minNumber = cellData.minNumber;
+        if (cellData.roundNumber !== undefined) cell!.roundNumber = cellData.roundNumber;
+        if (cellData.align !== undefined) cell!.align = cellData.align;
+        if (cellData.verticalAlign !== undefined) cell!.verticalAlign = cellData.verticalAlign;
+        if (cellData.overflowWrap !== undefined) cell!.overflowWrap = cellData.overflowWrap;
+        if (cellData.wordBreak !== undefined) cell!.wordBreak = cellData.wordBreak;
+        if (cellData.whiteSpace !== undefined) cell!.whiteSpace = cellData.whiteSpace;
+        if (cellData.backColor !== undefined) cell!.backColor = cellData.backColor;
+        if (cellData.fontColor !== undefined) cell!.fontColor = cellData.fontColor;
+        if (cellData.fontBold !== undefined) cell!.fontBold = cellData.fontBold;
+        if (cellData.fontItalic !== undefined) cell!.fontItalic = cellData.fontItalic;
+        if (cellData.fontThruline !== undefined) cell!.fontThruline = cellData.fontThruline;
+        if (cellData.fontUnderline !== undefined) cell!.fontUnderline = cellData.fontUnderline;
+        if (cellData.value !== undefined) cell!.value = cellData.value;
         handler.reConnectedCallbackElement(cell!);
         handler.reloadGridWithModifyCell(gridId, cell!.colIndex!);
         return true;

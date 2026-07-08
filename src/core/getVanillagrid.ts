@@ -441,7 +441,7 @@ const initVanillagrid = () => {
                         break;
                     case 'y':
                     case 'Y': 
-                        handler.redoundo(gId, false);
+                        handler.redoundo(gId, true);
                         e.preventDefault();
                         break;
                     case 'a':
@@ -458,16 +458,22 @@ const initVanillagrid = () => {
             const startCell = grid.data.variables.activeCells[0];
             const endCell = grid.data.variables.activeCells[grid.data.variables.activeCells.length - 1];
             let newTargetCell: Cell;
+            let isDataTypeKeydownCanceled = false;
             Object.keys(vg.dataType).forEach((key) => {
                 if(grid!.data.variables.targetCell!.dataType === key) {
                     if(vg.dataType[key].onSelectedAndKeyDown) {
                         if(typeof vg.dataType[key].onSelectedAndKeyDown !== 'function') throw new Error('onSelectedAndKeyDown must be a function.');
                         if(vg.dataType[key].onSelectedAndKeyDown(e, grid.data.id, handler.__getData(grid!.data.variables.targetCell!)!) === false) {
-                            return;
+                            isDataTypeKeydownCanceled = true;
                         }
                     }
                 }
             });
+            if (isDataTypeKeydownCanceled) {
+                e.stopPropagation();
+                e.preventDefault();
+                return;
+            }
             switch (e.key) {
                 case 'Tab':
                     newTargetCell = handler.getTabCell(grid.data.variables.targetCell!, e.shiftKey)!;
@@ -631,12 +637,12 @@ const initVanillagrid = () => {
 const destroyVanillagrid = () => {
     if(!singletonVanillagrid) return;
     Object.values(gridList).forEach((grid: Grid | null) => {
-        const vanillagrid = document.getElementById(grid!.data.id);
         const stylesSheet = document.getElementById(grid!.data.id + '_styles-sheet');
-        if (vanillagrid) (vanillagrid as any).parentNode.removeChild(vanillagrid);
-        if (stylesSheet) (stylesSheet as any).parentNode.removeChild(stylesSheet);
-        delete gridList[grid!.data.id];
-        grid = null;
+        if (stylesSheet && stylesSheet.parentNode) stylesSheet.parentNode.removeChild(stylesSheet);
+    });
+    singletonVanillagrid.unmountGrid();
+    Object.keys(gridList).forEach((gridId) => {
+        delete gridList[gridId];
     });
     document.removeEventListener('mousedown', singletonVanillagrid.documentEvent.mousedown!);
     document.removeEventListener('mouseup', singletonVanillagrid.documentEvent.mouseup!);
@@ -644,6 +650,5 @@ const destroyVanillagrid = () => {
     document.removeEventListener('copy', singletonVanillagrid.documentEvent.copy!);
     document.removeEventListener('paste', singletonVanillagrid.documentEvent.paste!);
     
-    singletonVanillagrid.unmountGrid();
     singletonVanillagrid = null;
 }

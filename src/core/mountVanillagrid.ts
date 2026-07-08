@@ -367,7 +367,7 @@ const getEvent = () => {
         onClickFilter(row: number, colId: string, filterNode: HTMLElement) {return true},
         onChooseFilter(row: number, colId: string, oldValue: any, newValue: any) {return true},
         onPaste(startRow: number, startColId: string, clipboardText: string) {return true},
-        onCopy(startRow: number, startColId: string, endRow: number, endColId: string) {return true},
+        onCopy(startRow: number, startColId: string, endRow: number, endColId: string, copyText: string) {return true},
         onResize(colId: string) {return true},
         onKeydownEditor(event: KeyboardEvent) {return true},
         onInputEditor(event: InputEvent) {return true},
@@ -428,7 +428,7 @@ export const mountVanillagrid = (vg: Vanillagrid, gridList: Record<string, Grid>
                 },
             },
             events: getEvent(),
-            hendler: {
+            handler: {
                 gridHeader_dblclick(e: any) {},
                 gridHeader_click(e: any) {},
                 gridBody_mousemove(e: any) {},
@@ -453,7 +453,7 @@ export const mountVanillagrid = (vg: Vanillagrid, gridList: Record<string, Grid>
         grid.methods = getGridMethod(vg, grid, handler);
         setGridCssStyle(grid);
 
-        grid.hendler.gridHeader_dblclick = (e: any) => {
+        grid.handler.gridHeader_dblclick = (e: any) => {
             if (vg._status.onHeaderDragging) return;
             let headerCell: Cell;
             if (e.target._type === 'ghd') {
@@ -482,9 +482,9 @@ export const mountVanillagrid = (vg: Vanillagrid, gridList: Record<string, Grid>
             grid.methods.sort(headerCell.colId, !grid.data.variables.sortToggle[headerCell.colId]);
             grid.events.onAfterDblClickHeader(headerCell.rowIndex, headerCell.colId);
         }
-        gridHeader.addEventListener('dblclick', grid.hendler.gridHeader_dblclick);
+        gridHeader.addEventListener('dblclick', grid.handler.gridHeader_dblclick);
 
-        grid.hendler.gridHeader_click = (e: any) => {
+        grid.handler.gridHeader_click = (e: any) => {
             let headerCell: Cell;
             if (e.target._type === 'ghd') {
                 headerCell = e.target;
@@ -505,7 +505,7 @@ export const mountVanillagrid = (vg: Vanillagrid, gridList: Record<string, Grid>
                 const removeSpans = headerCell.parentNode!.querySelectorAll('.' + headerCell._gridId + '_filterSelect');
                 const filterSelect = e.target.querySelectorAll('.' + headerCell._gridId + '_filterSelect')[0];
                 removeSpans.forEach((el: any) => {
-                    if (filterSelect !== el && el.value === 'ALL') el.style.display = 'none';
+                    if (filterSelect !== el && el.value === '$$ALL') el.style.display = 'none';
                 });
                 if (filterSelect.style.display === 'none') {
                     filterSelect.style.display = 'block';
@@ -515,23 +515,23 @@ export const mountVanillagrid = (vg: Vanillagrid, gridList: Record<string, Grid>
                 }
             }
         };
-        gridHeader.addEventListener('click', grid.hendler.gridHeader_click);
+        gridHeader.addEventListener('click', grid.handler.gridHeader_click);
         
-        grid.hendler.gridBody_mousemove = (e: any) => {
+        grid.handler.gridBody_mousemove = (e: any) => {
             if (vg._status.isDragging) {
                 vg._status.mouseX = e.clientX;
                 vg._status.mouseY = e.clientY;
             }
         };
-        gridBody.addEventListener('mousemove', grid.hendler.gridBody_mousemove);
+        gridBody.addEventListener('mousemove', grid.handler.gridBody_mousemove);
         
-        grid.hendler.gridBody_mouseleave = (e: any) => {
+        grid.handler.gridBody_mouseleave = (e: any) => {
             if (vg._status.isDragging) {
                 const mouseX = e.clientX;
                 const mouseY = e.clientY;
                 
-                const deltaX = mouseX - mouseX;
-                const deltaY = mouseY - mouseY;
+                const deltaX = mouseX - vg._status.mouseX;
+                const deltaY = mouseY - vg._status.mouseY;
                 
                 let direction = '';
 
@@ -545,16 +545,16 @@ export const mountVanillagrid = (vg: Vanillagrid, gridList: Record<string, Grid>
                 handler.startScrolling(grid.data.id, direction);
             }
         };
-        gridBody.addEventListener('mouseleave', grid.hendler.gridBody_mouseleave);
+        gridBody.addEventListener('mouseleave', grid.handler.gridBody_mouseleave);
         
-        grid.hendler.gridBody_mouseenter = (e: any) => {
+        grid.handler.gridBody_mouseenter = (e: any) => {
             if (vg._status.scrollInterval) {
                 handler.stopScrolling(vg);
             }
         };
-        gridBody.addEventListener('mouseenter', grid.hendler.gridBody_mouseenter);
+        gridBody.addEventListener('mouseenter', grid.handler.gridBody_mouseenter);
         
-        grid.hendler.gridBody_dblclick = (e: any) => {
+        grid.handler.gridBody_dblclick = (e: any) => {
             let cell: Cell;
             if (e.target._type === 'gbdv') {
                 cell = e.target.parentNode;
@@ -568,9 +568,9 @@ export const mountVanillagrid = (vg: Vanillagrid, gridList: Record<string, Grid>
             handler.createGridEditor(cell);
             grid.events.onAfterDblClickCell(cell.rowIndex, cell.colId);
         };
-        gridBody.addEventListener('dblclick', grid.hendler.gridBody_dblclick);
+        gridBody.addEventListener('dblclick', grid.handler.gridBody_dblclick);
         
-        grid.hendler.gridElement_click = (e: any) => {
+        grid.handler.gridElement_click = (e: any) => {
             if (!e.target._type) return;
             let cell: Cell
             if (e.target._type === 'gbdv') {
@@ -618,21 +618,23 @@ export const mountVanillagrid = (vg: Vanillagrid, gridList: Record<string, Grid>
                         break;
                 }
             }
+            let isDataTypeClickCanceled = false;
             Object.keys(vg.dataType).forEach((key) => {
                 if(cell.dataType === key) {
                     if(vg.dataType[key].onClick) {
                         if(typeof vg.dataType[key].onClick !== 'function') throw new Error('onClick must be a function.');
                         if((vg.dataType as any)[key].onClick(e, cell._gridId, handler.__getData(cell)) === false) {
-                            return;
+                            isDataTypeClickCanceled = true;
                         }
                     }
                 }
             });
+            if (isDataTypeClickCanceled) return;
             grid.events.onAfterClickCell(cell.rowIndex, cell.colId);
         };
-        gridElement.addEventListener('click', grid.hendler.gridElement_click);
+        gridElement.addEventListener('click', grid.handler.gridElement_click);
         
-        grid.hendler.gridElement_mousedown = (e: any) => {
+        grid.handler.gridElement_mousedown = (e: any) => {
             if (!e.target._type) return;
             let cell: Cell;
             if (e.target._type === 'gbdv') {
@@ -663,16 +665,18 @@ export const mountVanillagrid = (vg: Vanillagrid, gridList: Record<string, Grid>
                         break;
                 }
             }
+            let isDataTypeMousedownCanceled = false;
             Object.keys(vg.dataType).forEach((key) => {
                 if(cell.dataType === key) {
                     if(vg.dataType[key].onMousedown) {
                         if(typeof vg.dataType[key].onMousedown !== 'function') throw new Error('onMousedown must be a function.');
                         if((vg.dataType as any)[key].onMousedown(e, cell._gridId, handler.__getData(cell)) === false) {
-                            return;
+                            isDataTypeMousedownCanceled = true;
                         }
                     }
                 }
             });
+            if (isDataTypeMousedownCanceled) return;
             vg._status.activeGrid = grid;
             vg._status.isDragging = true;
             if (grid.data.gridInfo.selectionPolicy === 'range' && e.shiftKey && grid.data.variables.targetCell) {
@@ -683,9 +687,9 @@ export const mountVanillagrid = (vg: Vanillagrid, gridList: Record<string, Grid>
                 handler.selectCell(cell);
             }
         };
-        gridElement.addEventListener('mousedown', grid.hendler.gridElement_mousedown);
+        gridElement.addEventListener('mousedown', grid.handler.gridElement_mousedown);
         
-        grid.hendler.gridElement_mousemove = (e: any) => {
+        grid.handler.gridElement_mousemove = (e: any) => {
             let cell;
             if (e.target._type === 'gbdv') {
                 cell = e.target.parentNode;
@@ -704,9 +708,9 @@ export const mountVanillagrid = (vg: Vanillagrid, gridList: Record<string, Grid>
                 handler.selectCells(grid.data.variables.targetCell, cell);
             }
         };
-        gridElement.addEventListener('mousemove', grid.hendler.gridElement_mousemove);
+        gridElement.addEventListener('mousemove', grid.handler.gridElement_mousemove);
         
-        grid.hendler.gridElement_mouseleave = (e: any) => {
+        grid.handler.gridElement_mouseleave = (e: any) => {
             if (grid.data.gridInfo.selectionPolicy !== 'range') return;
             vg._status.mouseoverCell = null;
 
@@ -714,7 +718,7 @@ export const mountVanillagrid = (vg: Vanillagrid, gridList: Record<string, Grid>
                 vg._status.isDragging = false;
             }
         };
-        gridElement.addEventListener('mouseleave', grid.hendler.gridElement_mouseleave);
+        gridElement.addEventListener('mouseleave', grid.handler.gridElement_mouseleave);
 
         gridElement.append(gridHeader);
         gridElement.append(gridBody);
